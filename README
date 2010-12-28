@@ -1,12 +1,6 @@
 
 KISSY Editor - 富文本编辑器 An Editor for Internet!
 
-使用手册：
-http://kissyteam.github.com/kissy-editor/docs
-静态载入：
-http://kissyteam.github.com/kissy-editor/demo/static-min-test.html
-动态按需载入：
-http://kissyteam.github.com/kissy-editor/demo/loader-min-test.html
+配置 web server ，注意不要更改目录结构，然后访问 demo/test.html 即可。
 
-开发预览版 - nightly build ：
-http://kissyteam.github.com/kissy-editor/demo/static-min-dev.html
+除了 kissy-min.js 必须出现在页面上，其他 javasscript 文件可随意合并，重命名。
