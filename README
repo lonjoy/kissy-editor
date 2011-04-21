@@ -1,6 +1,8 @@
 
 KISSY Editor - 富文本编辑器 An Editor for Internet!
 
-配置 web server ，解压后注意不要更改目录结构，然后访问 demo/test.html 即可。
+v2.2
+
+配置 web server ，注意不要更改目录结构，然后访问 demo/test.html 即可。
 
 除了 kissy-min.js 必须出现在页面上，其他 javasscript 文件可随意合并，重命名。
