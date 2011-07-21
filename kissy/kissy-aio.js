@@ -1,7 +1,7 @@
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Jul 20 18:57
+build time: Jul 21 15:38
 */
 /*
  * @module kissy
@@ -87,7 +87,7 @@ build time: Jul 20 18:57
              */
             version: '1.20dev',
 
-            buildTime:'20110720185731',
+            buildTime:'20110721153856',
 
             /**
              * Returns a new object containing all of the properties of
@@ -3784,7 +3784,6 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
     noData['embed'] = 1;
 
     var commonOps = {
-
         hasData:function(cache, name) {
             if (cache) {
                 if (name !== undefined) {
@@ -3813,13 +3812,15 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
             if (ob == win) {
                 return objectOps.data(winDataCache, name, value);
             }
-            var cache = ob[EXPANDO] = ob[EXPANDO] || {};
+            var cache = ob[EXPANDO];
             if (value !== undefined) {
+                cache = ob[EXPANDO] = ob[EXPANDO] || {};
                 cache[name] = value;
             } else {
                 if (name !== undefined) {
-                    return cache[name];
+                    return cache && cache[name];
                 } else {
+                    cache = ob[EXPANDO] = ob[EXPANDO] || {};
                     return cache;
                 }
             }
@@ -3843,7 +3844,6 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
 
     var domOps = {
         hasData:function(elem, name) {
-
             var key = elem[EXPANDO];
             if (!key) {
                 return false;
@@ -3851,26 +3851,32 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
             var thisCache = dataCache[key];
             return commonOps.hasData(thisCache, name);
         },
-        data:function(elem, name, value) {
 
+        data:function(elem, name, value) {
             if (noData[elem.nodeName.toLowerCase()]) {
                 return;
             }
             var key = elem[EXPANDO];
             if (!key) {
+                // 节点上关联键值也可以
                 key = elem[EXPANDO] = S.guid();
             }
-            var cache = dataCache[key] = dataCache[key] || {};
+            var cache = dataCache[key];
             if (value !== undefined) {
+                // 需要新建
+                cache = dataCache[key] = dataCache[key] || {};
                 cache[name] = value;
             } else {
                 if (name !== undefined) {
-                    return cache[name] ;
+                    return cache && cache[name];
                 } else {
+                    // 需要新建
+                    cache = dataCache[key] = dataCache[key] || {};
                     return cache;
                 }
             }
         },
+
         removeData:function(elem, name) {
             var key = elem[EXPANDO];
             if (!key) {
@@ -3901,74 +3907,75 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
 
     S.mix(DOM, {
 
-            hasData:function(selector, name) {
-                var ret = false;
+        hasData:function(selector, name) {
+            var ret = false;
+            DOM.query(selector).each(function(elem) {
+                if (checkIsNode(elem)) {
+                    ret = ret || domOps.hasData(elem, name);
+                } else {
+                    ret = ret || objectOps.hasData(elem, name);
+                }
+            });
+            return ret;
+        },
+
+        /**
+         * Store arbitrary data associated with the matched elements.
+         */
+        data: function(selector, name, data) {
+            // suports hash
+            if (S.isPlainObject(name)) {
+                for (var k in name) {
+                    DOM.data(selector, k, name[k]);
+                }
+                return;
+            }
+
+            // getter
+            if (data === undefined) {
+                var elem = DOM.get(selector);
+                if (checkIsNode(elem)) {
+                    return domOps.data(elem, name, data);
+                } else {
+                    return objectOps.data(elem, name, data);
+                }
+            }
+            // setter
+            else {
                 DOM.query(selector).each(function(elem) {
                     if (checkIsNode(elem)) {
-                        ret = ret || domOps.hasData(elem, name);
+                        domOps.data(elem, name, data);
                     } else {
-                        ret = ret || objectOps.hasData(elem, name);
-                    }
-                });
-                return ret;
-            },
-
-            /**
-             * Store arbitrary data associated with the matched elements.
-             */
-            data: function(selector, name, data) {
-                // suports hash
-                if (S.isPlainObject(name)) {
-                    for (var k in name) {
-                        DOM.data(selector, k, name[k]);
-                    }
-                    return;
-                }
-
-                // getter
-                if (data === undefined) {
-                    var elem = DOM.get(selector);
-                    if (checkIsNode(elem)) {
-                        return domOps.data(elem, name, data);
-                    } else {
-                        return objectOps.data(elem, name, data);
-                    }
-                }
-                // setter
-                else {
-                    DOM.query(selector).each(function(elem) {
-                        if (checkIsNode(elem)) {
-                            domOps.data(elem, name, data);
-                        } else {
-                            objectOps.data(elem, name, data);
-                        }
-                    });
-                }
-            },
-
-            /**
-             * Remove a previously-stored piece of data.
-             */
-            removeData: function(selector, name) {
-                DOM.query(selector).each(function(elem) {
-                    if (checkIsNode(elem)) {
-                        domOps.removeData(elem, name);
-                    } else {
-                        objectOps.removeData(elem, name);
+                        objectOps.data(elem, name, data);
                     }
                 });
             }
-        });
+        },
+
+        /**
+         * Remove a previously-stored piece of data.
+         */
+        removeData: function(selector, name) {
+            DOM.query(selector).each(function(elem) {
+                if (checkIsNode(elem)) {
+                    domOps.removeData(elem, name);
+                } else {
+                    objectOps.removeData(elem, name);
+                }
+            });
+        }
+    });
 
     function checkIsNode(elem) {
+        // note : 普通对象不要定义 nodeType 这种特殊属性!
         return elem && elem.nodeType;
     }
 
     return DOM;
 
 }, {
-        requires:["./base"]
-    });
+    requires:["./base"]
+});
 /**
  * 承玉：2011-05-31
  *  - 分层 ，节点和普通对象分开粗合理
@@ -5497,7 +5504,12 @@ KISSY.add("dom", function(S,DOM) {
 KISSY.add('event/object', function(S, undefined) {
 
     var doc = document,
-        props = 'altKey attrChange attrName bubbles button cancelable charCode clientX clientY ctrlKey currentTarget data detail eventPhase fromElement handler keyCode layerX layerY metaKey newValue offsetX offsetY originalTarget pageX pageY prevValue relatedNode relatedTarget screenX screenY shiftKey srcElement target toElement view wheelDelta which'.split(' ');
+        props = ('altKey attrChange attrName bubbles button cancelable ' +
+            'charCode clientX clientY ctrlKey currentTarget data detail ' +
+            'eventPhase fromElement handler keyCode layerX layerY metaKey ' +
+            'newValue offsetX offsetY originalTarget pageX pageY prevValue ' +
+            'relatedNode relatedTarget screenX screenY shiftKey srcElement ' +
+            'target toElement view wheelDelta which').split(' ');
 
     /**
      * KISSY's event system normalizes the event object according to
@@ -5819,7 +5831,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                 // remove all types of event
                 if (type === undefined) {
                     for (type in events) {
-                        Event.remove(target, type);
+                        Event.remove.call(Event, target, type);
                     }
                     return;
                 }
@@ -5829,7 +5841,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                 if ((listeners = events[type])) {
                     len = listeners.length;
                     // 移除 fn
-                    if (S.isFunction(fn) && len) {
+                    if (fn && len) {
                         for (i = 0,j = 0,t = []; i < len; ++i) {
                             var reserve = false,listener = listeners[i];
                             if (fn !== listener.fn
@@ -5870,11 +5882,12 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                                 special['tearDown'].call(target) === false)) {
                             simpleRemove(target, type, eventDesc.handler);
                         }
+                        // remove target's single event description
                         delete events[type];
                     }
                 }
 
-                // remove expando
+                // remove target's  all events description
                 if (S.isEmptyObject(events)) {
                     eventDesc.handler.target = null;
                     delete eventDesc.handler;
@@ -5926,7 +5939,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         /**
          * fire event , simulate bubble in browser
          */
-        fire:function(targets, eventType, eventData) {
+        fire:function(targets, eventType, eventData, onlyHandlers) {
             if (batchForType("fire", targets, eventType, eventData)) {
                 return;
             }
@@ -5944,7 +5957,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                         ret = eventDesc.handler(undefined, eventData);
                     }
                 } else {
-                    var r = fireDOMEvent(target, eventType, eventData);
+                    var r = fireDOMEvent(target, eventType, eventData, onlyHandlers);
                     if (r !== undefined) {
                         ret = r;
                     }
@@ -5986,7 +5999,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
      */
     function addDomEvent(target, type, eventHandler, handlers, handleObj) {
         var special = Event.special[type] || {};
-        // dom 节点才需要注册 dom 事件
+        // 第一次注册该事件，dom 节点才需要注册 dom 事件
         if (!handlers.length && (!special.setup || special.setup.call(target) === false)) {
             simpleAdd(target, type, eventHandler)
         }
@@ -5999,12 +6012,18 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
     /**
      * fire dom event from bottom to up
      */
-    function fireDOMEvent(target, eventType, eventData) {
+    function fireDOMEvent(target, eventType, eventData, onlyHandlers) {
         var ret;
         if (!isValidTarget(target)) {
             return ret;
         }
-        var event = new EventObject(target, eventData);
+        var event = new EventObject(target);
+        S.mix(event, eventData);
+        // 只运行自己的绑定函数，不冒泡也不触发默认行为
+        if (onlyHandlers) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
         event.target = target;
         var cur = target,
             ontype = "on" + eventType;
@@ -6062,21 +6081,16 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 
     return Event;
 }, {
-        requires:["dom","event/object"]
-    });
+    requires:["dom","event/object"]
+});
 
 /**
  * 承玉：2011-06-07
  *  - eventHandler 一个元素一个而不是一个元素一个事件一个，节省内存
  *  - 减少闭包使用，prevent ie 内存泄露？
  *  - 增加 fire ，模拟冒泡处理 dom 事件
- *  - TODO: 自定义事件和 dom 事件操作分离?
+ *  - TODO: 自定义事件和 dom 事件操作彻底分离?
  *
- * TODO:
- *   - event || window.event, 什么情况下取 window.event ? IE4 ?
- *   - 更详尽细致的 test cases
- *   - 内存泄漏测试
- *   - target 为 window, iframe 等特殊对象时的 test case
  */
 
 /**
@@ -6182,156 +6196,154 @@ KISSY.add('event/focusin', function(S, UA, Event) {
  */
 KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
 
-    var doc = document,
-        HASH_CHANGE = 'hashchange',
-        docMode = doc['documentMode'],
-        ie = docMode || UA['ie'];
+    var ie = docMode || UA['ie'],
+        HASH_CHANGE = 'hashchange';
 
     // IE8以上切换浏览器模式到IE7，会导致 'onhashchange' in window === true
+    // 1. 不支持 hashchange 事件，支持 hash 导航(opera??)：定时器监控
+    // 2. 不支持 hashchange 事件，不支持 hash 导航(ie67) : iframe + 定时器
     if ((!( 'on' + HASH_CHANGE in window)) || ie < 8) {
-        var getHash = function() {
-            var url = location.href;
-            return '#' + url.replace(/^[^#]*#?(.*)$/, '$1');
-        },
+
+        var POLL_INTERVAL = 50,
+            doc = document,
+            win = window,
+            docMode = doc['documentMode'],
+            getHash = function() {
+                // ie 返回 "" ，其他返回 "#"
+                // return location.hash ?
+                var url = location.href;
+                return '#' + url.replace(/^[^#]*#?(.*)$/, '$1');
+            },
+            timer,
+
+            lastHash = getHash(),
+
+            poll = function () {
+                var hash = getHash();
+                if (hash !== lastHash) {
+                    hashChange(hash);
+                    lastHash = hash;
+                }
+                timer = setTimeout(poll, POLL_INTERVAL);
+            },
+
+            hashChange = ie < 8 ? function(hash) {
+                //debugger
+                var html = '<html><body>' + hash + '</body></html>',
+                    doc = iframe.contentWindow.document;
+                try {
+                    // 写入历史 hash
+                    doc.open();
+                    doc.write(html);
+                    doc.close();
+                    return true;
+                } catch (e) {
+                    return false;
+                }
+            } : function (hash) {
+                notifyHashChange(hash);
+            },
+
+            notifyHashChange = function (hash) {
+                S.log("hash changed : " + hash);
+                Event.fire(win, HASH_CHANGE);
+            },
             setup = function () {
-                poll();
+                if (!timer) {
+                    poll();
+                }
             },
             tearDown = function () {
                 timer && clearTimeout(timer);
                 timer = null;
             },
-            poll = function () {
-                //console.log('poll start..' + +new Date());
-                var hash = getHash();
+            iframe;
 
-                if (hash !== lastHash) {
-                    //debugger
-                    hashChange(hash);
-                    lastHash = hash;
-                }
-                timer = setTimeout(poll, 50);
-            },
-            hashChange = function (hash) {
-                notifyHashChange(hash);
-            },
-            notifyHashChange = function (hash) {
-                S.log("hash changed : " + hash);
-                for (var i = 0; i < targets.length; i++) {
-                    var t = targets[i];
-                    //模拟暂时没有属性
-                    Event._handle(t, {
-                        type: HASH_CHANGE
+        // ie6, 7, 覆盖一些function
+        if (ie < 8) {
+
+            /**
+             * 前进后退 : start -> notifyHashChange
+             * 直接输入 : poll -> hashChange -> start
+             * iframe 内容和 url 同步
+             */
+            setup = function() {
+                if (!iframe) {
+                    //http://www.paciellogroup.com/blog/?p=604
+                    iframe = DOM.create('<iframe ' +
+                        //'src="#" ' +
+                        'style="display: none" ' +
+                        'height="0" ' +
+                        'width="0" ' +
+                        'tabindex="-1" ' +
+                        'title="empty"/>');
+                    // Append the iframe to the documentElement rather than the body.
+                    // Keeping it outside the body prevents scrolling on the initial
+                    // page load
+                    DOM.prepend(iframe, document.documentElement);
+
+                    // init，第一次触发，以后都是 start
+                    Event.add(iframe, "load", function() {
+                        Event.remove(iframe, "load");
+                        // Update the iframe with the initial location hash, if any. This
+                        // will create an initial history entry that the user can return to
+                        // after the state has changed.
+                        hashChange(getHash());
+                        Event.add(iframe, "load", start);
+                        poll();
                     });
+
+                    /**
+                     * 前进后退 ： start -> 触发
+                     * 直接输入 : timer -> hashChange -> start -> 触发
+                     * 触发统一在 start(load)
+                     * iframe 内容和 url 同步
+                     */
+                        //后退触发点
+                        //或addHistory 调用
+                        //只有 start 来通知应用程序
+                    function start() {
+                        // S.log('iframe start load..');
+                        //debugger
+                        var c = S.trim(iframe.contentWindow.document.body.innerHTML);
+                        var ch = getHash();
+
+                        //后退时不等
+                        //改变location则相等
+                        if (c != ch) {
+                            location.hash = c;
+                            // 使lasthash为iframe历史， 不然重新写iframe， 会导致最新状态（丢失前进状态）
+                            lastHash = c;
+                        }
+                        notifyHashChange(c);
+                    }
                 }
-            },
-            timer,
-            targets = [],
-            lastHash = getHash();
+            };
+
+            tearDown = function() {
+                timer && clearTimeout(timer);
+                timer = null;
+                Event.detach(iframe);
+                DOM.remove(iframe);
+                iframe = null;
+            };
+        }
 
         Event.special[HASH_CHANGE] = {
             setup: function() {
-                var target = this,
-                    index = S.indexOf(target, targets);
-                if (-1 === index) {
-                    targets.push(target);
+                if (this !== win) {
+                    return;
                 }
-                if (!timer) {
-                    setup();
-                }
-                //不用注册dom事件
+                // 不用注册 dom 事件
+                setup();
             },
             tearDown: function() {
-                var target = this,
-                    index = S.indexOf(target, targets);
-                if (index >= 0) {
-                    targets.splice(index, 1);
+                if (this !== win) {
+                    return;
                 }
-                if (targets.length === 0) {
-                    tearDown();
-                }
+                tearDown();
             }
         };
-
-        // ie6, 7, 用匿名函数来覆盖一些function
-        if (ie < 8) {
-            (function() {
-                var iframe;
-
-                /**
-                 * 前进后退 : start -> notifyHashChange
-                 * 直接输入 : poll -> hashChange -> start
-                 * iframe 内容和 url 同步
-                 */
-
-                setup = function() {
-                    if (!iframe) {
-                        //http://www.paciellogroup.com/blog/?p=604
-                        iframe = DOM.create('<iframe ' +
-                            //'src="#" ' +
-                            'style="display: none" ' +
-                            'height="0" ' +
-                            'width="0" ' +
-                            'tabindex="-1" ' +
-                            'title="empty"/>');
-                        // Append the iframe to the documentElement rather than the body.
-                        // Keeping it outside the body prevents scrolling on the initial
-                        // page load
-                        DOM.prepend(iframe, document.documentElement);
-
-                        // init
-                        Event.add(iframe, "load", function() {
-                            Event.remove(iframe, "load");
-                            // Update the iframe with the initial location hash, if any. This
-                            // will create an initial history entry that the user can return to
-                            // after the state has changed.
-                            hashChange(getHash());
-                            Event.add(iframe, "load", start);
-                            poll();
-                        });
-
-                        /**
-                         * 前进后退 ： start -> 触发
-                         * 直接输入 : timer -> hashChange -> start -> 触发
-                         * 触发统一在 start(load)
-                         * iframe 内容和 url 同步
-                         */
-                            //后退触发点
-                            //或addHistory 调用
-                            //只有 start 来通知应用程序
-                        function start() {
-                            //console.log('iframe start load..');
-                            //debugger
-                            var c = S.trim(iframe.contentWindow.document.body.innerHTML);
-                            var ch = getHash();
-
-                            //后退时不等
-                            //改变location则相等
-                            if (c != ch) {
-                                location.hash = c;
-                                // 使lasthash为iframe历史， 不然重新写iframe， 会导致最新状态（丢失前进状态）
-                                lastHash = c;
-                            }
-                            notifyHashChange(c);
-                        }
-                    }
-                };
-
-                hashChange = function(hash) {
-                    //debugger
-                    var html = '<html><body>' + hash + '</body></html>';
-                    var doc = iframe.contentWindow.document;
-                    try {
-                        // 写入历史 hash
-                        doc.open();
-                        doc.write(html);
-                        doc.close();
-                        return true;
-                    } catch (e) {
-                        return false;
-                    }
-                };
-            })();
-        }
     }
 }, {
     requires:["./base","dom","ua"]
@@ -6359,86 +6371,64 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
  * @author yiminghe@gmail.com
  */
 KISSY.add('event/valuechange', function(S, Event, DOM) {
-    var VALUE_CHANGE = "valueChange",
+    var VALUE_CHANGE = "valuechange",
         KEY = "event/valuechange",
-        history = {},
-        poll = {},
+        HISTORY_KEY = KEY + "/history",
+        POLL_KEY = KEY + "/poll",
         interval = 50;
 
-    function timestamp(node) {
-        var r = DOM.data(node, KEY);
-        if (!r) {
-            r = (+new Date());
-            DOM.data(node, KEY, r);
-        }
-        return r;
-    }
-
-    function untimestamp(node) {
-        DOM.removeData(node, KEY);
-    }
-
-    //pre value for input monitored
-
-
     function stopPoll(target) {
-        var t = timestamp(target);
-        delete history[t];
-        if (poll[t]) {
-            clearTimeout(poll[t]);
-            delete poll[t];
+        DOM.removeData(target, HISTORY_KEY);
+        if (DOM.hasData(target, POLL_KEY)) {
+            var poll = DOM.data(target, POLL_KEY);
+            clearTimeout(poll);
+            DOM.removeData(target, POLL_KEY);
         }
     }
 
-    function blur(ev) {
+    function stopPollHandler(ev) {
         var target = ev.target;
         stopPoll(target);
     }
 
     function startPoll(target) {
-        var t = timestamp(target);
-        if (poll[t]) return;
-
-        poll[t] = setTimeout(function() {
-            var v = target.value;
-            if (v !== history[t]) {
-                Event._handle(target, {
-                        type:VALUE_CHANGE,
-                        prevVal:history[t],
-                        newVal:v
-                    });
-                history[t] = v;
+        if (DOM.hasData(target, POLL_KEY)) return;
+        DOM.data(target, POLL_KEY, setTimeout(function() {
+            var v = target.value,h = DOM.data(target, HISTORY_KEY);
+            if (v !== h) {
+                // 只触发自己绑定的 handler
+                Event.fire(target, VALUE_CHANGE, {
+                    prevVal:h,
+                    newVal:v
+                }, true);
+                DOM.data(target, HISTORY_KEY, v);
             }
-            poll[t] = setTimeout(arguments.callee, interval);
-        }, interval);
+            DOM.data(target, POLL_KEY, setTimeout(arguments.callee, interval));
+        }, interval));
     }
 
     function startPollHandler(ev) {
         var target = ev.target;
-        //when focus ,record its previous value
+        // when focus ,record its current value immediately
         if (ev.type == "focus") {
-            var t = timestamp(target);
-            history[t] = target.value;
+            DOM.data(target, HISTORY_KEY, target.value);
         }
         startPoll(target);
     }
 
     function monitor(target) {
         unmonitored(target);
-        Event.on(target, "blur", blur);
+        Event.on(target, "blur", stopPollHandler);
         Event.on(target, "mousedown keyup keydown focus", startPollHandler);
     }
 
     function unmonitored(target) {
         stopPoll(target);
-        Event.remove(target, "blur", blur);
+        Event.remove(target, "blur", stopPollHandler);
         Event.remove(target, "mousedown keyup keydown focus", startPollHandler);
-        untimestamp(target);
     }
 
     Event.special[VALUE_CHANGE] = {
-        //no corresponding dom event needed
-        fix: false,
         setup: function() {
             var target = this,
                 nodeName = target.nodeName.toLowerCase();
@@ -6452,11 +6442,10 @@ KISSY.add('event/valuechange', function(S, Event, DOM) {
             unmonitored(target);
         }
     };
-
     return Event;
 }, {
-        requires:["./base","dom"]
-    });
+    requires:["./base","dom"]
+});
 
 /**
  * kissy delegate for event module
@@ -6915,11 +6904,11 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
         DOM_INCLUDES_NORM_IF = {
             // dom method : set parameter index
             "attr":1,
-            "text":1,
+            "text":0,
             "css":1,
             "val":0,
             "prop":1,
-            "offset":1,
+            "offset":0,
             "html":0,
             "data":1
         },
@@ -13950,7 +13939,7 @@ KISSY.add("resizable", function(S, R) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Jul 20 18:43
+build time: Jul 20 21:14
 */
 /**
  * UIBase.Align
@@ -15114,7 +15103,7 @@ KISSY.add("uibase/constrain", function(S, DOM, Node) {
     function _getConstrainRegion(constrain) {
         var ret;
         if (!constrain) return ret;
-        var el = this.get("view").get("el");
+        var el = this.get("el");
         if (constrain !== true) {
             constrain = Node.one(constrain);
             ret = constrain.offset();
@@ -15262,6 +15251,7 @@ KISSY.add("uibase/contentboxrender", function(S, Node, BoxRender) {
         __createDom:function() {
             var self = this,
                 contentEl,
+                c,
                 el = self.get("el"),
                 elChildren = S.makeArray(el[0].childNodes);
             contentEl = new Node(constructEl(
@@ -15277,8 +15267,8 @@ KISSY.add("uibase/contentboxrender", function(S, Node, BoxRender) {
                 for (var i = 0; i < elChildren.length; i++) {
                     contentEl.append(elChildren[i]);
                 }
-            } else if (self.get("content")) {
-                self._uiSetContent(self.get("content"));
+            } else if (c = self.get("content")) {
+                setContent(self, c);
             }
 
 
@@ -15294,11 +15284,15 @@ KISSY.add("uibase/contentboxrender", function(S, Node, BoxRender) {
             this.get("contentEl").css(v);
         },
         _uiSetContent:function(c) {
-            var contentEl = this.get("contentEl");
-            contentEl.html("");
-            c && contentEl.append(c);
+            setContent(this, c);
         }
     };
+
+    function setContent(self, c) {
+        var contentEl = self.get("contentEl");
+        contentEl.html("");
+        c && contentEl.append(c);
+    }
 
     return ContentBox;
 }, {
@@ -15328,7 +15322,7 @@ KISSY.add("uibase/drag", function(S) {
         __bindUI:function() {
             var Draggable = S.require("dd/draggable");
             var self = this,
-                el = self.get("view").get("el");
+                el = self.get("el");
             if (self.get("draggable") && Draggable)
                 self.__drag = new Draggable({
                     node:el,
@@ -15703,7 +15697,7 @@ KISSY.add("uibase/resize", function(S) {
             var Resizable = S.require("resizable"),self = this;
             if (Resizable) {
                 self.resizer && self.resizer.destroy();
-                v.node = self.get("view").get("el");
+                v.node = self.get("el");
                 v.autoRender = true;
                 if (v.handlers) {
                     self.resizer = new Resizable(v);
@@ -15947,7 +15941,7 @@ KISSY.add("uibase/stdmodrender", function(S, Node) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Jul 20 18:42
+build time: Jul 20 21:14
 */
 /**
  * container can delegate event for its children
@@ -16016,7 +16010,7 @@ KISSY.add("component/container", function(S, UIBase, MC, UIStore) {
                 elem = this.get('view').get("el")[0];
             while (node && node !== elem) {
                 for (var i = 0; i < len; i++) {
-                    if (children[i].get("view").get("el")[0] === node) {
+                    if (children[i].get("el")[0] === node) {
                         return children[i];
                     }
                 }
@@ -16033,7 +16027,7 @@ KISSY.add("component/container", function(S, UIBase, MC, UIStore) {
  * model and control base class for kissy
  * @author yiminghe@gmail.com
  */
-KISSY.add("component/modelcontrol", function(S, UIBase) {
+KISSY.add("component/modelcontrol", function(S, UIBase, UIStore) {
 
     function wrapperViewSetter(attrName) {
         return function(ev) {
@@ -16073,6 +16067,7 @@ KISSY.add("component/modelcontrol", function(S, UIBase) {
                 if (attrs.hasOwnProperty(attrName)) {
                     var attrCfg = attrs[attrName],v;
                     if (attrCfg.view) {
+                        // 只设置用户设置的值
                         if ((v = attrVals[attrName]) !== undefined) {
                             cfg[attrName] = v;
                         }
@@ -16091,6 +16086,8 @@ KISSY.add("component/modelcontrol", function(S, UIBase) {
 
     return UIBase.create([UIBase.Box], {
 
+            getCls:UIStore.getCls,
+
             initializer:function() {
                 /**
                  * 整理属性，对纯属于 view 的属性，添加 getter setter 直接到 view
@@ -16105,6 +16102,8 @@ KISSY.add("component/modelcontrol", function(S, UIBase) {
                             // attrCfg.setter = wrapperViewSetter(attrName);
                             self.on("after" + capitalFirst(attrName) + "Change",
                                 wrapperViewSetter(attrName));
+                            // 逻辑层读值直接从 view 层读
+                            // 那么如果存在默认值也设置在 view 层
                             attrCfg.getter = wrapperViewGetter(attrName);
                         }
                     }
@@ -16486,7 +16485,7 @@ KISSY.add("component/modelcontrol", function(S, UIBase) {
             }
         });
 }, {
-    requires:['uibase']
+    requires:['uibase','./uistore']
 });
 /**
  *  Note:
@@ -16497,16 +16496,10 @@ KISSY.add("component/modelcontrol", function(S, UIBase) {
  * render base class for kissy
  * @author yiminghe@gmail.com
  */
-KISSY.add("component/render", function(S, UIBase) {
+KISSY.add("component/render", function(S, UIBase, UIStore) {
     return UIBase.create([UIBase.Box.Render], {
 
-        getCls:function(cls) {
-            var cs = cls.split(/\s+/);
-            for (var i = 0; i < cs.length; i++) {
-                cs[i] = this.get("prefixCls") + cs[i];
-            }
-            return cs.join(" ");
-        },
+        getCls:UIStore.getCls,
 
         getKeyEventTarget:function() {
             return this.get("el");
@@ -16542,7 +16535,7 @@ KISSY.add("component/render", function(S, UIBase) {
         }
     });
 }, {
-    requires:['uibase']
+    requires:['uibase','./uistore']
 });KISSY.add("component/uistore", function() {
     var uis = {
         // 不带前缀 prefixCls
@@ -16569,7 +16562,17 @@ KISSY.add("component/render", function(S, UIBase) {
         uis[cls] = uic;
     }
 
+
+    function getCls(cls) {
+        var cs = cls.split(/\s+/);
+        for (var i = 0; i < cs.length; i++) {
+            cs[i] = this.get("prefixCls") + cs[i];
+        }
+        return cs.join(" ");
+    }
+
     return {
+        getCls:getCls,
         getUIByClass:getUIByClass,
         setUIByClass:setUIByClass
     };
@@ -19186,7 +19189,7 @@ KISSY.add("switchable", function(S, Switchable, Aria, Accordion, AAria, autoplay
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Jul 20 18:43
+build time: Jul 20 21:14
 */
 /**
  * KISSY Overlay
@@ -19356,7 +19359,7 @@ KISSY.add("overlay/aria", function() {
     Aria.prototype = {
 
         __bindUI:function() {
-            var self = this,el = self.get("view").get("el");
+            var self = this,el = self.get("el");
             if (self.get("aria")) {
                 el.on("keydown", function(e) {
                     if (e.keyCode === 27) {
@@ -19402,7 +19405,7 @@ KISSY.add("overlay/aria", function() {
                     return;
                 }
                 var v = ev.newVal,
-                    el = self.get("view").get("el");
+                    el = self.get("el");
                 el.stop(true);
                 el.css("visibility", "visible");
                 var m = effect + effects[effect][Number(v)];
@@ -19480,9 +19483,9 @@ KISSY.add('overlay/dialog', function(S, Overlay, UIBase, DialogRender,Aria) {
     ], {
         renderUI:function() {
             var self = this;
-            self.get("view").get("el").addClass(this.get("view").get("prefixCls")+"dialog");
+            self.get("el").addClass(this.get("prefixCls")+"dialog");
             //设置值，drag-ext 绑定时用到
-            self.set("handlers", [self.get("view").get("header")]);
+            self.set("handlers", [self.get("header")]);
         }
     });
 
@@ -22732,7 +22735,7 @@ KISSY.add("calendar", function(S, C, Page, Time, Date) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Jul 20 18:43
+build time: Jul 20 21:14
 */
 /**
  *  menu where items can be filtered based on user keyboard input
@@ -22740,7 +22743,7 @@ build time: Jul 20 18:43
  */
 KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
 
-    var HIT_CLS = "{prefixCls}menuitem-hit";
+    var HIT_CLS = "menuitem-hit";
 
     // 转义正则特殊字符，返回字符串用来构建正则表达式
     function regExpEscape(s) {
@@ -22750,24 +22753,26 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
 
     return UIBase.create(Menu, {
             bindUI:function() {
-                var self = this;
-                var view = self.get("view");
-                var filterInput = view.get("filterInput");
+                var self = this,
+                    view = self.get("view"),
+                    filterInput = view.get("filterInput");
                 /*监控键盘事件*/
                 filterInput.on("keyup", self.handleFilterEvent, self);
             },
 
             handleFilterEvent:function() {
-                var self = this;
-                var view = self.get("view");
-                var filterInput = view.get("filterInput");
+                var self = this,
+                    view = self.get("view"),
+                    filterInput = view.get("filterInput"),
+                    highlightedItem = self.get("highlightedItem");
                 /* 根据用户输入过滤 */
                 self.set("filterStr", filterInput.val());
-                var highlightedItem = self.get("highlightedItem");
+
                 // 如果没有高亮项或者高亮项因为过滤被隐藏了
                 // 默认选择符合条件的第一项
                 if (!highlightedItem || !highlightedItem.get("visible")) {
-                    self.set("highlightedItem", self._getNextEnabledHighlighted(0, 1));
+                    self.set("highlightedItem",
+                        self._getNextEnabledHighlighted(0, 1));
                 }
             },
 
@@ -22777,10 +22782,10 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
             },
 
             filterItems:function(str) {
-                var self = this;
-                var view = self.get("view");
-                var _labelEl = view.get("labelEl");
-                var filterInput = view.get("filterInput");
+                var self = this,
+                    view = self.get("view"),
+                    _labelEl = view.get("labelEl"),
+                    filterInput = view.get("filterInput");
 
                 // 有过滤条件提示隐藏，否则提示显示
                 _labelEl[str ? "hide" : "show"]();
@@ -22807,10 +22812,11 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
                             enteredItems = items;
                             //待补全的项
                             lastWord = items[items.length - 1];
-                            var item = self.get("highlightedItem");
-                            var content = item && item.get("caption");
+                            var item = self.get("highlightedItem"),
+                                content = item && item.get("caption");
                             // 有高亮而且最后一项不为空补全
-                            if (content && content.indexOf(lastWord) > -1 && lastWord) {
+                            if (content && content.indexOf(lastWord) > -1
+                                && lastWord) {
                                 enteredItems[enteredItems.length - 1] = content;
                             }
                             filterInput.val(enteredItems.join(",") + ",");
@@ -22836,14 +22842,10 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
                     }
                 }
 
-                var children = self.get("children");
-
-                var strExp = str && new RegExp(regExpEscape(str), "ig");
-
-                // 匹配项样式类
-                var hit = S.substitute(HIT_CLS, {
-                    prefixCls:this.get("prefixCls")
-                });
+                var children = self.get("children"),
+                    strExp = str && new RegExp(regExpEscape(str), "ig"),
+                    // 匹配项样式类
+                    hit = this.getCls(HIT_CLS);
 
                 // 过滤所有子组件
                 S.each(children, function(c) {
@@ -22874,9 +22876,9 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
             },
 
             decorateInternal:function(el) {
-                var self = this,prefixCls = this.get("prefixCls");
+                var self = this;
                 self.set("el", el);
-                var menuContent = el.one("." + prefixCls + "menu-content");
+                var menuContent = el.one("." + self.getCls("menu-content"));
                 self.decorateChildren(menuContent);
             },
 
@@ -22918,15 +22920,9 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
  */
 KISSY.add("menu/filtermenurender", function(S, Node, UIBase, MenuRender) {
     var $ = Node.all,
-        MENU_FILTER = "{prefixCls}menu-filter",
-        MENU_FILTER_LABEL = "{prefixCls}menu-filter-label",
-        MENU_CONTENT = "{prefixCls}menu-content";
-
-    function getCls(self, str) {
-        return S.substitute(str, {
-            prefixCls:self.get("prefixCls")
-        });
-    }
+        MENU_FILTER = "menu-filter",
+        MENU_FILTER_LABEL = "menu-filter-label",
+        MENU_CONTENT = "menu-content";
 
     return UIBase.create(MenuRender, {
         getContentElement:function() {
@@ -22942,19 +22938,22 @@ KISSY.add("menu/filtermenurender", function(S, Node, UIBase, MenuRender) {
             var filterWrap = self.get("filterWrap");
             if (!filterWrap) {
                 self.set("filterWrap",
-                    filterWrap = $("<div class='" + getCls(this, MENU_FILTER) + "'/>")
+                    filterWrap = $("<div class='" + this.getCls(MENU_FILTER) + "'/>")
                         .appendTo(contentEl));
             }
             if (!this.get("labelEl")) {
                 this.set("labelEl",
-                    $("<div class='" + getCls(this, MENU_FILTER_LABEL) + "'/>").appendTo(filterWrap));
+                    $("<div class='" + this.getCls(MENU_FILTER_LABEL) + "'/>")
+                        .appendTo(filterWrap));
             }
             if (!self.get("filterInput")) {
-                self.set("filterInput", $("<input autocomplete='off'/>").appendTo(filterWrap));
+                self.set("filterInput", $("<input autocomplete='off'/>")
+                    .appendTo(filterWrap));
             }
             if (!self.get("menuContent")) {
                 self.set("menuContent",
-                    $("<div class='" + getCls(this, MENU_CONTENT) + "'/>").appendTo(contentEl));
+                    $("<div class='" + this.getCls(MENU_CONTENT) + "'/>")
+                        .appendTo(contentEl));
             }
         },
 
@@ -22970,17 +22969,17 @@ KISSY.add("menu/filtermenurender", function(S, Node, UIBase, MenuRender) {
 
         HTML_PARSER:{
             labelEl:function(el) {
-                return el.one("." + getCls(this, MENU_FILTER))
-                    .one("." + getCls(this, MENU_FILTER_LABEL))
+                return el.one("." + this.getCls(MENU_FILTER))
+                    .one("." + this.getCls(MENU_FILTER_LABEL))
             },
             filterWrap:function(el) {
-                return el.one("." + getCls(this, MENU_FILTER));
+                return el.one("." + this.getCls(MENU_FILTER));
             },
             menuContent:function(el) {
-                return el.one("." + getCls(this, MENU_CONTENT));
+                return el.one("." + this.getCls(MENU_CONTENT));
             },
             filterInput:function(el) {
-                return el.one("." + getCls(this, MENU_FILTER)).one("input");
+                return el.one("." + this.getCls(MENU_FILTER)).one("input");
             }
         }
     });
@@ -22993,9 +22992,7 @@ KISSY.add("menu/filtermenurender", function(S, Node, UIBase, MenuRender) {
  */
 KISSY.add("menu/menu", function(S, UIBase, Component, MenuRender) {
 
-    var Menu;
-
-    Menu = UIBase.create(Component.Container, {
+    var Menu = UIBase.create(Component.Container, {
         _uiSetHighlightedItem:function(v, ev) {
             var pre = ev && ev.prevVal;
             if (pre) {
@@ -23169,10 +23166,9 @@ KISSY.add("menu/menu", function(S, UIBase, Component, MenuRender) {
             activeItem:{
                 view:true
             }
-        }
+        },
+        DefaultRender:MenuRender
     });
-
-    Menu.DefaultRender = MenuRender;
 
     Component.UIStore.setUIByClass("menu", {
         priority:10,
@@ -23283,7 +23279,7 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
 
             // @inheritedDoc
             // option.text
-            //content:{},
+            // content:{},
 
             // option.value
             value:{},
@@ -23317,25 +23313,19 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
 KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
 
 
-    var HIGHLIGHTED_CLS = "{prefixCls}menuitem-highlight",
-        CONTENTBOX_CLS = "{prefixCls}contentbox",
-        SELECTED_CLS = "{prefixCls}menuitem-selected",
-        CHECKED_CLS = "{prefixCls}menuitem-checked",
-        ACTIVE_CLS = "{prefixCls}menuitem-active",
-        CHECK_CLS = "{prefixCls}menuitem-checkbox",
-        CONTENT_CLS = "{prefixCls}menuitem-content",
-        EL_CLS = "{prefixCls}menuitem",
-        DISABLED_CLS = "{prefixCls}menuitem-disabled";
-
-    function getCls(self, str) {
-        return S.substitute(str, {
-            prefixCls:self.get("prefixCls")
-        });
-    }
+    var HIGHLIGHTED_CLS = "menuitem-highlight",
+        CONTENTBOX_CLS = "contentbox",
+        SELECTED_CLS = "menuitem-selected",
+        CHECKED_CLS = "menuitem-checked",
+        ACTIVE_CLS = "menuitem-active",
+        CHECK_CLS = "menuitem-checkbox",
+        CONTENT_CLS = "menuitem-content",
+        EL_CLS = "menuitem",
+        DISABLED_CLS = "menuitem-disabled";
 
     function setUpCheckEl(self) {
         var el = self.get("el"),
-            cls = getCls(self, CHECK_CLS),
+            cls = self.getCls(CHECK_CLS),
             checkEl = el.one("." + cls);
         if (!checkEl) {
             checkEl = new Node("<div class='" + cls + "'/>").prependTo(el);
@@ -23349,42 +23339,42 @@ KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
         renderUI:function() {
             var self = this,
                 el = self.get("el");
-            var cls = getCls(self, CONTENTBOX_CLS);
-            el.addClass(getCls(self, EL_CLS))
+            var cls = self.getCls(CONTENTBOX_CLS);
+            el.addClass(self.getCls(EL_CLS))
                 .attr("role", "menuitem");
-            self.get("contentEl").addClass(getCls(self, CONTENT_CLS));
+            self.get("contentEl").addClass(self.getCls(CONTENT_CLS));
             if (!el.attr("id")) {
                 el.attr("id", S.guid("ks-menuitem"));
             }
         },
 
         _uiSetDisabled:function(v) {
-            var el = this.get("el").attr("aria-disabled", !!v);
+            var self = this,el = self.get("el").attr("aria-disabled", !!v);
             if (v) {
-                el.addClass(getCls(this, DISABLED_CLS));
+                el.addClass(self.getCls(DISABLED_CLS));
             } else {
-                el.removeClass(getCls(this, DISABLED_CLS));
+                el.removeClass(self.getCls(DISABLED_CLS));
             }
         },
 
         _uiSetHighlighted:function(v) {
-            var el = this.get("el");
+            var self = this,el = this.get("el");
             if (v) {
-                el.addClass(getCls(this, HIGHLIGHTED_CLS));
+                el.addClass(self.getCls(HIGHLIGHTED_CLS));
             } else {
-                el.removeClass(getCls(this, HIGHLIGHTED_CLS));
+                el.removeClass(self.getCls(HIGHLIGHTED_CLS));
             }
         },
 
         _uiSetSelected:function(v) {
-            var el = this.get("el");
-            el[v ? "addClass" : "removeClass"](getCls(this, SELECTED_CLS));
+            var self = this,el = self.get("el");
+            el[v ? "addClass" : "removeClass"](self.getCls(SELECTED_CLS));
         },
 
         _uiSetChecked:function(v) {
-            var el = this.get("el");
-            el[v ? "addClass" : "removeClass"](getCls(this, CHECKED_CLS));
-            v && setUpCheckEl(this);
+            var self = this,el = self.get("el");
+            el[v ? "addClass" : "removeClass"](self.getCls(CHECKED_CLS));
+            v && setUpCheckEl(self);
         },
 
         _uiSetSelectable:function(v) {
@@ -23396,14 +23386,14 @@ KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
         },
 
         _handleMouseDown:function() {
-            var el = this.get("el");
-            el.addClass(getCls(this, ACTIVE_CLS));
+            var self = this,el = this.get("el");
+            el.addClass(self.getCls(ACTIVE_CLS));
             el.attr("aria-pressed", true);
         },
 
         _handleMouseUp:function() {
-            var el = this.get("el");
-            el.removeClass(getCls(this, ACTIVE_CLS));
+            var self = this,el = this.get("el");
+            el.removeClass(self.getCls(ACTIVE_CLS));
             el.attr("aria-pressed", false);
         },
 
@@ -23439,7 +23429,7 @@ KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
  */
 KISSY.add("menu/menurender", function(S, UA, UIBase, Component) {
 
-    var CLS = "{prefixCls}menu  {prefixCls}menu-vertical";
+    var CLS = "menu  menu-vertical";
 
     return UIBase.create(Component.Render, [
         UIBase.Contentbox.Render
@@ -23447,9 +23437,7 @@ KISSY.add("menu/menurender", function(S, UA, UIBase, Component) {
 
         renderUI:function() {
             var el = this.get("el");
-            el.addClass(S.substitute(CLS, {
-                prefixCls:this.get("prefixCls")
-            }))
+            el.addClass(this.getCls(CLS))
                 .attr("role", "menu")
                 .attr("aria-haspopup", true);
             if (!el.attr("id")) {
@@ -23460,7 +23448,7 @@ KISSY.add("menu/menurender", function(S, UA, UIBase, Component) {
         _uiSetActiveItem:function(v) {
             var el = this.get("el");
             if (v) {
-                var menuItemEl = v.get("view").get("el"),
+                var menuItemEl = v.get("el"),
                     id = menuItemEl.attr("id");
                 el.attr("aria-activedescendant", id);
                 // 会打印重复 ，每个子菜单都会打印，然后冒泡至父菜单，再打印，和该 menuitem 所处层次有关系
@@ -23517,15 +23505,13 @@ KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender
  * @author yiminghe@gmail.com
  */
 KISSY.add("menu/popupmenurender", function(S, UA, UIBase, MenuRender) {
-    var CLS = "{prefixCls}popmenu";
+    var CLS = "popmenu";
     return UIBase.create(MenuRender, [
         UIBase.Position.Render,
         UA['ie'] === 6 ? UIBase.Shim.Render : null
     ], {
         renderUI:function() {
-            this.get("el").addClass(S.substitute(CLS, {
-                prefixCls:this.get("prefixCls")
-            }));
+            this.get("el").addClass(this.getCls(CLS));
         }
     }, {
         ATTRS:{
@@ -23549,13 +23535,10 @@ KISSY.add("menu/separator", function(S, UIBase, Component, SeparatorRender) {
     return UIBase.create(Component.ModelControl, {
     }, {
         ATTRS:{
-
             handleMouseEvents:{
                 value:false
             }
-
         },
-
         DefaultRender:SeparatorRender
     });
 
@@ -23567,16 +23550,11 @@ KISSY.add("menu/separator", function(S, UIBase, Component, SeparatorRender) {
  */
 KISSY.add("menu/separatorrender", function(S, UIBase, Component) {
 
-    var CLS = "{prefixCls}menuseparator";
+    var CLS = "menuseparator";
     return UIBase.create(Component.Render, {
-
         createDom:function() {
-            var el = this.get("el");
-            el.attr("role", "separator").addClass(S.substitute(CLS, {
-                prefixCls:this.get("prefixCls")
-            }));
+            this.get("el").attr("role", "separator").addClass(this.getCls(CLS));
         }
-
     }, {
         ATTRS:{
             focusable:{
@@ -23599,12 +23577,11 @@ KISSY.add(
     /* or precisely submenuitem */
     "menu/submenu",
     function(S, UIBase, Component, MenuItem, SubMenuRender) {
-        var SubMenu;
 
         /**
          * Class representing a submenu that can be added as an item to other menus.
          */
-        SubMenu = UIBase.create(MenuItem, {
+        var SubMenu = UIBase.create(MenuItem, {
 
                 _onParentHide:function() {
                     this.get("menu") && this.get("menu").hide();
@@ -23661,7 +23638,7 @@ KISSY.add(
 
                 showMenu:function() {
                     var menu = this.get("menu");
-                    menu.set("align", {node:this.get("view").get("el"), points:['tr','tl']});
+                    menu.set("align", {node:this.get("el"), points:['tr','tl']});
                     menu.render();
                     /**
                      * If activation of your menuitem produces a popup menu,
@@ -23669,8 +23646,8 @@ KISSY.add(
                      to allow the assistive technology to follow the menu hierarchy
                      and assist the user in determining context during menu navigation.
                      */
-                    this.get("view").get("el").attr("aria-haspopup",
-                        menu.get("view").get("el").attr("id"));
+                    this.get("el").attr("aria-haspopup",
+                        menu.get("el").attr("id"));
                     menu.show();
                 },
 
@@ -23846,11 +23823,12 @@ KISSY.add(
                             m.set("parent", this);
                         }
                     }
-                }
+                },
+
+                DefaultRender:SubMenuRender
             }
         );
 
-        SubMenu.DefaultRender = SubMenuRender;
 
         Component.UIStore.setUIByClass("submenu", {
             priority:20,
@@ -23922,7 +23900,7 @@ KISSY.add("menu/submenurender", function(S, UIBase, MenuItemRender) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Jul 20 18:42
+build time: Jul 20 21:14
 */
 /**
  * Model and Control for button
@@ -24004,16 +23982,15 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
 
     function getCls(self, str) {
         return S.substitute(str, {
-            prefixCls:self.get("prefixCls"),
             tag:self.__css_tag
         });
     }
 
-    var CLS = "{prefixCls}inline-block " + " {prefixCls}{tag}-button",
-        FOCUS_CLS = "{prefixCls}{tag}-button-focused",
-        HOVER_CLS = "{prefixCls}{tag}-button-hover",
-        ACTIVE_CLS = "{prefixCls}{tag}-button-active",
-        DISABLED_CLS = "{prefixCls}{tag}-button-disabled";
+    var CLS = "inline-block " + " {tag}-button",
+        FOCUS_CLS = "{tag}-button-focused",
+        HOVER_CLS = "{tag}-button-hover",
+        ACTIVE_CLS = "{tag}-button-active",
+        DISABLED_CLS = "{tag}-button-disabled";
 
     return UIBase.create(ButtonRender, {
 
@@ -24022,7 +23999,8 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
         renderUI:function() {
             var self = this,
                 el = self.get("el");
-            el.addClass(getCls(self, CLS));
+            el.addClass(getCls(self,
+                self.getCls(CLS)));
         },
 
         /**
@@ -24030,7 +24008,8 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
          */
         _handleFocus:function() {
             var self = this;
-            self.get("el").addClass(getCls(self, FOCUS_CLS));
+            self.get("el").addClass(getCls(self,
+                self.getCls(FOCUS_CLS)));
         },
 
         /**
@@ -24038,7 +24017,8 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
          */
         _handleBlur:function() {
             var self = this;
-            self.get("el").removeClass(getCls(self, FOCUS_CLS));
+            self.get("el").removeClass(getCls(self,
+                self.getCls(FOCUS_CLS)));
         },
 
         /**
@@ -24046,7 +24026,8 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
          */
         _handleMouseEnter:function() {
             var self = this;
-            self.get("el").addClass(getCls(self, HOVER_CLS));
+            self.get("el").addClass(getCls(self,
+                self.getCls(HOVER_CLS)));
         },
 
         /**
@@ -24054,7 +24035,8 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
          */
         _handleMouseLeave:function() {
             var self = this;
-            self.get("el").removeClass(getCls(self, HOVER_CLS));
+            self.get("el").removeClass(getCls(self,
+                self.getCls(HOVER_CLS)));
             // 鼠标离开时，默认设为鼠标松开状态
             self._handleMouseUp();
         },
@@ -24067,7 +24049,7 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
         _uiSetDisabled:function(v) {
             var self = this,el = self.get("el");
             if (v) {
-                el.addClass(getCls(self, DISABLED_CLS))
+                el.addClass(getCls(self, self.getCls(DISABLED_CLS)))
                     //不能被 tab focus 到
                     //support aria
                     .attr({
@@ -24075,8 +24057,12 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
                         "aria-disabled": true
                     });
             } else {
-                el.removeClass(getCls(self, DISABLED_CLS))
-                    .attr({"tabindex": 0,"aria-disabled": false});
+                el.removeClass(getCls(self,
+                    self.getCls(DISABLED_CLS)))
+                    .attr({
+                        "tabindex": 0,
+                        "aria-disabled": false
+                    });
             }
         },
 
@@ -24085,7 +24071,9 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
          */
         _handleMouseDown:function() {
             var self = this;
-            self.get("el").addClass(getCls(self, ACTIVE_CLS))
+            self.get("el")
+                .addClass(getCls(self,
+                self.getCls(ACTIVE_CLS)))
                 .attr("aria-pressed", true);
         },
 
@@ -24094,7 +24082,8 @@ KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
          */
         _handleMouseUp:function() {
             var self = this;
-            self.get("el").removeClass(getCls(self, ACTIVE_CLS))
+            self.get("el").removeClass(getCls(self,
+                self.getCls(ACTIVE_CLS)))
                 .attr("aria-pressed", false);
         }
 
@@ -24126,7 +24115,7 @@ KISSY.add("button/customrender", function(S, Node, UIBase, Css3Render) {
                     contentEl = self.get("contentEl"),
                     id = S.guid('ks-button-labelby');
                 //按钮的描述节点在最内层，其余都是装饰
-                contentEl.addClass(this.getCls(CONTENT_CLS));
+                contentEl.addClass(self.getCls(CONTENT_CLS));
                 var elChildren = S.makeArray(contentEl[0].childNodes);
                 var innerEl = new Node("<div id='" + id + "' " +
                     "class='" + self.getCls(INNER_CLS) + "'/>").appendTo(contentEl);
@@ -24135,7 +24124,7 @@ KISSY.add("button/customrender", function(S, Node, UIBase, Css3Render) {
                     innerEl.append(elChildren[i]);
                 }
                 el.attr("aria-labelledby", id);
-                self._innerEl = innerEl;
+                self.set("innerEl", innerEl);
             }
             ,
 
@@ -24145,15 +24134,17 @@ KISSY.add("button/customrender", function(S, Node, UIBase, Css3Render) {
              * @param v
              */
             _uiSetContent:function(v) {
-                var innerEl = this._innerEl;
+                var innerEl = this.get("innerEl");
                 innerEl.html("");
                 v && innerEl.append(v);
             }
+        }, {
+            /**
+             * @inheritedDoc
+             * content:{}
+             */
+            innerEL:{}
         }
-        /**
-         * @inheritedDoc
-         * content:{}
-         */
     );
 }, {
     requires:['node','uibase','./css3render']
@@ -24190,7 +24181,7 @@ KISSY.add("button", function(S, Button, Render) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Jul 20 18:43
+build time: Jul 21 11:15
 */
 /**
  * combination of menu and button ,similar to native select
@@ -24213,7 +24204,7 @@ KISSY.add("menubutton/menubutton", function(S, UIBase, Node, Button, MenuButtonR
                     node:el
                 }, self.get("menuAlign")));
                 menu.show();
-                el.attr("aria-haspopup", menu.get("view").get("el").attr("id"));
+                el.attr("aria-haspopup", menu.get("el").attr("id"));
                 view.set("collapsed", false);
             }
         },
@@ -24302,23 +24293,37 @@ KISSY.add("menubutton/menubutton", function(S, UIBase, Node, Button, MenuButtonR
         },
 
         /**
+         * if no menu , then construct
+         */
+        getMenu:function() {
+            var m = this.get("menu");
+            if (!m) {
+                m = new Menu.PopupMenu(S.mix({
+                    prefixCls:this.get("prefixCls")
+                }, this.get("menuCfg")));
+                this.set("menu", m);
+            }
+            return m;
+        },
+
+        /**
          * Adds a new menu item at the end of the menu.
          * @param item Menu item to add to the menu.
          */
         addItem:function(item, index) {
-            this.get("menu").addChild(item, index);
+            this.getMenu().addChild(item, index);
         },
 
         removeItem:function(c, destroy) {
-            this.get("menu").removeChild(c, destroy);
+            this.get("menu") && this.get("menu").removeChild(c, destroy);
         },
 
         removeItems:function(destroy) {
-            this.get("menu").removeChildren(destroy);
+            this.get("menu") && this.get("menu").removeChildren(destroy);
         },
 
         getItemAt:function(index) {
-            return this.get("menu").getChildAt(index);
+            return this.get("menu") && this.get("menu").getChildAt(index);
         },
 
         destructor:function() {
@@ -24345,20 +24350,13 @@ KISSY.add("menubutton/menubutton", function(S, UIBase, Node, Button, MenuButtonR
             // 不关心选中元素 , 由 select 负责
             // selectedItem
             menu:{
-                valueFn:function() {
-                    return new Menu.PopupMenu(S.mix({
-                        prefixCls:this.get("prefixCls"),
-                        parent:this
-                    }, this.get("menuCfg")));
-                },
                 setter:function(v) {
                     v.set("parent", this);
                 }
             }
-        }
+        },
+        DefaultRender:MenuButtonRender
     });
-
-    MenuButton.DefaultRender = MenuButtonRender;
 
     return MenuButton;
 }, {
@@ -24370,37 +24368,34 @@ KISSY.add("menubutton/menubutton", function(S, UIBase, Node, Button, MenuButtonR
 KISSY.add("menubutton/menubuttonrender", function(S, UIBase, Button) {
 
     var MENU_BUTTON_TMPL = '<div class="{prefixCls}inline-block ' +
-        '{prefixCls}menu-button-caption"></div>' +
+        '{prefixCls}menu-button-caption">{content}</div>' +
         '<div class="{prefixCls}inline-block ' +
         '{prefixCls}menu-button-dropdown">&nbsp;</div>',
-        CAPTION_CLS = "{prefixCls}menu-button-caption",
-        COLLAPSE_CLS = "{prefixCls}menu-button-open";
-
-    function getCls(self, str) {
-        return S.substitute(str, {
-            prefixCls:self.get("prefixCls")
-        });
-    }
-
+        CAPTION_CLS = "menu-button-caption",
+        COLLAPSE_CLS = "menu-button-open";
 
     return UIBase.create(Button.Render, {
-        renderUI:function() {
-        },
 
         createDom:function() {
-            var el = this.get("el");
-            el.one("div").one("div").html(getCls(this, MENU_BUTTON_TMPL));
-            //带有 menu
-            el.attr("aria-haspopup", true);
+            var innerEl = this.get("innerEl"),
+                html = S.substitute(MENU_BUTTON_TMPL, {
+                    content:this.get("content") || "",
+                    prefixCls:this.get("prefixCls")
+                });
+            innerEl
+                .html(html)
+                //带有 menu
+                .attr("aria-haspopup", true);
         },
 
         _uiSetContent:function(v) {
-            if (v == undefined) return;
-            this.get("el").one("." + getCls(this, CAPTION_CLS)).html(v);
+            var caption = this.get("el").one("." + this.getCls(CAPTION_CLS));
+            caption.html("");
+            caption.append(v);
         },
 
         _uiSetCollapsed:function(v) {
-            var el = this.get("el"),cls = getCls(this, COLLAPSE_CLS);
+            var el = this.get("el"),cls = this.getCls(COLLAPSE_CLS);
             if (!v) {
                 el.addClass(cls);
                 el.attr("aria-expanded", true);
@@ -24412,7 +24407,7 @@ KISSY.add("menubutton/menubuttonrender", function(S, UIBase, Button) {
 
         _uiSetActiveItem:function(v) {
             this.get("el").attr("aria-activedescendant",
-                (v && v.get("view").get("el").attr("id")) || "");
+                (v && v.get("el").attr("id")) || "");
         }
     }, {
         ATTRS:{
@@ -24532,7 +24527,7 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, MenuButton, Menu, Optio
         element = S.one(element);
         var optionMenu = new Menu.PopupMenu(S.mix({
             prefixCls:cfg.prefixCls
-        }, cfg.menuCfg)),
+        }, cfg['menuCfg'])),
             selectedItem,
             curValue = element.val(),
             options = element.all("option");
