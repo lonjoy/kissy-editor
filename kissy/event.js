@@ -1,7 +1,7 @@
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Jul 21 14:27
+build time: Aug 9 18:39
 */
 /**
  * @module  event
@@ -10,6 +10,7 @@ build time: Jul 21 14:27
 KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 
     var doc = document,
+        makeArray = S.makeArray,
         simpleAdd = doc.addEventListener ?
             function(el, type, fn, capture) {
                 if (el.addEventListener) {
@@ -44,12 +45,12 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 
     var Event = {
         _data:function(elem) {
-            var args = S.makeArray(arguments);
+            var args = makeArray(arguments);
             args.splice(1, 0, EVENT_GUID);
             return DOM.data.apply(DOM, args);
         },
         _removeData:function(elem) {
-            var args = S.makeArray(arguments);
+            var args = makeArray(arguments);
             args.splice(1, 0, EVENT_GUID);
             return DOM.removeData.apply(DOM, args);
         },
@@ -304,9 +305,9 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
     function batchForType(methodName, targets, types) {
         // on(target, 'click focus', fn)
         if ((types = S.trim(types)) && types.indexOf(SPACE) > 0) {
-            var args = S.makeArray(arguments);
+            var args = makeArray(arguments);
             S.each(types.split(SPACE), function(type) {
-                var args2 = S.clone(args);
+                var args2 = [].concat(args);
                 args2.splice(0, 3, targets, type);
                 Event[methodName].apply(Event, args2);
             });
@@ -390,6 +391,8 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                         target[ eventType ]();
                     }
                 } catch (ieError) {
+                    S.log("trigger action error : ");
+                    S.log(ieError);
                 }
 
                 if (old) {
@@ -426,53 +429,73 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 KISSY.add("event/delegate", function(S, DOM, Event) {
     var batchForType = Event._batchForType,
         delegateMap = {
-            focus:"focusin",
-            blur:"focusout"
+            "focus":{
+                type:"focusin"
+            },
+            "blur":{
+                type:"focusout"
+            },
+            "mouseenter":{
+                type:"mouseover",
+                handler:mouseHandler
+            },
+            "mouseleave":{
+                type:"mouseout",
+                handler:mouseHandler
+            }
         };
 
     S.mix(Event, {
-            delegate:function(targets, type, selector, fn, scope) {
-                if (batchForType('delegate', targets, type, selector, fn, scope)) {
-                    return targets;
-                }
-                DOM.query(targets).each(function(target) {
-                    // 自定义事件 delegate 无意义
-                    if (target.isCustomEventTarget) {
-                        return;
-                    }
-                    type = delegateMap[type] || type;
-                    Event.on(target, type, delegateHandler, target, {
-                            fn:fn,
-                            selector:selector,
-                            // type:type,
-                            scope:scope,
-                            equals:equals
-                        });
-                });
-                return targets;
-            },
-
-            undelegate:function(targets, type, selector, fn, scope) {
-                if (batchForType('undelegate', targets, type, selector, fn, scope)) {
-                    return targets;
-                }
-                DOM.query(targets).each(function(target) {
-                    // 自定义事件 delegate 无意义
-                    if (target.isCustomEventTarget) {
-                        return;
-                    }
-                    type = delegateMap[type] || type;
-                    Event.remove(target, type, delegateHandler, target, {
-                            fn:fn,
-                            selector:selector,
-                            // type:type,
-                            scope:scope,
-                            equals:equals
-                        });
-                });
+        delegate:function(targets, type, selector, fn, scope) {
+            if (batchForType('delegate', targets, type, selector, fn, scope)) {
                 return targets;
             }
-        });
+            DOM.query(targets).each(function(target) {
+                // 自定义事件 delegate 无意义
+                if (target.isCustomEventTarget) {
+                    return;
+                }
+                var preType = type,handler = delegateHandler;
+                if (delegateMap[type]) {
+                    type = delegateMap[preType].type;
+                    handler = delegateMap[preType].handler || handler;
+                }
+                Event.on(target, type, handler, target, {
+                    fn:fn,
+                    selector:selector,
+                    preType:preType,
+                    scope:scope,
+                    equals:equals
+                });
+            });
+            return targets;
+        },
+
+        undelegate:function(targets, type, selector, fn, scope) {
+            if (batchForType('undelegate', targets, type, selector, fn, scope)) {
+                return targets;
+            }
+            DOM.query(targets).each(function(target) {
+                // 自定义事件 delegate 无意义
+                if (target.isCustomEventTarget) {
+                    return;
+                }
+                var preType = type,handler = delegateHandler;
+                if (delegateMap[type]) {
+                    type = delegateMap[preType].type;
+                    handler = delegateMap[preType].handler || handler;
+                }
+                Event.remove(target, type, handler, target, {
+                    fn:fn,
+                    selector:selector,
+                    preType:preType,
+                    scope:scope,
+                    equals:equals
+                });
+            });
+            return targets;
+        }
+    });
 
     // 比较函数，两个 delegate 描述对象比较
     function equals(d) {
@@ -485,17 +508,40 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
         }
     }
 
-    function eq(d1, d2) {
-        return (d1 == d2 || (!d1 && d2) || (!d1 && d2));
-    }
-
     // 根据 selector ，从事件源得到对应节点
     function delegateHandler(event, data) {
         var delegateTarget = this,
-            gret,
             target = event.target,
             invokeds = DOM.closest(target, [data.selector], delegateTarget);
+
         // 找到了符合 selector 的元素，可能并不是事件源
+        return invokes.call(delegateTarget, invokeds, event, data);
+    }
+
+    // mouseenter/leave 特殊处理
+    function mouseHandler(event, data) {
+        var delegateTarget = this,
+            target = event.target,
+            relatedTarget = event.relatedTarget;
+        // 恢复为用户想要的 mouseenter/leave 类型
+        event.type = data.preType;
+        // mouseenter/leave 不会冒泡，只选择最近一个
+        target = DOM.closest(target, data.selector, delegateTarget);
+        if (target) {
+            if (target !== relatedTarget &&
+                (!relatedTarget || !DOM.contains(target, relatedTarget))
+                ) {
+                event.currentTarget = target;
+                return data.fn.call(data.scope || delegateTarget, event);
+            }
+        }
+        return undefined;
+    }
+
+
+    function invokes(invokeds, event, data) {
+        var delegateTarget = this,
+            gret;
         if (invokeds) {
             for (var i = 0; i < invokeds.length; i++) {
                 event.currentTarget = invokeds[i];
@@ -518,8 +564,8 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
 
     return Event;
 }, {
-        requires:["dom","./base"]
-    });
+    requires:["dom","./base"]
+});
 
 /**
  * focusin/out 的特殊之处 , delegate 只能在容器上注册 focusin/out ，
@@ -532,8 +578,7 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
  *   2.1 当 Event.fire("focus") , 同 1.1
  *   2.2 当 Event.fire("focusin"),直接执行 focusin 对应的 handlers 数组，但不会真正聚焦
  *
- * TODO:
- * mouseenter/leave delegate??
+ * mouseenter/leave delegate 特殊处理， mouseenter 没有冒泡的概念，只能替换为 mouseover/out
  *
  **//**
  * @module  event-focusin
@@ -542,7 +587,7 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
 KISSY.add('event/focusin', function(S, UA, Event) {
 
     // 让非 IE 浏览器支持 focusin/focusout
-    if (!UA.ie) {
+    if (!UA['ie']) {
         S.each([
             { name: 'focusin', fix: 'focus' },
             { name: 'focusout', fix: 'blur' }
@@ -623,7 +668,7 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
 
             hashChange = ie < 8 ? function(hash) {
                 //debugger
-                var html = '<html><body>' + hash + '</body></html>',
+                var html = '<html><body>' + hash + '<' + '/body><' + '/html>',
                     doc = iframe.contentWindow.document;
                 try {
                     // 写入历史 hash
@@ -632,14 +677,16 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
                     doc.close();
                     return true;
                 } catch (e) {
+                    S.log('doc write error : ');
+                    S.log(e);
                     return false;
                 }
-            } : function (hash) {
-                notifyHashChange(hash);
+            } : function () {
+                notifyHashChange();
             },
 
-            notifyHashChange = function (hash) {
-                S.log("hash changed : " + hash);
+            notifyHashChange = function () {
+                //S.log("hash changed : " + hash);
                 Event.fire(win, HASH_CHANGE);
             },
             setup = function () {
@@ -697,9 +744,9 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
                         //或addHistory 调用
                         //只有 start 来通知应用程序
                     function start() {
-                        // S.log('iframe start load..');
+                        //S.log('iframe start load..');
                         //debugger
-                        var c = S.trim(iframe.contentWindow.document.body.innerHTML);
+                        var c = S.trim(DOM.html(iframe.contentWindow.document.body));
                         var ch = getHash();
 
                         //后退时不等
@@ -709,7 +756,7 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
                             // 使lasthash为iframe历史， 不然重新写iframe， 会导致最新状态（丢失前进状态）
                             lastHash = c;
                         }
-                        notifyHashChange(c);
+                        notifyHashChange();
                     }
                 }
             };
@@ -744,11 +791,216 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
 });
 
 /**
+ * 已知 bug :
+ * - ie67 有时后退后取得的 location.hash 不和地址栏一致，导致必须后退两次才能触发 hashchange
+ *
  * v1 : 2010-12-29
  * v1.1: 支持非IE，但不支持onhashchange事件的浏览器(例如低版本的firefox、safari)
  * refer : http://yiminghe.javaeye.com/blog/377867
  *         https://github.com/cowboy/jquery-hashchange
  *//**
+ * @fileOverview some keycodes definition and utils from closure-library
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("event/keycodes", function() {
+    var KeyCodes = {
+        MAC_ENTER: 3,
+        BACKSPACE: 8,
+        TAB: 9,
+        NUM_CENTER: 12,  // NUMLOCK on FF/Safari Mac
+        ENTER: 13,
+        SHIFT: 16,
+        CTRL: 17,
+        ALT: 18,
+        PAUSE: 19,
+        CAPS_LOCK: 20,
+        ESC: 27,
+        SPACE: 32,
+        PAGE_UP: 33,     // also NUM_NORTH_EAST
+        PAGE_DOWN: 34,   // also NUM_SOUTH_EAST
+        END: 35,         // also NUM_SOUTH_WEST
+        HOME: 36,        // also NUM_NORTH_WEST
+        LEFT: 37,        // also NUM_WEST
+        UP: 38,          // also NUM_NORTH
+        RIGHT: 39,       // also NUM_EAST
+        DOWN: 40,        // also NUM_SOUTH
+        PRINT_SCREEN: 44,
+        INSERT: 45,      // also NUM_INSERT
+        DELETE: 46,      // also NUM_DELETE
+        ZERO: 48,
+        ONE: 49,
+        TWO: 50,
+        THREE: 51,
+        FOUR: 52,
+        FIVE: 53,
+        SIX: 54,
+        SEVEN: 55,
+        EIGHT: 56,
+        NINE: 57,
+        QUESTION_MARK: 63, // needs localization
+        A: 65,
+        B: 66,
+        C: 67,
+        D: 68,
+        E: 69,
+        F: 70,
+        G: 71,
+        H: 72,
+        I: 73,
+        J: 74,
+        K: 75,
+        L: 76,
+        M: 77,
+        N: 78,
+        O: 79,
+        P: 80,
+        Q: 81,
+        R: 82,
+        S: 83,
+        T: 84,
+        U: 85,
+        V: 86,
+        W: 87,
+        X: 88,
+        Y: 89,
+        Z: 90,
+        META: 91, // WIN_KEY_LEFT
+        WIN_KEY_RIGHT: 92,
+        CONTEXT_MENU: 93,
+        NUM_ZERO: 96,
+        NUM_ONE: 97,
+        NUM_TWO: 98,
+        NUM_THREE: 99,
+        NUM_FOUR: 100,
+        NUM_FIVE: 101,
+        NUM_SIX: 102,
+        NUM_SEVEN: 103,
+        NUM_EIGHT: 104,
+        NUM_NINE: 105,
+        NUM_MULTIPLY: 106,
+        NUM_PLUS: 107,
+        NUM_MINUS: 109,
+        NUM_PERIOD: 110,
+        NUM_DIVISION: 111,
+        F1: 112,
+        F2: 113,
+        F3: 114,
+        F4: 115,
+        F5: 116,
+        F6: 117,
+        F7: 118,
+        F8: 119,
+        F9: 120,
+        F10: 121,
+        F11: 122,
+        F12: 123,
+        NUMLOCK: 144,
+        SEMICOLON: 186,            // needs localization
+        DASH: 189,                 // needs localization
+        EQUALS: 187,               // needs localization
+        COMMA: 188,                // needs localization
+        PERIOD: 190,               // needs localization
+        SLASH: 191,                // needs localization
+        APOSTROPHE: 192,           // needs localization
+        SINGLE_QUOTE: 222,         // needs localization
+        OPEN_SQUARE_BRACKET: 219,  // needs localization
+        BACKSLASH: 220,            // needs localization
+        CLOSE_SQUARE_BRACKET: 221, // needs localization
+        WIN_KEY: 224,
+        MAC_FF_META: 224, // Firefox (Gecko) fires this for the meta key instead of 91
+        WIN_IME: 229
+    };
+
+    KeyCodes.isTextModifyingKeyEvent = function(e) {
+        if (e.altKey && !e.ctrlKey ||
+            e.metaKey ||
+            // Function keys don't generate text
+            e.keyCode >= KeyCodes.F1 &&
+                e.keyCode <= KeyCodes.F12) {
+            return false;
+        }
+
+        // The following keys are quite harmless, even in combination with
+        // CTRL, ALT or SHIFT.
+        switch (e.keyCode) {
+            case KeyCodes.ALT:
+            case KeyCodes.CAPS_LOCK:
+            case KeyCodes.CONTEXT_MENU:
+            case KeyCodes.CTRL:
+            case KeyCodes.DOWN:
+            case KeyCodes.END:
+            case KeyCodes.ESC:
+            case KeyCodes.HOME:
+            case KeyCodes.INSERT:
+            case KeyCodes.LEFT:
+            case KeyCodes.MAC_FF_META:
+            case KeyCodes.META:
+            case KeyCodes.NUMLOCK:
+            case KeyCodes.NUM_CENTER:
+            case KeyCodes.PAGE_DOWN:
+            case KeyCodes.PAGE_UP:
+            case KeyCodes.PAUSE:
+            case KeyCodes.PHANTOM:
+            case KeyCodes.PRINT_SCREEN:
+            case KeyCodes.RIGHT:
+            case KeyCodes.SHIFT:
+            case KeyCodes.UP:
+            case KeyCodes.WIN_KEY:
+            case KeyCodes.WIN_KEY_RIGHT:
+                return false;
+            default:
+                return true;
+        }
+    };
+
+    KeyCodes.isCharacterKey = function(keyCode) {
+        if (keyCode >= KeyCodes.ZERO &&
+            keyCode <= KeyCodes.NINE) {
+            return true;
+        }
+
+        if (keyCode >= KeyCodes.NUM_ZERO &&
+            keyCode <= KeyCodes.NUM_MULTIPLY) {
+            return true;
+        }
+
+        if (keyCode >= KeyCodes.A &&
+            keyCode <= KeyCodes.Z) {
+            return true;
+        }
+
+        // Safari sends zero key code for non-latin characters.
+        if (goog.userAgent.WEBKIT && keyCode == 0) {
+            return true;
+        }
+
+        switch (keyCode) {
+            case KeyCodes.SPACE:
+            case KeyCodes.QUESTION_MARK:
+            case KeyCodes.NUM_PLUS:
+            case KeyCodes.NUM_MINUS:
+            case KeyCodes.NUM_PERIOD:
+            case KeyCodes.NUM_DIVISION:
+            case KeyCodes.SEMICOLON:
+            case KeyCodes.DASH:
+            case KeyCodes.EQUALS:
+            case KeyCodes.COMMA:
+            case KeyCodes.PERIOD:
+            case KeyCodes.SLASH:
+            case KeyCodes.APOSTROPHE:
+            case KeyCodes.SINGLE_QUOTE:
+            case KeyCodes.OPEN_SQUARE_BRACKET:
+            case KeyCodes.BACKSLASH:
+            case KeyCodes.CLOSE_SQUARE_BRACKET:
+                return true;
+            default:
+                return false;
+        }
+    };
+
+    return KeyCodes;
+
+});/**
  * @module  event-mouseenter
  * @author  lifesinger@gmail.com , yiminghe@gmail.com
  */
@@ -780,19 +1032,18 @@ KISSY.add('event/mouseenter', function(S, Event, DOM, UA) {
                         return;
                     }
 
-                    // Traverse up the tree
-                    parent = DOM.closest(parent, function(item) {
-                        return item == self;
-                    });
-
-                    if (parent !== self) {
+                    // 在自身外边就触发
+                    if (parent !== self &&
+                        // self==document , parent==null
+                        (!parent || !DOM.contains(self, parent))
+                        ) {
                         // handle event if we actually just moused on to a non sub-element
                         Event._handle(self, event);
                     }
 
                     // assuming we've left the element since we most likely mousedover a xul element
                 } catch(e) {
-                    S.log("withinElement :" + e);
+                    S.log("withinElement error : " + e);
                 }
             }
 
@@ -815,8 +1066,8 @@ KISSY.add('event/mouseenter', function(S, Event, DOM, UA) {
 
     return Event;
 }, {
-        requires:["./base","dom","ua"]
-    });
+    requires:["./base","dom","ua"]
+});
 
 /**
  * 承玉：2011-06-07
@@ -906,7 +1157,7 @@ KISSY.add('event/object', function(S, undefined) {
 
             // add which for key events
             if (self.which === undefined) {
-                self.which = (self.charCode !== undefined) ? self.charCode : self.keyCode;
+                self.which = (self.charCode === undefined) ? self.keyCode : self.charCode;
             }
 
             // add metaKey to non-Mac browsers (use ctrl for PC's and Meta for Macs)
@@ -993,6 +1244,10 @@ KISSY.add('event/object', function(S, undefined) {
         }
     });
 
+    if (1 > 2) {
+        alert(S.cancelBubble);
+    }
+
     return EventObject;
 
 });
@@ -1010,7 +1265,7 @@ KISSY.add('event/object', function(S, undefined) {
  * @module  EventTarget
  * @author  lifesinger@gmail.com , yiminghe@gmail.com
  */
-KISSY.add('event/target', function(S, Event, DOM, undefined) {
+KISSY.add('event/target', function(S, Event) {
 
     /**
      * EventTarget provides the implementation for any object to publish,
@@ -1040,7 +1295,7 @@ KISSY.add('event/target', function(S, Event, DOM, undefined) {
          实际上只需要 dom/data ，但是不要跨模块引用另一模块的子模块，
          否则会导致build打包文件 dom 和 dom-data 重复载入
          */
-        requires:["./base","dom"]
+        requires:["./base"]
     });
 
 /**
@@ -1141,12 +1396,14 @@ KISSY.add('event/valuechange', function(S, Event, DOM) {
     return Event;
 }, {
     requires:["./base","dom"]
-});KISSY.add("event", function(S, Event, Target,Object) {
+});KISSY.add("event", function(S, KeyCodes, Event, Target, Object) {
+    Event.KeyCodes = KeyCodes;
     Event.Target = Target;
-    Event.Object=Object;
+    Event.Object = Object;
     return Event;
 }, {
     requires:[
+        "event/keycodes",
         "event/base",
         "event/target",
         "event/object",
@@ -1154,5 +1411,6 @@ KISSY.add('event/valuechange', function(S, Event, DOM) {
         "event/hashchange",
         "event/valuechange",
         "event/delegate",
-        "event/mouseenter"]
+        "event/mouseenter"
+    ]
 });

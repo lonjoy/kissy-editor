@@ -1,7 +1,7 @@
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Jul 21 15:38
+build time: Aug 9 20:36
 */
 /*
  * @module kissy
@@ -18,7 +18,9 @@ build time: Jul 21 15:38
              * @return {Object} the augmented object
              */
             mix: function(r, s, ov, wl, deep) {
-                if (!s || !r) return r;
+                if (!s || !r) {
+                    return r;
+                }
                 if (ov === undefined) {
                     ov = true;
                 }
@@ -87,7 +89,7 @@ build time: Jul 21 15:38
              */
             version: '1.20dev',
 
-            buildTime:'20110721153856',
+            buildTime:'20110809203622',
 
             /**
              * Returns a new object containing all of the properties of
@@ -144,7 +146,9 @@ build time: Jul 21 15:38
              * @return r {Object}
              */
             extend: function(r, s, px, sx) {
-                if (!s || !r) return r;
+                if (!s || !r) {
+                    return r;
+                }
 
                 var create = Object.create ?
                     function(proto, c) {
@@ -247,7 +251,9 @@ build time: Jul 21 15:38
                     len = S.__APP_INIT_METHODS.length;
 
                 S.mix(O, this, true, S.__APP_MEMBERS);
-                for (; i < len; i++) S[S.__APP_INIT_METHODS[i]].call(O);
+                for (; i < len; i++) {
+                    S[S.__APP_INIT_METHODS[i]].call(O);
+                }
 
                 S.mix(O, S.isFunction(sx) ? sx() : sx);
                 isStr && (host[name] = O);
@@ -258,7 +264,9 @@ build time: Jul 21 15:38
 
             config:function(c) {
                 for (var p in c) {
-                    if (this["_" + p]) this["_" + p](c[p]);
+                    if (this["_" + p]) {
+                        this["_" + p](c[p]);
+                    }
                 }
             },
 
@@ -302,7 +310,7 @@ build time: Jul 21 15:38
     S.__init();
     return S;
 
-})('KISSY');
+})('KISSY',undefined);
 /**
  * @module  lang
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
@@ -322,7 +330,9 @@ build time: Jul 21 15:38
         trim = String.prototype.trim,
         map = AP.map,
         EMPTY = '',
+        HEX_BASE = 16,
         CLONE_MARKER = '__~ks_cloned',
+        COMPARE_MARKER = '__~ks_compared',
         RE_TRIM = /^\s+|\s+$/g,
         encode = encodeURIComponent,
         decode = decodeURIComponent,
@@ -372,7 +382,7 @@ build time: Jul 21 15:38
     function isValidParamValue(val) {
         var t = typeof val;
         // If the type of val is null, undefined, number, string, boolean, return true.
-        return val === null || (t !== 'object' && t !== 'function');
+        return nullOrUndefined(val) || (t !== 'object' && t !== 'function');
     }
 
     S.mix(S, {
@@ -383,10 +393,12 @@ build time: Jul 21 15:38
          * Determine the internal JavaScript [[Class]] of an object.
          */
         type: function(o) {
-            return o == null ?
+            return nullOrUndefined(o) ?
                 String(o) :
                 class2type[toString.call(o)] || 'object';
         },
+
+        isNullOrUndefined:nullOrUndefined,
 
         isNull: function(o) {
             return o === null;
@@ -424,56 +436,64 @@ build time: Jul 21 15:38
             return o && toString.call(o) === '[object Object]' && 'isPrototypeOf' in o;
         },
 
+
+
+        /**
+         * 两个目标是否内容相同
+         *
+         * @param a 比较目标1
+         * @param b 比较目标2
+         * @param [mismatchKeys] internal use
+         * @param [mismatchValues] internal use
+         */
+        equals : function(a, b, /*internal use*/mismatchKeys, /*internal use*/mismatchValues) {
+            // inspired by jasmine
+            mismatchKeys = mismatchKeys || [];
+            mismatchValues = mismatchValues || [];
+
+            if (a === b) {
+                return true;
+            }
+            if (a === undefined || a === null || b === undefined || b === null) {
+                // need type coercion
+                return nullOrUndefined(a) && nullOrUndefined(b);
+            }
+            if (a instanceof Date && b instanceof Date) {
+                return a.getTime() == b.getTime();
+            }
+            if (S.isString(a) && S.isString(b)) {
+                return (a == b);
+            }
+            if (S.isNumber(a) && S.isNumber(b)) {
+                return (a == b);
+            }
+            if (typeof a === "object" && typeof b === "object") {
+                return compareObjects(a, b, mismatchKeys, mismatchValues);
+            }
+            // Straight check
+            return (a === b);
+        },
+
         /**
          * Creates a deep copy of a plain object or array. Others are returned untouched.
          */
-        clone: function(o, f, cloned) {
-            var ret = o, isArray, k, stamp, marked = cloned || {};
-
-            // array or plain object
-            if (o
-                && (
-                (isArray = S.isArray(o))
-                    || S.isPlainObject(o)
-                )
-                ) {
-
-                // avoid recursive clone
-                if (o[CLONE_MARKER]) {
-                    return marked[o[CLONE_MARKER]];
-                }
-                o[CLONE_MARKER] = (stamp = S.guid());
-                marked[stamp] = o;
-
-                // clone it
-                if (isArray) {
-                    ret = f ? S.filter(o, f) : o.concat();
-                } else {
-                    ret = {};
-                    for (k in o) {
-                        if (k !== CLONE_MARKER &&
-                            o.hasOwnProperty(k) &&
-                            (!f || (f.call(o, o[k], k, o) !== false))) {
-                            ret[k] = S.clone(o[k], f, marked);
-                        }
+        clone: function(o, f) {
+            var marked = {},
+                ret = cloneInternal(o, f, marked);
+            S.each(marked, function(v) {
+                // 清理在源对象上做的标记
+                v = v.o;
+                if (v[CLONE_MARKER]) {
+                    try {
+                        delete v[CLONE_MARKER];
+                    } catch (e) {
+                        S.log("delete CLONE_MARKER error : ");
+                        S.log(e);
+                        v[CLONE_MARKER] = undefined;
                     }
                 }
-            }
-
-            // clear marked
-            if (!cloned) {
-                S.each(marked, function(v) {
-                    if (v[CLONE_MARKER]) {
-                        try {
-                            delete v[CLONE_MARKER];
-                        } catch (e) {
-                            v[CLONE_MARKER] = undefined;
-                        }
-                    }
-                });
-                marked = undefined;
-            }
-
+            });
+            marked = undefined;
             return ret;
         },
 
@@ -482,10 +502,10 @@ build time: Jul 21 15:38
          */
         trim: trim ?
             function(str) {
-                return (str == undefined) ? EMPTY : trim.call(str);
+                return nullOrUndefined(str) ? EMPTY : trim.call(str);
             } :
             function(str) {
-                return (str == undefined) ? EMPTY : str.toString().replace(RE_TRIM, EMPTY);
+                return nullOrUndefined(str) ? EMPTY : str.toString().replace(RE_TRIM, EMPTY);
             },
 
         /**
@@ -502,7 +522,7 @@ build time: Jul 21 15:38
                 if (match.charAt(0) === '\\') {
                     return match.slice(1);
                 }
-                return (o[name] !== undefined) ? o[name] : EMPTY;
+                return (o[name] === undefined) ? EMPTY : o[name];
             });
         },
 
@@ -653,7 +673,7 @@ build time: Jul 21 15:38
             },
 
         /**
-         * @refer: https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/array/reduce
+         * @refer  https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/array/reduce
          */
         reduce:/*
          NaN ?
@@ -661,12 +681,14 @@ build time: Jul 21 15:38
          return arr.reduce(callback, initialValue);
          } : */function(arr, callback, initialValue) {
             var len = arr.length;
-            if (typeof callback !== "function")
-                throw new TypeError();
+            if (typeof callback !== "function") {
+                throw new TypeError("callback is not function!");
+            }
 
             // no value to return if no initial value and an empty array
-            if (len == 0 && arguments.length == 2)
-                throw new TypeError();
+            if (len === 0 && arguments.length == 2) {
+                throw new TypeError("arguments invalid");
+            }
 
             var k = 0;
             var accumulator;
@@ -681,8 +703,10 @@ build time: Jul 21 15:38
                     }
 
                     // if array contains no values, no initial value to return
-                    if (++k >= len)
+                    k += 1;
+                    if (k >= len) {
                         throw new TypeError();
+                    }
                 }
                 while (true);
             }
@@ -699,22 +723,25 @@ build time: Jul 21 15:38
 
         /**
          * it is not same with native bind
-         * @refer:https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/bind
+         * @refer https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/bind
          */
         bind:function(fn, obj) {
             var slice = [].slice,
                 args = slice.call(arguments, 2),
+                fNOP = function () {
+                },
                 bound = function () {
-                    return fn.apply(this instanceof bound ? this : obj,
+                    return fn.apply(this instanceof fNOP ? this : obj,
                         args.concat(slice.call(arguments)));
                 };
-            bound.prototype = fn.prototype;
+            fNOP.prototype = fn.prototype;
+            bound.prototype = new fNOP();
             return bound;
         },
 
         /**
          * Gets current date in milliseconds.
-         * @refer: https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date/now
+         * @refer  https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Date/now
          * http://j-query.blogspot.com/2011/02/timing-ecmascript-5-datenow-function.html
          * http://kangax.github.com/es5-compat-table/
          */
@@ -726,7 +753,7 @@ build time: Jul 21 15:38
          */
         fromUnicode:function(str) {
             return str.replace(/\\u([a-f\d]{4})/ig, function(m, u) {
-                return  String.fromCharCode(parseInt(u, 16));
+                return  String.fromCharCode(parseInt(u, HEX_BASE));
             });
         },
         /**
@@ -752,10 +779,15 @@ build time: Jul 21 15:38
         /**
          * Converts object to a true array.
          * @param o {object|Array} array like object or array
+         * @return {Array}
          */
         makeArray: function(o) {
-            if (o === null || o === undefined) return [];
-            if (S.isArray(o)) return o;
+            if (nullOrUndefined(o)) {
+                return [];
+            }
+            if (S.isArray(o)) {
+                return o;
+            }
 
             // The strings and functions also have 'length'
             if (typeof o.length !== 'number' || S.isString(o) || S.isFunction(o)) {
@@ -779,10 +811,14 @@ build time: Jul 21 15:38
          * </code>
          */
         param: function(o, sep, eq, arr) {
-            if (!S.isPlainObject(o)) return EMPTY;
+            if (!S.isPlainObject(o)) {
+                return EMPTY;
+            }
             sep = sep || SEP;
             eq = eq || EQ;
-            if (S.isUndefined(arr)) arr = true;
+            if (S.isUndefined(arr)) {
+                arr = true;
+            }
             var buf = [], key, val;
             for (key in o) {
                 val = o[key];
@@ -835,7 +871,7 @@ build time: Jul 21 15:38
                 try {
                     val = decode(pair[1] || EMPTY);
                 } catch(e) {
-                    S.log("decodeURIComponent error : " + pair[1], "error");
+                    S.log(e + "decodeURIComponent error : " + pair[1], "error");
                     val = pair[1] || EMPTY;
                 }
                 if (S.endsWith(key, "[]")) {
@@ -903,7 +939,7 @@ build time: Jul 21 15:38
         },
 
         startsWith:function(str, prefix) {
-            return str.lastIndexOf(prefix, 0) == 0;
+            return str.lastIndexOf(prefix, 0) === 0;
         },
 
         endsWith:function(str, suffix) {
@@ -936,22 +972,124 @@ build time: Jul 21 15:38
             }
         });
 
-})(KISSY);
+    function nullOrUndefined(o) {
+        return S.isNull(o) || S.isUndefined(o);
+    }
+
+
+    function cloneInternal(o, f, marked) {
+        var ret = o, isArray, k, stamp;
+        // 引用类型要先记录
+        if (o &&
+            ((isArray = S.isArray(o)) ||
+                S.isPlainObject(o) ||
+                S.isDate(o) ||
+                S.isRegExp(o)
+                )) {
+            if (o[CLONE_MARKER]) {
+                // 对应的克隆后对象
+                return marked[o[CLONE_MARKER]].r;
+            }
+            // 做标记
+            o[CLONE_MARKER] = (stamp = S.guid());
+
+            // 先把对象建立起来
+            if (isArray) {
+                ret = f ? S.filter(o, f) : o.concat();
+            } else if (S.isDate(o)) {
+                ret = new Date(+o);
+            } else if (S.isRegExp(o)) {
+                ret = new RegExp(o);
+            } else {
+                ret = {};
+            }
+
+            // 存储源对象以及克隆后的对象
+            marked[stamp] = {r:ret,o:o};
+        }
+
+
+        // array or plain object need to be copied recursively
+        if (o && (isArray || S.isPlainObject(o))) {
+            // clone it
+            if (isArray) {
+                for (var i = 0; i < ret.length; i++) {
+                    ret[i] = cloneInternal(ret[i], f, marked);
+                }
+            } else {
+                for (k in o) {
+                    if (k !== CLONE_MARKER &&
+                        o.hasOwnProperty(k) &&
+                        (!f || (f.call(o, o[k], k, o) !== false))) {
+                        ret[k] = cloneInternal(o[k], f, marked);
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    function compareObjects(a, b, mismatchKeys, mismatchValues) {
+        // 两个比较过了，无需再比较，防止循环比较
+        if (a[COMPARE_MARKER] === b && b[COMPARE_MARKER] === a) {
+            return true;
+        }
+        a[COMPARE_MARKER] = b;
+        b[COMPARE_MARKER] = a;
+        var hasKey = function(obj, keyName) {
+            return (obj !== null && obj !== undefined) && obj[keyName] !== undefined;
+        };
+        for (var property in b) {
+            if (!hasKey(a, property) && hasKey(b, property)) {
+                mismatchKeys.push("expected has key '" + property + "', but missing from actual.");
+            }
+        }
+        for (property in a) {
+            if (!hasKey(b, property) && hasKey(a, property)) {
+                mismatchKeys.push("expected missing key '" + property + "', but present in actual.");
+            }
+        }
+        for (property in b) {
+            if (property == COMPARE_MARKER) {
+                continue;
+            }
+            if (!S.equals(a[property], b[property], mismatchKeys, mismatchValues)) {
+                mismatchValues.push("'" + property + "' was '" + (b[property] ? (b[property].toString()) : b[property])
+                    + "' in expected, but was '" +
+                    (a[property] ? (a[property].toString()) : a[property]) + "' in actual.");
+            }
+        }
+        if (S.isArray(a) && S.isArray(b) && a.length != b.length) {
+            mismatchValues.push("arrays were not the same length");
+        }
+        delete a[COMPARE_MARKER];
+        delete b[COMPARE_MARKER];
+        return (mismatchKeys.length === 0 && mismatchValues.length === 0);
+    }
+
+    S.isNullOrUndefined = nullOrUndefined;
+
+})(KISSY, undefined);
 /**
  * setup data structure for kissy loader
- * @author:yiminghe@gmail.com
+ * @author yiminghe@gmail.com
  */
 (function(S){
-    if("require" in this) return;
+    if("require" in this) {
+        return;
+    }
     S.__loader={};
     S.__loaderUtils={};
     S.__loaderData={};
 })(KISSY);/**
  * status constants
- * @author:yiminghe@gmail.com
+ * @author yiminghe@gmail.com
  */
 (function(S,data) {
-    if("require" in this) return;
+    if("require" in this) {
+        return;
+    }
     S.mix(data, {
         "LOADING" : 1,
         "LOADED" : 2,
@@ -960,13 +1098,15 @@ build time: Jul 21 15:38
     });
 })(KISSY,KISSY.__loaderData);/**
  * utils for kissy loader
- * @author:yiminghe@gmail.com
+ * @author yiminghe@gmail.com
  */
 (function(S, loader, utils) {
-    if (S.use) return;
+    if (S.use) {
+        return;
+    }
     S.mix(utils, {
-        isWebKit:!!navigator.userAgent.match(/AppleWebKit/),
-        IE : !!navigator.userAgent.match(/MSIE/),
+        isWebKit:!!navigator['userAgent'].match(/AppleWebKit/),
+        IE : !!navigator['userAgent'].match(/MSIE/),
         isCss:function(url) {
             return /\.css(?:\?|$)/i.test(url);
         },
@@ -1062,20 +1202,23 @@ build time: Jul 21 15:38
 
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**
  * script/css load across browser
- * @author: yiminghe@gmail.com
+ * @author  yiminghe@gmail.com
  */
 (function(S, utils) {
-    if (S.use) return;
+    if (S.use) {
+        return;
+    }
     var isWebKit = utils.isWebKit,
+        CSS_POLL_INTERVAL = 100,
         /**
          * central poll for link node
          */
             timer = null,
 
         monitors = {
-        /**
-         * node.href:{node:node,callback:callback}
-         */
+            /**
+             * node.href:{node:node,callback:callback}
+             */
         };
 
     function startCssTimer() {
@@ -1126,7 +1269,7 @@ build time: Jul 21 15:38
             timer = null;
             S.log("end css polling");
         } else {
-            timer = setTimeout(ccsPoll, 100);
+            timer = setTimeout(ccsPoll, CSS_POLL_INTERVAL);
         }
     }
 
@@ -1190,10 +1333,13 @@ build time: Jul 21 15:38
     )
     (KISSY, KISSY.__loaderUtils);/**
  * getScript support for css and js callback after load
- * @author: lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, utils) {
-    if ("require" in this) return;
+    if ("require" in this) {
+        return;
+    }
+    var MILLISECONDS_OF_SECOND = 1000;
     var scriptOnload = utils.scriptOnload;
 
     S.mix(S, {
@@ -1206,7 +1352,7 @@ build time: Jul 21 15:38
          */
         getStyle:function(url, success, charset) {
             var doc = document,
-                head = doc.getElementsByTagName("head")[0],
+                head = doc.head || doc.getElementsByTagName("head")[0],
                 node = doc.createElement('link'),
                 config = success;
 
@@ -1247,7 +1393,7 @@ build time: Jul 21 15:38
                 return S.getStyle(url, success, charset);
             }
             var doc = document,
-                head = doc.getElementsByTagName("head")[0],
+                head = doc.head || doc.getElementsByTagName("head")[0],
                 node = doc.createElement('script'),
                 config = success,
                 error,
@@ -1293,7 +1439,7 @@ build time: Jul 21 15:38
                     timer = S.later(function() {
                         timer = undefined;
                         error();
-                    }, (timeout || this.Config.timeout) * 1000);
+                    }, (timeout || this.Config.timeout) * MILLISECONDS_OF_SECOND);
                 }
             }
             head.insertBefore(node, head.firstChild);
@@ -1303,10 +1449,12 @@ build time: Jul 21 15:38
 
 })(KISSY, KISSY.__loaderUtils);/**
  * add module definition
- * @author: lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, loader, utils,data) {
-    if("require" in this) return;
+    if("require" in this) {
+        return;
+    }
     var win = S.__HOST,
         IE = utils.IE,
         doc = win['document'],
@@ -1434,10 +1582,12 @@ build time: Jul 21 15:38
 
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils,KISSY.__loaderData);/**
  * build full path from relative path and base path
- * @author: lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, loader, utils, data) {
-    if ("require" in this) return;
+    if ("require" in this) {
+        return;
+    }
     S.mix(loader, {
         __buildPath: function(mod, base) {
             var self = this,
@@ -1470,10 +1620,12 @@ build time: Jul 21 15:38
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils, KISSY.__loaderData);/**
  * logic for config.global , mainly for kissy.editor
- * @author: lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, loader) {
-    if("require" in this) return;
+    if("require" in this) {
+        return;
+    }
     S.mix(loader, {
         __mixMods: function(global) {
             var mods = this.Env.mods,
@@ -1506,12 +1658,14 @@ build time: Jul 21 15:38
             mods[name] = mod;
         }
     });
-})(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**
+})(KISSY, KISSY.__loader);/**
  * for ie ,find current executive script ,then infer module name
- * @author:yiminghe@gmail.com
+ * @author yiminghe@gmail.com
  */
 (function(S, loader, utils) {
-    if("require" in this) return;
+    if("require" in this) {
+        return;
+    }
     S.mix(loader, {
         //ie 特有，找到当前正在交互的脚本，根据脚本名确定模块名
         // 如果找不到，返回发送前那个脚本
@@ -1539,7 +1693,7 @@ build time: Jul 21 15:38
             S.log("interactive src :" + src);
             //注意：模块名不包含后缀名以及参数，所以去除
             //系统模块去除系统路径
-            if (src.lastIndexOf(self.Config.base, 0) == 0) {
+            if (src.lastIndexOf(self.Config.base, 0) === 0) {
                 return utils.removePostfix(src.substring(self.Config.base.length));
             }
 
@@ -1548,7 +1702,7 @@ build time: Jul 21 15:38
             for (var p in packages) {
                 var p_path = packages[p].path;
                 if (packages.hasOwnProperty(p)
-                    && src.lastIndexOf(p_path, 0) == 0) {
+                    && src.lastIndexOf(p_path, 0) === 0) {
                     return utils.removePostfix(src.substring(p_path.length));
                 }
             }
@@ -1560,10 +1714,12 @@ build time: Jul 21 15:38
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**
  * load a single mod (js or css)
- * @author: lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, loader, utils, data) {
-    if ("require" in this) return;
+    if ("require" in this) {
+        return;
+    }
     var win = S.__HOST,
         IE = utils.IE,
         doc = win['document'],
@@ -1688,7 +1844,9 @@ build time: Jul 21 15:38
  * @description: constant member and common method holder
  */
 (function(S, loader,data) {
-    if("require" in this) return;
+    if("require" in this) {
+        return;
+    }
     var win = S.__HOST,
         doc = win['document'],
         head = doc.getElementsByTagName('head')[0] || doc.documentElement,
@@ -1769,10 +1927,12 @@ build time: Jul 21 15:38
 
 /**
  * package mechanism
- * @author:yiminghe@gmail.com
+ * @author yiminghe@gmail.com
  */
 (function(S, loader, utils) {
-    if ("require" in this) return;
+    if ("require" in this) {
+        return;
+    }
     var win = S.__HOST,
         doc = win['document'],
         head = doc.getElementsByTagName('head')[0] || doc.documentElement;
@@ -1857,10 +2017,12 @@ build time: Jul 21 15:38
         });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**
  * register module ,associate module name with module factory(definition)
- * @author: lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, loader,data) {
-    if ("require" in this) return;
+    if ("require" in this) {
+        return;
+    }
     var win = S.__HOST,
         doc = win['document'],
         head = doc.getElementsByTagName('head')[0] || doc.documentElement,
@@ -1892,10 +2054,12 @@ build time: Jul 21 15:38
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderData);/**
  * use and attach mod
- * @author: lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, loader, utils, data) {
-    if ("require" in this) return;
+    if ("require" in this) {
+        return;
+    }
     var win = S.__HOST,
         doc = win['document'],
         head = doc.getElementsByTagName('head')[0] || doc.documentElement,
@@ -1960,10 +2124,9 @@ build time: Jul 21 15:38
          * @param {string} moduleName
          */
         require:function(moduleName) {
-            var self = this,
-                mods = self.Env.mods,
+            var mods = S.Env.mods,
                 mod = mods[moduleName],
-                re = self['onRequire'] && self['onRequire'](mod);
+                re = S['onRequire'] && S['onRequire'](mod);
             if (re !== undefined) {
                 return re;
             }
@@ -2107,10 +2270,12 @@ build time: Jul 21 15:38
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils, KISSY.__loaderData);/**
  *  mix loader into S and infer KISSy baseUrl if not set
- *  @author: lifesinger@gmail.com,yiminghe@gmail.com
+ *  @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, loader, utils) {
-    if ("require" in this) return;
+    if ("require" in this) {
+        return;
+    }
     S.mix(S, loader);
 
     /**
@@ -2126,8 +2291,8 @@ build time: Jul 21 15:38
      *  <script src="path/to/kissy" data-combo-prefix="combo?" data-combo-sep="&"></script>
      */
     // notice: timestamp
-    var baseReg = /^(.*)(seed|kissy)(-min)?\.js[^/]*/i,
-        baseTestReg = /(seed|kissy)(-min)?\.js/i,
+    var baseReg = /^(.*)(seed|kissy)(-aio)?(-min)?\.js[^/]*/i,
+        baseTestReg = /(seed|kissy)(-aio)?(-min)?\.js/i,
         pagePath = S.__pagePath;
 
     function getBaseUrl(script) {
@@ -2205,7 +2370,7 @@ build time: Jul 21 15:38
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  * @description this code can only run at browser environment
  */
-(function(S) {
+(function(S, undefined) {
 
     var win = S.__HOST,
         doc = win['document'],
@@ -2236,19 +2401,20 @@ build time: Jul 21 15:38
     S.mix(S, {
 
 
-            /**
-             * A crude way of determining if an object is a window
-             */
-            isWindow: function(o) {
-                return S.type(o) === 'object'
-                    && 'setInterval' in o
-                    && 'document' in o
-                    && o.document.nodeType == 9;
-            },
+        /**
+         * A crude way of determining if an object is a window
+         */
+        isWindow: function(o) {
+            return S.type(o) === 'object'
+                && 'setInterval' in o
+                && 'document' in o
+                && o.document.nodeType == 9;
+        },
 
 
-            parseXML: function(data) {
-                var xml;
+        parseXML: function(data) {
+            var xml;
+            try {
                 // Standard
                 if (window.DOMParser) {
                     xml = new DOMParser().parseFromString(data, "text/xml");
@@ -2257,78 +2423,84 @@ build time: Jul 21 15:38
                     xml.async = "false";
                     xml.loadXML(data);
                 }
-                var root = xml.documentElement;
-                if (! root || ! root.nodeName || root.nodeName === "parsererror") {
-                    S.error("Invalid XML: " + data);
-                }
-                return xml;
-            },
-
-            /**
-             * Evalulates a script in a global context.
-             */
-            globalEval: function(data) {
-                if (data && RE_NOT_WHITE.test(data)) {
-                    // Inspired by code by Andrea Giammarchi
-                    // http://webreflection.blogspot.com/2007/08/global-scope-evaluation-and-dom.html
-                    var head = doc.getElementsByTagName('head')[0] || docElem,
-                        script = doc.createElement('script');
-
-                    // It works! All browsers support!
-                    script.text = data;
-
-                    // Use insertBefore instead of appendChild to circumvent an IE6 bug.
-                    // This arises when a base node is used.
-                    head.insertBefore(script, head.firstChild);
-                    head.removeChild(script);
-                }
-            },
-
-            /**
-             * Specify a function to execute when the DOM is fully loaded.
-             * @param fn {Function} A function to execute after the DOM is ready
-             * <code>
-             * KISSY.ready(function(S){ });
-             * </code>
-             * @return {KISSY}
-             */
-            ready: function(fn) {
-                // Attach the listeners
-                if (!readyBound) {
-                    _bindReady();
-                }
-
-                // If the DOM is already ready
-                if (isReady) {
-                    // Execute the function immediately
-                    fn.call(win, this);
-                } else {
-                    // Remember the function for later
-                    readyList.push(fn);
-                }
-
-                return this;
-            },
-
-            /**
-             * Executes the supplied callback when the item with the supplied id is found.
-             * @param id <String> The id of the element, or an array of ids to look for.
-             * @param fn <Function> What to execute when the element is found.
-             */
-            available: function(id, fn) {
-                id = (id + EMPTY).match(RE_IDSTR)[1];
-                if (!id || !S.isFunction(fn)) return;
-
-                var retryCount = 1,
-
-                    timer = S.later(function() {
-                        if (doc.getElementById(id) && (fn() || 1) || ++retryCount > POLL_RETRYS) {
-                            timer.cancel();
-                        }
-
-                    }, POLL_INTERVAL, true);
+            } catch(e) {
+                S.log("parseXML error : ");
+                S.log(e);
+                xml = undefined;
             }
-        });
+            if (!xml || !xml.documentElement || xml.getElementsByTagName("parsererror").length) {
+                S.error("Invalid XML: " + data);
+            }
+            return xml;
+        },
+
+        /**
+         * Evalulates a script in a global context.
+         */
+        globalEval: function(data) {
+            if (data && RE_NOT_WHITE.test(data)) {
+                // Inspired by code by Andrea Giammarchi
+                // http://webreflection.blogspot.com/2007/08/global-scope-evaluation-and-dom.html
+                var head = doc.getElementsByTagName('head')[0] || docElem,
+                    script = doc.createElement('script');
+
+                // It works! All browsers support!
+                script.text = data;
+
+                // Use insertBefore instead of appendChild to circumvent an IE6 bug.
+                // This arises when a base node is used.
+                head.insertBefore(script, head.firstChild);
+                head.removeChild(script);
+            }
+        },
+
+        /**
+         * Specify a function to execute when the DOM is fully loaded.
+         * @param fn {Function} A function to execute after the DOM is ready
+         * <code>
+         * KISSY.ready(function(S){ });
+         * </code>
+         * @return {KISSY}
+         */
+        ready: function(fn) {
+            // Attach the listeners
+            if (!readyBound) {
+                _bindReady();
+            }
+
+            // If the DOM is already ready
+            if (isReady) {
+                // Execute the function immediately
+                fn.call(win, this);
+            } else {
+                // Remember the function for later
+                readyList.push(fn);
+            }
+
+            return this;
+        },
+
+        /**
+         * Executes the supplied callback when the item with the supplied id is found.
+         * @param id <String> The id of the element, or an array of ids to look for.
+         * @param fn <Function> What to execute when the element is found.
+         */
+        available: function(id, fn) {
+            id = (id + EMPTY).match(RE_IDSTR)[1];
+            if (!id || !S.isFunction(fn)) {
+                return;
+            }
+
+            var retryCount = 1,
+
+                timer = S.later(function() {
+                    if (doc.getElementById(id) && (fn() || 1) || ++retryCount > POLL_RETRYS) {
+                        timer.cancel();
+                    }
+
+                }, POLL_INTERVAL, true);
+        }
+    });
 
 
     /**
@@ -2383,8 +2555,10 @@ build time: Jul 21 15:38
             var notframe = false;
 
             try {
-                notframe = win['frameElement'] == null;
+                notframe = (win['frameElement'] === null);
             } catch(e) {
+                S.log("frameElement error : ");
+                S.log(e);
             }
 
             if (doScroll && notframe) {
@@ -2394,7 +2568,9 @@ build time: Jul 21 15:38
                         doScroll('left');
                         fire();
                     } catch(ex) {
-                        setTimeout(readyScroll, 50);
+                        S.log("detect document ready : ");
+                        S.log(ex);
+                        setTimeout(readyScroll, POLL_INTERVAL);
                     }
                 }
 
@@ -2437,9 +2613,9 @@ build time: Jul 21 15:38
 /**
  * 声明 kissy 核心中所包含的模块，动态加载时将直接从 core.js 中加载核心模块
  * @description: 为了和 1.1.7 及以前版本保持兼容，务实与创新，兼容与革新 ！
- * @author:yiminghe@gmail.com
+ * @author yiminghe@gmail.com
  */
-(function(S, undef) {
+(function(S) {
     S.config({
         combine:{
             core:['dom','ua','event','node','json','ajax','anim','base','cookie']
