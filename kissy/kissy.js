@@ -1,12 +1,11 @@
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 20:36
+build time: Aug 16 15:41
 */
 /*
- * @module kissy
+ * a seed where KISSY grows up from , KISS Yeah !
  * @author lifesinger@gmail.com,yiminghe@gmail.com
- * @descript a seed where kissy grows up from , kiss yeah !
  */
 (function(S, undefined) {
 
@@ -79,238 +78,238 @@ build time: Aug 9 20:36
 
     S.mix(S, {
 
-            // S.app() with these members.
-            __APP_MEMBERS: ['namespace'],
-            __APP_INIT_METHODS: ['__init'],
+        // S.app() with these members.
+        __APP_MEMBERS: ['namespace'],
+        __APP_INIT_METHODS: ['__init'],
 
-            /**
-             * The version of the library.
-             * @type {String}
-             */
-            version: '1.20dev',
+        /**
+         * The version of the library.
+         * @type {String}
+         */
+        version: '1.20dev',
 
-            buildTime:'20110809203622',
+        buildTime:'20110816154135',
 
-            /**
-             * Returns a new object containing all of the properties of
-             * all the supplied objects. The properties from later objects
-             * will overwrite those in earlier objects. Passing in a
-             * single object will create a shallow copy of it.
-             * @return {Object} the new merged object
-             */
-            merge: function() {
-                var o = {}, i, l = arguments.length;
-                for (i = 0; i < l; i++) {
-                    S.mix(o, arguments[i]);
-                }
-                return o;
-            },
-
-            /**
-             * Applies prototype properties from the supplier to the receiver.
-             * @return {Object} the augmented object
-             */
-            augment: function(/*r, s1, s2, ..., ov, wl*/) {
-                var args = S.makeArray(arguments),
-                    len = args.length - 2,
-                    r = args[0],
-                    ov = args[len],
-                    wl = args[len + 1],
-                    i = 1;
-
-                if (!S.isArray(wl)) {
-                    ov = wl;
-                    wl = undefined;
-                    len++;
-                }
-                if (!S.isBoolean(ov)) {
-                    ov = undefined;
-                    len++;
-                }
-
-                for (; i < len; i++) {
-                    S.mix(r.prototype, args[i].prototype || args[i], ov, wl);
-                }
-
-                return r;
-            },
-
-            /**
-             * Utility to set up the prototype, constructor and superclass properties to
-             * support an inheritance strategy that can chain constructors and methods.
-             * Static members will not be inherited.
-             * @param r {Function} the object to modify
-             * @param s {Function} the object to inherit
-             * @param px {Object} prototype properties to add/override
-             * @param sx {Object} static properties to add/override
-             * @return r {Object}
-             */
-            extend: function(r, s, px, sx) {
-                if (!s || !r) {
-                    return r;
-                }
-
-                var create = Object.create ?
-                    function(proto, c) {
-                        return Object.create(proto, {
-                                constructor: {
-                                    value: c
-                                }
-                            });
-                    } :
-                    function (proto, c) {
-                        function F() {
-                        }
-
-                        F.prototype = proto;
-
-                        var o = new F();
-                        o.constructor = c;
-                        return o;
-                    },
-                    sp = s.prototype,
-                    rp;
-
-                // add prototype chain
-                rp = create(sp, r);
-                r.prototype = S.mix(rp, r.prototype);
-                r.superclass = create(sp, s);
-
-                // add prototype overrides
-                if (px) {
-                    S.mix(rp, px);
-                }
-
-                // add object overrides
-                if (sx) {
-                    S.mix(r, sx);
-                }
-
-                return r;
-            },
-
-            /****************************************************************************************
-
-             *                            The KISSY System Framework                                *
-
-             ****************************************************************************************/
-
-            /**
-             * Initializes KISSY
-             */
-            __init: function() {
-                this.Config = this.Config || {};
-                this.Env = this.Env || {};
-
-                // NOTICE: '@DEBUG@' will replace with '' when compressing.
-                // So, if loading source file, debug is on by default.
-                // If loading min version, debug is turned off automatically.
-                this.Config.debug = '@DEBUG@';
-            },
-
-            /**
-             * Returns the namespace specified and creates it if it doesn't exist. Be careful
-             * when naming packages. Reserved words may work in some browsers and not others.
-             * <code>
-             * S.namespace('KISSY.app'); // returns KISSY.app
-             * S.namespace('app.Shop'); // returns KISSY.app.Shop
-             * S.namespace('TB.app.Shop', true); // returns TB.app.Shop
-             * </code>
-             * @return {Object}  A reference to the last namespace object created
-             */
-            namespace: function() {
-                var args = S.makeArray(arguments),
-                    l = args.length,
-                    o = null, i, j, p,
-                    global = (args[l - 1] === true && l--);
-
-                for (i = 0; i < l; i++) {
-                    p = (EMPTY + args[i]).split('.');
-                    o = global ? host : this;
-                    for (j = (host[p[0]] === o) ? 1 : 0; j < p.length; ++j) {
-                        o = o[p[j]] = o[p[j]] || { };
-                    }
-                }
-                return o;
-            },
-
-            /**
-             * create app based on KISSY.
-             * @param name {String} the app name
-             * @param sx {Object} static properties to add/override
-             * <code>
-             * S.app('TB');
-             * TB.namespace('app'); // returns TB.app
-             * </code>
-             * @return {Object}  A reference to the app global object
-             */
-            app: function(name, sx) {
-                var isStr = S.isString(name),
-                    O = isStr ? host[name] || {} : name,
-                    i = 0,
-                    len = S.__APP_INIT_METHODS.length;
-
-                S.mix(O, this, true, S.__APP_MEMBERS);
-                for (; i < len; i++) {
-                    S[S.__APP_INIT_METHODS[i]].call(O);
-                }
-
-                S.mix(O, S.isFunction(sx) ? sx() : sx);
-                isStr && (host[name] = O);
-
-                return O;
-            },
-
-
-            config:function(c) {
-                for (var p in c) {
-                    if (this["_" + p]) {
-                        this["_" + p](c[p]);
-                    }
-                }
-            },
-
-            /**
-             * Prints debug info.
-             * @param msg {String} the message to log.
-             * @param cat {String} the log category for the message. Default
-             *        categories are "info", "warn", "error", "time" etc.
-             * @param src {String} the source of the the message (opt)
-             */
-            log: function(msg, cat, src) {
-                if (S.Config.debug) {
-                    if (src) {
-                        msg = src + ': ' + msg;
-                    }
-                    if (host['console'] !== undefined && console.log) {
-                        console[cat && console[cat] ? cat : 'log'](msg);
-                    }
-                }
-            },
-
-            /**
-             * Throws error message.
-             */
-            error: function(msg) {
-                if (S.Config.debug) {
-                    throw msg;
-                }
-            },
-
-            /*
-             * Generate a global unique id.
-             * @param pre {String} optional guid prefix
-             * @return {String} the guid
-             */
-            guid: function(pre) {
-                return (pre || EMPTY) + guid++;
+        /**
+         * Returns a new object containing all of the properties of
+         * all the supplied objects. The properties from later objects
+         * will overwrite those in earlier objects. Passing in a
+         * single object will create a shallow copy of it.
+         * @return {Object} the new merged object
+         */
+        merge: function() {
+            var o = {}, i, l = arguments.length;
+            for (i = 0; i < l; i++) {
+                S.mix(o, arguments[i]);
             }
-        });
+            return o;
+        },
+
+        /**
+         * Applies prototype properties from the supplier to the receiver.
+         * @return {Object} the augmented object
+         */
+        augment: function(/*r, s1, s2, ..., ov, wl*/) {
+            var args = S.makeArray(arguments),
+                len = args.length - 2,
+                r = args[0],
+                ov = args[len],
+                wl = args[len + 1],
+                i = 1;
+
+            if (!S.isArray(wl)) {
+                ov = wl;
+                wl = undefined;
+                len++;
+            }
+            if (!S.isBoolean(ov)) {
+                ov = undefined;
+                len++;
+            }
+
+            for (; i < len; i++) {
+                S.mix(r.prototype, args[i].prototype || args[i], ov, wl);
+            }
+
+            return r;
+        },
+
+        /**
+         * Utility to set up the prototype, constructor and superclass properties to
+         * support an inheritance strategy that can chain constructors and methods.
+         * Static members will not be inherited.
+         * @param r {Function} the object to modify
+         * @param s {Function} the object to inherit
+         * @param px {Object} prototype properties to add/override
+         * @param sx {Object} static properties to add/override
+         * @return r {Object}
+         */
+        extend: function(r, s, px, sx) {
+            if (!s || !r) {
+                return r;
+            }
+
+            var create = Object.create ?
+                function(proto, c) {
+                    return Object.create(proto, {
+                        constructor: {
+                            value: c
+                        }
+                    });
+                } :
+                function (proto, c) {
+                    function F() {
+                    }
+
+                    F.prototype = proto;
+
+                    var o = new F();
+                    o.constructor = c;
+                    return o;
+                },
+                sp = s.prototype,
+                rp;
+
+            // add prototype chain
+            rp = create(sp, r);
+            r.prototype = S.mix(rp, r.prototype);
+            r.superclass = create(sp, s);
+
+            // add prototype overrides
+            if (px) {
+                S.mix(rp, px);
+            }
+
+            // add object overrides
+            if (sx) {
+                S.mix(r, sx);
+            }
+
+            return r;
+        },
+
+        /****************************************************************************************
+
+         *                            The KISSY System Framework                                *
+
+         ****************************************************************************************/
+
+        /**
+         * Initializes KISSY
+         */
+        __init: function() {
+            this.Config = this.Config || {};
+            this.Env = this.Env || {};
+
+            // NOTICE: '@DEBUG@' will replace with '' when compressing.
+            // So, if loading source file, debug is on by default.
+            // If loading min version, debug is turned off automatically.
+            this.Config.debug = '@DEBUG@';
+        },
+
+        /**
+         * Returns the namespace specified and creates it if it doesn't exist. Be careful
+         * when naming packages. Reserved words may work in some browsers and not others.
+         * <code>
+         * S.namespace('KISSY.app'); // returns KISSY.app
+         * S.namespace('app.Shop'); // returns KISSY.app.Shop
+         * S.namespace('TB.app.Shop', true); // returns TB.app.Shop
+         * </code>
+         * @return {Object}  A reference to the last namespace object created
+         */
+        namespace: function() {
+            var args = S.makeArray(arguments),
+                l = args.length,
+                o = null, i, j, p,
+                global = (args[l - 1] === true && l--);
+
+            for (i = 0; i < l; i++) {
+                p = (EMPTY + args[i]).split('.');
+                o = global ? host : this;
+                for (j = (host[p[0]] === o) ? 1 : 0; j < p.length; ++j) {
+                    o = o[p[j]] = o[p[j]] || { };
+                }
+            }
+            return o;
+        },
+
+        /**
+         * create app based on KISSY.
+         * @param name {String} the app name
+         * @param sx {Object} static properties to add/override
+         * <code>
+         * S.app('TB');
+         * TB.namespace('app'); // returns TB.app
+         * </code>
+         * @return {Object}  A reference to the app global object
+         */
+        app: function(name, sx) {
+            var isStr = S.isString(name),
+                O = isStr ? host[name] || {} : name,
+                i = 0,
+                len = S.__APP_INIT_METHODS.length;
+
+            S.mix(O, this, true, S.__APP_MEMBERS);
+            for (; i < len; i++) {
+                S[S.__APP_INIT_METHODS[i]].call(O);
+            }
+
+            S.mix(O, S.isFunction(sx) ? sx() : sx);
+            isStr && (host[name] = O);
+
+            return O;
+        },
+
+
+        config:function(c) {
+            for (var p in c) {
+                if (this["_" + p]) {
+                    this["_" + p](c[p]);
+                }
+            }
+        },
+
+        /**
+         * Prints debug info.
+         * @param msg {String} the message to log.
+         * @param cat {String} the log category for the message. Default
+         *        categories are "info", "warn", "error", "time" etc.
+         * @param src {String} the source of the the message (opt)
+         */
+        log: function(msg, cat, src) {
+            if (S.Config.debug) {
+                if (src) {
+                    msg = src + ': ' + msg;
+                }
+                if (host['console'] !== undefined && console.log) {
+                    console[cat && console[cat] ? cat : 'log'](msg);
+                }
+            }
+        },
+
+        /**
+         * Throws error message.
+         */
+        error: function(msg) {
+            if (S.Config.debug) {
+                throw msg;
+            }
+        },
+
+        /*
+         * Generate a global unique id.
+         * @param pre {String} optional guid prefix
+         * @return {String} the guid
+         */
+        guid: function(pre) {
+            return (pre || EMPTY) + guid++;
+        }
+    });
 
     S.__init();
     return S;
 
-})('KISSY',undefined);
+})('KISSY', undefined);
 /**
  * @module  lang
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
@@ -534,25 +533,27 @@ build time: Aug 9 20:36
          * @param context {Object} (opt)
          */
         each: function(object, fn, context) {
-            var key,
-                val,
-                i = 0,
-                length = object && object.length,
-                isObj = length === undefined || S.type(object) === 'function';
-            context = context || host;
+            if (object) {
+                var key,
+                    val,
+                    i = 0,
+                    length = object && object.length,
+                    isObj = length === undefined || S.type(object) === 'function';
 
-            if (isObj) {
-                for (key in object) {
-                    if (fn.call(context, object[key], key, object) === false) {
-                        break;
+                context = context || host;
+
+                if (isObj) {
+                    for (key in object) {
+                        if (fn.call(context, object[key], key, object) === false) {
+                            break;
+                        }
+                    }
+                } else {
+                    for (val = object[0];
+                         i < length && fn.call(context, val, i, object) !== false; val = object[++i]) {
                     }
                 }
-            } else {
-                for (val = object[0];
-                     i < length && fn.call(context, val, i, object) !== false; val = object[++i]) {
-                }
             }
-
             return object;
         },
 
@@ -1172,13 +1173,22 @@ build time: Aug 9 20:36
         removePostfix:function (path) {
             return path.replace(/(-min)?\.js[^/]*$/i, "");
         },
-        //路径正则化，不能是相对地址
-        //相对地址则转换成相对页面的绝对地址
+        /**
+         * 路径正则化，不能是相对地址
+         * 相对地址则转换成相对页面的绝对地址
+         * 用途:
+         * 1. package path 相对地址则相对于当前页面获取绝对地址
+         * 2. kissy.js 相对引用如何获取.
+         */
         normalBasePath:function (path) {
             if (path.charAt(path.length - 1) != '/') {
                 path += "/";
             }
             path = S.trim(path);
+            /**
+             * 一定要正则化，防止出现 ../ 等相对路径
+             * 考虑本地路径
+             */
             if (!path.match(/^(http(s)?)|(file):/i)
                 && !startsWith(path, "/")) {
                 path = loader.__pagePath + path;
@@ -1843,8 +1853,8 @@ build time: Aug 9 20:36
  * @author lifesinger@gmail.com, lijing00333@163.com, yiminghe@gmail.com
  * @description: constant member and common method holder
  */
-(function(S, loader,data) {
-    if("require" in this) {
+(function(S, loader, data) {
+    if ("require" in this) {
         return;
     }
     var win = S.__HOST,
@@ -1855,11 +1865,11 @@ build time: Aug 9 20:36
 
     mix(loader, {
 
-        //当前页面所在的目录
-        // http://xx.com/y/z.htm
+        // 当前页面所在的目录
+        // http://xx.com/y/z.htm#!/f/g
         // ->
         // http://xx.com/y/
-        __pagePath:location.href.replace(/[^/]*$/i, ""),
+        __pagePath:location.href.replace(location.hash, "").replace(/[^/]*$/i, ""),
 
         //firefox,ie9,chrome 如果add没有模块名，模块定义先暂存这里
         __currentModule:null,
@@ -1885,7 +1895,7 @@ build time: Aug 9 20:36
     });
 
 
-})(KISSY, KISSY.__loader,KISSY.__loaderData);
+})(KISSY, KISSY.__loader, KISSY.__loaderData);
 
 /**
  * 2011-01-04 chengyu<yiminghe@gmail.com> refactor:
@@ -2290,10 +2300,9 @@ build time: Aug 9 20:36
      * @notice: custom combo rules, such as yui3:
      *  <script src="path/to/kissy" data-combo-prefix="combo?" data-combo-sep="&"></script>
      */
-    // notice: timestamp
+        // notice: timestamp
     var baseReg = /^(.*)(seed|kissy)(-aio)?(-min)?\.js[^/]*/i,
-        baseTestReg = /(seed|kissy)(-aio)?(-min)?\.js/i,
-        pagePath = S.__pagePath;
+        baseTestReg = /(seed|kissy)(-aio)?(-min)?\.js/i;
 
     function getBaseUrl(script) {
         var src = script.src,
@@ -2324,14 +2333,6 @@ build time: Aug 9 20:36
                     }
                 });
             }
-        }
-        /**
-         * 一定要正则化，防止出现 ../ 等相对路径
-         * 考虑本地路径
-         */
-        if (!base.match(/^(http(s)?)|(file):/i)
-            && !S.startsWith(base, "/")) {
-            base = pagePath + base;
         }
         return base;
     }
@@ -2663,12 +2664,12 @@ D:\code\kissy_git\kissy\src\node\anim-plugin.js
 D:\code\kissy_git\kissy\src\node.js
 D:\code\kissy_git\kissy\src\json\json2.js
 D:\code\kissy_git\kissy\src\json.js
+D:\code\kissy_git\kissy\src\ajax\form-serializer.js
 D:\code\kissy_git\kissy\src\ajax\xhrobject.js
 D:\code\kissy_git\kissy\src\ajax\base.js
 D:\code\kissy_git\kissy\src\ajax\xhr.js
 D:\code\kissy_git\kissy\src\ajax\script.js
 D:\code\kissy_git\kissy\src\ajax\jsonp.js
-D:\code\kissy_git\kissy\src\ajax\form-serializer.js
 D:\code\kissy_git\kissy\src\ajax\form.js
 D:\code\kissy_git\kissy\src\ajax\iframe-upload.js
 D:\code\kissy_git\kissy\src\ajax.js
@@ -3447,9 +3448,6 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                 }
             }
         });
-        if (1 > 2) {
-            DOM.removeProp().hasProp();
-        }
         return DOM;
     }, {
         requires:["./base","ua"]
@@ -3689,21 +3687,21 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
                 // Fix "XHTML"-style tags in all browsers
                 html = html.replace(rxhtmlTag, "<$1><" + "/$2>");
 
-                if ((m = RE_TAG.exec(html))
-                    && (k = m[1])
-                    && S.isFunction(creators[(k = k.toLowerCase())])) {
-                    tag = k;
+                if ((m = RE_TAG.exec(html)) && (k = m[1])) {
+                    tag = k.toLowerCase();
                 }
 
-                nodes = creators[tag](html, ownerDoc).childNodes;
+                nodes = (creators[tag] || creators[DIV])(html, ownerDoc).childNodes;
 
                 if (nodes.length === 1) {
                     // return single node, breaking parentNode ref from "fragment"
                     ret = nodes[0][PARENT_NODE].removeChild(nodes[0]);
                 }
-                else {
+                else if (nodes.length) {
                     // return multiple nodes as a fragment
                     ret = nl2frag(nodes, ownerDoc || doc);
+                } else {
+                    S.error(html + " : create node error");
                 }
             }
 
@@ -3714,7 +3712,7 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
             div: function(html, ownerDoc) {
                 var frag = ownerDoc ? ownerDoc.createElement(DIV) : DEFAULT_DIV;
                 // html 为 <style></style> 时不行，必须有其他元素？
-                frag['innerHTML'] = "w<div>" + html + "<" + "/div>";
+                frag['innerHTML'] = "m<div>" + html + "<" + "/div>";
                 return frag.lastChild;
             }
         },
@@ -3929,27 +3927,18 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
             })(creatorsMap[p]);
         }
 
-        if (ie) {
-            // IE 下不能单独添加 script 元素
-            creators.script = function(html, ownerDoc) {
-                var frag = ownerDoc ? ownerDoc.createElement(DIV) : DEFAULT_DIV;
-                frag['innerHTML'] = '-' + html;
-                frag.removeChild(frag.firstChild);
+
+        // IE7- adds TBODY when creating thead/tfoot/caption/col/colgroup elements
+        if (ie < 8) {
+            creators.tbody = function(html, ownerDoc) {
+                var frag = create(TABLE_OPEN + html + TABLE_CLOSE, null, ownerDoc),
+                    tbody = frag.children['tags']('tbody')[0];
+
+                if (frag.children.length > 1 && tbody && !RE_TBODY.test(html)) {
+                    tbody[PARENT_NODE].removeChild(tbody); // strip extraneous tbody
+                }
                 return frag;
             };
-
-            // IE7- adds TBODY when creating thead/tfoot/caption/col/colgroup elements
-            if (ie < 8) {
-                creators.tbody = function(html, ownerDoc) {
-                    var frag = create(TABLE_OPEN + html + TABLE_CLOSE, null, ownerDoc),
-                        tbody = frag.children['tags']('tbody')[0];
-
-                    if (frag.children.length > 1 && tbody && !RE_TBODY.test(html)) {
-                        tbody[PARENT_NODE].removeChild(tbody); // strip extraneous tbody
-                    }
-                    return frag;
-                };
-            }
         }
 
         S.mix(creators, {
@@ -4665,10 +4654,12 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
         _CUSTOM_STYLES: CUSTOM_STYLES,
 
         _getComputedStyle: function(elem, name) {
-            var val = '', d = elem.ownerDocument;
+            var val = '', computedStyle = {},d = elem.ownerDocument;
 
-            if (elem[STYLE]) {
-                val = d.defaultView.getComputedStyle(elem, null)[name];
+            if (elem[STYLE] &&
+                // https://github.com/kissyteam/kissy/issues/61
+                (computedStyle = d.defaultView.getComputedStyle(elem, null))) {
+                val = computedStyle[name];
             }
             return val;
         },
@@ -6344,6 +6335,10 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         // { handler: eventHandler, events:  {type:[{scope:scope,fn:fn}]}  } }
         EVENT_GUID = 'ksEventTargetId' + S.now();
 
+    /**
+     * @name Event
+     * @namespace
+     */
     var Event = {
         _data:function(elem) {
             var args = makeArray(arguments);
@@ -6731,35 +6726,62 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 KISSY.add('event/target', function(S, Event) {
 
     /**
-     * EventTarget provides the implementation for any object to publish,
-     * subscribe and fire to custom events.
+     * 提供事件发布和订阅机制
+     * @name Target
+     * @memberOf Event
      */
-    return {
+    var Target =
+    /**
+     * @lends Event.Target
+     */
+    {
 
         isCustomEventTarget: true,
 
+        /**
+         * 触发事件
+         * @param {String} type 事件名
+         * @param {Object} eventData 事件附加信息对象
+         * @returns 如果一个 listener 返回false，则返回 false ，否则返回最后一个 listener 的值.
+         */
         fire: function(type, eventData) {
             // no chain ,need data returned
             return Event.fire(this, type, eventData);
         },
 
+        /**
+         * 监听事件
+         * @param {String} type 事件名
+         * @param {Function} fn 事件处理器
+         * @param {Object} scope 事件处理器内的 this 值，默认当前实例
+         * @returns 当前实例
+         */
         on: function(type, fn, scope) {
             Event.add(this, type, fn, scope);
             return this; // chain
         },
 
+        /**
+         * 取消监听事件
+         * @param {String} type 事件名
+         * @param {Function} fn 事件处理器
+         * @param {Object} scope 事件处理器内的 this 值，默认当前实例
+         * @returns 当前实例
+         */
         detach: function(type, fn, scope) {
             Event.remove(this, type, fn, scope);
             return this; // chain
         }
     };
+
+    return Target;
 }, {
-        /*
-         实际上只需要 dom/data ，但是不要跨模块引用另一模块的子模块，
-         否则会导致build打包文件 dom 和 dom-data 重复载入
-         */
-        requires:["./base"]
-    });
+    /*
+     实际上只需要 dom/data ，但是不要跨模块引用另一模块的子模块，
+     否则会导致build打包文件 dom 和 dom-data 重复载入
+     */
+    requires:["./base"]
+});
 
 /**
  * NOTES:
@@ -7528,10 +7550,6 @@ KISSY.add("node/base", function(S, DOM, undefined) {
         }
     });
 
-    if (1 > 2) {
-        DOM.getDOMNodes();
-    }
-
     return NodeList;
 }, {
     requires:["dom"]
@@ -7963,7 +7981,7 @@ KISSY.add("anim/manager", function(S) {
         return anim[tag];
     }
 
-    var manager = {
+    return {
         interval:20,
         runnings:{},
         timer:null,
@@ -8024,12 +8042,6 @@ KISSY.add("anim/manager", function(S) {
             return done;
         }
     };
-
-    if (1 > 2) {
-        manager.pause().resume();
-    }
-
-    return manager;
 });
 
 /**
@@ -8877,10 +8889,9 @@ KISSY.add('node/anim-plugin', function(S, DOM, Anim, N, undefined) {
                     var self = this;
 
                     // 没有参数时，调用 DOM 中的对应方法
-                    if (DOM[k] && arguments.length === 0) {
+                    if (DOM[k] && !speed) {
                         DOM[k](self);
-                    }
-                    else {
+                    } else {
                         // 原生支持问题很多，默认不采用原生
                         if (nativeSupport === undefined) {
                             nativeSupport = false;
@@ -9502,6 +9513,62 @@ KISSY.add('json', function (S, JSON) {
     };
 }, {
     requires:["json/json2"]
+});
+
+/**
+ * form data  serialization util
+ * @author  yiminghe@gmail.com
+ */
+KISSY.add("ajax/form-serializer", function(S, DOM) {
+    var rselectTextarea = /^(?:select|textarea)/i,
+        rCRLF = /\r?\n/g,
+        rinput = /^(?:color|date|datetime|email|hidden|month|number|password|range|search|tel|text|time|url|week)$/i;
+    return {
+        /**
+         * 序列化表单元素
+         * @param {String|HTMLElement[]|HTMLElement|Node} forms
+         */
+        serialize:function(forms) {
+            var elements = [],data = {};
+            DOM.query(forms).each(function(el) {
+                // form 取其表单元素集合
+                // 其他直接取自身
+                var subs = el.elements ? S.makeArray(el.elements) : [el];
+                elements.push.apply(elements, subs);
+            });
+            // 对表单元素进行过滤，具备有效值的才保留
+            elements = S.filter(elements, function(el) {
+                // 有名字
+                return el.name &&
+                    // 不被禁用
+                    !el.disabled &&
+                    (
+                        // radio,checkbox 被选择了
+                        el.checked ||
+                            // select 或者 textarea
+                            rselectTextarea.test(el.nodeName) ||
+                            // input 类型
+                            rinput.test(el.type)
+                        );
+
+                // 这样子才取值
+            });
+            S.each(elements, function(el) {
+                var val = DOM.val(el),vs;
+                // 字符串换行平台归一化
+                val = S.map(S.makeArray(val), function(v) {
+                    return v.replace(rCRLF, "\r\n");
+                });
+                // 全部搞成数组，防止同名
+                vs = data[el.name] = data[el.name] || [];
+                vs.push.apply(vs, val);
+            });
+            // 名值键值对序列化,数组元素名字前不加 []
+            return S.param(data, undefined, undefined, false);
+        }
+    };
+}, {
+    requires:['dom']
 });
 
 /**
@@ -10242,7 +10309,9 @@ KISSY.add("ajax/script", function(S, io) {
 
                 // Remove the script
                 if (head && script.parentNode) {
-                    script.src = "#";
+                    // ie 报错载入无效 js
+                    // 怎么 abort ??
+                    // script.src = "#";
                     head.removeChild(script);
                 }
 
@@ -10348,29 +10417,6 @@ KISSY.add("ajax/jsonp", function(S, io) {
 }, {
     requires:['./base']
 });
-
-/**
- * form data  serialization util
- * @author  yiminghe@gmail.com
- */
-KISSY.add("ajax/form-serializer", function(S, DOM) {
-    return {
-        serialize:function(form) {
-            form = DOM.get(form);
-            var data = {};
-            S.each(form.elements, function(e) {
-                var d = e.disabled;
-                //必须编码
-                if (!d) {
-                    data[e.name] = DOM.val(e);
-                }
-            });
-            return S.param(data, undefined, undefined, false);
-        }
-    };
-}, {
-        requires:['dom']
-    });
 
 KISSY.add("ajax/form", function(S, io, DOM, FormSerializer) {
 
@@ -10561,10 +10607,17 @@ KISSY.add("ajax/iframe-upload", function(S, DOM, Event, io) {
     requires:["dom","event","./base"]
 });
 
-KISSY.add("ajax", function(S, io) {
+KISSY.add("ajax", function(S, serializer, io) {
     var undef = undefined;
     // some shortcut
     S.mix(io, {
+
+        /**
+         * form 序列化
+         * @param formElement {HTMLFormElement} 将要序列化的 form 元素
+         */
+        serialize:serializer.serialize,
+
         get: function(url, data, callback, dataType, _t) {
             // data 参数可省略
             if (S.isFunction(data)) {
@@ -10635,7 +10688,9 @@ KISSY.add("ajax", function(S, io) {
 
     return io;
 }, {
-    requires:["ajax/base",
+    requires:[
+        "ajax/form-serializer",
+        "ajax/base",
         "ajax/xhrobject",
         "ajax/xhr",
         "ajax/script",
@@ -10651,8 +10706,9 @@ KISSY.add("ajax", function(S, io) {
 KISSY.add('base/attribute', function(S, undef) {
 
     /**
-     * Attribute provides the implementation for any object
-     * to deal with its attribute in aop ways.
+     * 提供属性管理机制
+     * @name Attribute
+     * @class
      */
     function Attribute() {
         /**
@@ -10677,206 +10733,208 @@ KISSY.add('base/attribute', function(S, undef) {
         this.__attrVals = {};
     }
 
-    S.augment(Attribute, {
-
-        __getDefAttrs: function() {
-            return S.clone(this.__attrs);
-        },
-
+    S.augment(Attribute,
         /**
-         * Adds an attribute with the provided configuration to the host object.
-         * The config supports the following properties:
-         * {
-         *     value: 'the default value',
-         *     valueFn: function
-         *     setter: function
-         *     getter: function
-         * }
-         * @param {boolean} override whether override existing attribute config ,default true
+         * @lends Attribute.prototype
          */
-        addAttr: function(name, attrConfig, override) {
-            var host = this;
-            if (!host.__attrs[name]) {
-                host.__attrs[name] = S.clone(attrConfig || {});
-            } else {
-                S.mix(host.__attrs[name], attrConfig, override);
-            }
-            return host;
-        },
+        {
 
-        /**
-         * Configures a group of attributes, and sets initial values.
-         * @param {Object} attrConfigs  An object with attribute name/configuration pairs.
-         * @param {Object} values An object with attribute name/value pairs, defining the initial values to apply.
-         *        Values defined in the cfgs argument will be over-written by values in this argument.
-         */
-        addAttrs: function(attrConfigs, values) {
-            var host = this;
+            __getDefAttrs: function() {
+                return S.clone(this.__attrs);
+            },
 
-            S.each(attrConfigs, function(attrConfig, name) {
-                if (name in values) {
-                    attrConfig.value = values[name];
+            /**
+             * Adds an attribute with the provided configuration to the host object.
+             * The config supports the following properties:
+             * {
+             *     value: 'the default value',
+             *     valueFn: function
+             *     setter: function
+             *     getter: function
+             * }
+             * @param {boolean} override whether override existing attribute config ,default true
+             */
+            addAttr: function(name, attrConfig, override) {
+                var host = this;
+                if (!host.__attrs[name]) {
+                    host.__attrs[name] = S.clone(attrConfig || {});
+                } else {
+                    S.mix(host.__attrs[name], attrConfig, override);
                 }
-                host.addAttr(name, attrConfig);
-            });
+                return host;
+            },
 
-            return host;
-        },
+            /**
+             * Configures a group of attributes, and sets initial values.
+             * @param {Object} attrConfigs  An object with attribute name/configuration pairs.
+             * @param {Object} values An object with attribute name/value pairs, defining the initial values to apply.
+             *        Values defined in the cfgs argument will be over-written by values in this argument.
+             */
+            addAttrs: function(attrConfigs, values) {
+                var host = this;
 
-        /**
-         * Checks if the given attribute has been added to the host.
-         */
-        hasAttr: function(name) {
-            return name && this.__attrs.hasOwnProperty(name);
-        },
+                S.each(attrConfigs, function(attrConfig, name) {
+                    if (name in values) {
+                        attrConfig.value = values[name];
+                    }
+                    host.addAttr(name, attrConfig);
+                });
 
-        /**
-         * Removes an attribute from the host object.
-         */
-        removeAttr: function(name) {
-            var host = this;
+                return host;
+            },
 
-            if (host.hasAttr(name)) {
-                delete host.__attrs[name];
-                delete host.__attrVals[name];
-            }
+            /**
+             * Checks if the given attribute has been added to the host.
+             */
+            hasAttr: function(name) {
+                return name && this.__attrs.hasOwnProperty(name);
+            },
 
-            return host;
-        },
+            /**
+             * Removes an attribute from the host object.
+             */
+            removeAttr: function(name) {
+                var host = this;
 
-        /**
-         * Sets the value of an attribute.
-         */
-        set: function(name, value) {
-            var host = this,
-                prevVal = host.get(name);
-
-            // if no change, just return
-            if (prevVal === value) {
-                return;
-            }
-
-            // check before event
-            if (false === host.__fireAttrChange('before', name, prevVal, value)) {
-                return;
-            }
-
-            // set it
-            host.__set(name, value);
-
-            // fire after event
-            host.__fireAttrChange('after', name, prevVal, host.__attrVals[name]);
-
-            return host;
-        },
-
-        __fireAttrChange: function(when, name, prevVal, newVal) {
-            return this.fire(when + capitalFirst(name) + 'Change', {
-                attrName: name,
-                prevVal: prevVal,
-                newVal: newVal
-            });
-        },
-
-        /**
-         * internal use, no event involved, just set.
-         */
-        __set: function(name, value) {
-            var host = this,
-                setValue,
-                // if host does not have meta info corresponding to (name,value)
-                // then register on demand in order to collect all data meta info
-                // 一定要注册属性元数据，否则其他模块通过 _attrs 不能枚举到所有有效属性
-                // 因为属性在声明注册前可以直接设置值
-                attrConfig = host.__attrs[name] = host.__attrs[name] || {},
-                setter = attrConfig['setter'];
-
-            // if setter has effect
-            if (setter) {
-                setValue = setter.call(host, value);
-            }
-            if (setValue !== undef) {
-                value = setValue;
-            }
-
-            // finally set
-            host.__attrVals[name] = value;
-        },
-
-        /**
-         * Gets the current value of the attribute.
-         */
-        get: function(name) {
-            var host = this, attrConfig, getter, ret;
-
-            attrConfig = host.__attrs[name];
-            getter = attrConfig && attrConfig['getter'];
-
-            // get user-set value or default value
-            //user-set value takes privilege
-            ret = name in host.__attrVals ?
-                host.__attrVals[name] :
-                host.__getDefAttrVal(name);
-
-            // invoke getter for this attribute
-            if (getter) {
-                ret = getter.call(host, ret);
-            }
-
-            return ret;
-        },
-
-        __getDefAttrVal: function(name) {
-            var host = this,
-                attrConfig = host.__attrs[name],
-                valFn, val;
-
-            if (!attrConfig) {
-                return;
-            }
-
-            if ((valFn = attrConfig.valueFn)) {
-                val = valFn.call(host);
-                if (val !== undef) {
-                    attrConfig.value = val;
-                }
-                delete attrConfig.valueFn;
-            }
-
-            return attrConfig.value;
-        },
-
-        /**
-         * Resets the value of an attribute.
-         * @note just reset what addAttr set  (not what invoker set when call new Xx(cfg))
-         */
-        reset: function (name) {
-            var host = this;
-
-            if (host.hasAttr(name)) {
-                // if attribute does not have default value, then set to undefined.
-                return host.set(name, host.__getDefAttrVal(name));
-            }
-
-            // reset all
-            for (name in host.__attrs) {
                 if (host.hasAttr(name)) {
-                    host.reset(name);
+                    delete host.__attrs[name];
+                    delete host.__attrVals[name];
                 }
-            }
 
-            return host;
-        }
-    });
+                return host;
+            },
+
+            /**
+             * Sets the value of an attribute.
+             */
+            set: function(name, value) {
+                var host = this,
+                    prevVal = host.get(name);
+
+                // if no change, just return
+                if (prevVal === value) {
+                    return;
+                }
+
+                // check before event
+                if (false === host.__fireAttrChange('before', name, prevVal, value)) {
+                    return;
+                }
+
+                // set it
+                host.__set(name, value);
+
+                // fire after event
+                host.__fireAttrChange('after', name, prevVal, host.__attrVals[name]);
+
+                return host;
+            },
+
+            __fireAttrChange: function(when, name, prevVal, newVal) {
+                return this.fire(when + capitalFirst(name) + 'Change', {
+                    attrName: name,
+                    prevVal: prevVal,
+                    newVal: newVal
+                });
+            },
+
+            /**
+             * internal use, no event involved, just set.
+             * @private
+             */
+            __set: function(name, value) {
+                var host = this,
+                    setValue,
+                    // if host does not have meta info corresponding to (name,value)
+                    // then register on demand in order to collect all data meta info
+                    // 一定要注册属性元数据，否则其他模块通过 _attrs 不能枚举到所有有效属性
+                    // 因为属性在声明注册前可以直接设置值
+                    attrConfig = host.__attrs[name] = host.__attrs[name] || {},
+                    setter = attrConfig['setter'];
+
+                // if setter has effect
+                if (setter) {
+                    setValue = setter.call(host, value);
+                }
+                if (setValue !== undef) {
+                    value = setValue;
+                }
+
+                // finally set
+                host.__attrVals[name] = value;
+            },
+
+            /**
+             * Gets the current value of the attribute.
+             */
+            get: function(name) {
+                var host = this, attrConfig, getter, ret;
+
+                attrConfig = host.__attrs[name];
+                getter = attrConfig && attrConfig['getter'];
+
+                // get user-set value or default value
+                //user-set value takes privilege
+                ret = name in host.__attrVals ?
+                    host.__attrVals[name] :
+                    host.__getDefAttrVal(name);
+
+                // invoke getter for this attribute
+                if (getter) {
+                    ret = getter.call(host, ret);
+                }
+
+                return ret;
+            },
+
+            __getDefAttrVal: function(name) {
+                var host = this,
+                    attrConfig = host.__attrs[name],
+                    valFn, val;
+
+                if (!attrConfig) {
+                    return;
+                }
+
+                if ((valFn = attrConfig.valueFn)) {
+                    val = valFn.call(host);
+                    if (val !== undef) {
+                        attrConfig.value = val;
+                    }
+                    delete attrConfig.valueFn;
+                }
+
+                return attrConfig.value;
+            },
+
+            /**
+             * Resets the value of an attribute.just reset what addAttr set  (not what invoker set when call new Xx(cfg))
+             * @param {String} name name of attribute
+             */
+            reset: function (name) {
+                var host = this;
+
+                if (host.hasAttr(name)) {
+                    // if attribute does not have default value, then set to undefined.
+                    return host.set(name, host.__getDefAttrVal(name));
+                }
+
+                // reset all
+                for (name in host.__attrs) {
+                    if (host.hasAttr(name)) {
+                        host.reset(name);
+                    }
+                }
+
+                return host;
+            }
+        });
 
     function capitalFirst(s) {
         s += '';
         return s.charAt(0).toUpperCase() + s.substring(1);
     }
 
-    if (1 > 2) {
-        Attribute.addAttrs();
-    }
     Attribute['__capitalFirst'] = capitalFirst;
 
     return Attribute;
@@ -10888,8 +10946,12 @@ KISSY.add('base/attribute', function(S, undef) {
  */
 KISSY.add('base/base', function (S, Attribute, Event) {
 
-    /*
+    /**
      * Base for class-based component
+     * @name Base
+     * @extends Event.Target
+     * @extends Attribute
+     * @class
      */
     function Base(config) {
         Attribute.call(this);
@@ -10900,7 +10962,6 @@ KISSY.add('base/base', function (S, Attribute, Event) {
             addAttrs(this, c['ATTRS']);
             c = c.superclass ? c.superclass.constructor : null;
         }
-
         // initial
         initAttrs(this, config);
     }
@@ -10932,8 +10993,8 @@ KISSY.add('base/base', function (S, Attribute, Event) {
     S.augment(Base, Event.Target, Attribute);
     return Base;
 }, {
-        requires:["./attribute","event"]
-    });
+    requires:["./attribute","event"]
+});
 
 KISSY.add("base", function(S, Base) {
     return Base;

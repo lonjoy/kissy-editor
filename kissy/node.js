@@ -1,7 +1,7 @@
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 /**
  * @module  anim-node-plugin
@@ -88,10 +88,9 @@ KISSY.add('node/anim-plugin', function(S, DOM, Anim, N, undefined) {
                     var self = this;
 
                     // 没有参数时，调用 DOM 中的对应方法
-                    if (DOM[k] && arguments.length === 0) {
+                    if (DOM[k] && !speed) {
                         DOM[k](self);
-                    }
-                    else {
+                    } else {
                         // 原生支持问题很多，默认不采用原生
                         if (nativeSupport === undefined) {
                             nativeSupport = false;
@@ -529,10 +528,6 @@ KISSY.add("node/base", function(S, DOM, undefined) {
         }
     });
 
-    if (1 > 2) {
-        DOM.getDOMNodes();
-    }
-
     return NodeList;
 }, {
     requires:["dom"]
@@ -573,7 +568,9 @@ KISSY.add("node/override", function(S, DOM, Event, NodeList) {
             if (S.isString(newNode)) {
                 newNode = DOM.create(newNode);
             }
-            DOM[insertType](newNode, self);
+            if (newNode) {
+                DOM[insertType](newNode, self);
+            }
             return self;
 
         };

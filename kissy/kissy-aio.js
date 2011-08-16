@@ -1,12 +1,11 @@
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 20:36
+build time: Aug 16 15:41
 */
 /*
- * @module kissy
+ * a seed where KISSY grows up from , KISS Yeah !
  * @author lifesinger@gmail.com,yiminghe@gmail.com
- * @descript a seed where kissy grows up from , kiss yeah !
  */
 (function(S, undefined) {
 
@@ -79,238 +78,238 @@ build time: Aug 9 20:36
 
     S.mix(S, {
 
-            // S.app() with these members.
-            __APP_MEMBERS: ['namespace'],
-            __APP_INIT_METHODS: ['__init'],
+        // S.app() with these members.
+        __APP_MEMBERS: ['namespace'],
+        __APP_INIT_METHODS: ['__init'],
 
-            /**
-             * The version of the library.
-             * @type {String}
-             */
-            version: '1.20dev',
+        /**
+         * The version of the library.
+         * @type {String}
+         */
+        version: '1.20dev',
 
-            buildTime:'20110809203622',
+        buildTime:'20110816154135',
 
-            /**
-             * Returns a new object containing all of the properties of
-             * all the supplied objects. The properties from later objects
-             * will overwrite those in earlier objects. Passing in a
-             * single object will create a shallow copy of it.
-             * @return {Object} the new merged object
-             */
-            merge: function() {
-                var o = {}, i, l = arguments.length;
-                for (i = 0; i < l; i++) {
-                    S.mix(o, arguments[i]);
-                }
-                return o;
-            },
-
-            /**
-             * Applies prototype properties from the supplier to the receiver.
-             * @return {Object} the augmented object
-             */
-            augment: function(/*r, s1, s2, ..., ov, wl*/) {
-                var args = S.makeArray(arguments),
-                    len = args.length - 2,
-                    r = args[0],
-                    ov = args[len],
-                    wl = args[len + 1],
-                    i = 1;
-
-                if (!S.isArray(wl)) {
-                    ov = wl;
-                    wl = undefined;
-                    len++;
-                }
-                if (!S.isBoolean(ov)) {
-                    ov = undefined;
-                    len++;
-                }
-
-                for (; i < len; i++) {
-                    S.mix(r.prototype, args[i].prototype || args[i], ov, wl);
-                }
-
-                return r;
-            },
-
-            /**
-             * Utility to set up the prototype, constructor and superclass properties to
-             * support an inheritance strategy that can chain constructors and methods.
-             * Static members will not be inherited.
-             * @param r {Function} the object to modify
-             * @param s {Function} the object to inherit
-             * @param px {Object} prototype properties to add/override
-             * @param sx {Object} static properties to add/override
-             * @return r {Object}
-             */
-            extend: function(r, s, px, sx) {
-                if (!s || !r) {
-                    return r;
-                }
-
-                var create = Object.create ?
-                    function(proto, c) {
-                        return Object.create(proto, {
-                                constructor: {
-                                    value: c
-                                }
-                            });
-                    } :
-                    function (proto, c) {
-                        function F() {
-                        }
-
-                        F.prototype = proto;
-
-                        var o = new F();
-                        o.constructor = c;
-                        return o;
-                    },
-                    sp = s.prototype,
-                    rp;
-
-                // add prototype chain
-                rp = create(sp, r);
-                r.prototype = S.mix(rp, r.prototype);
-                r.superclass = create(sp, s);
-
-                // add prototype overrides
-                if (px) {
-                    S.mix(rp, px);
-                }
-
-                // add object overrides
-                if (sx) {
-                    S.mix(r, sx);
-                }
-
-                return r;
-            },
-
-            /****************************************************************************************
-
-             *                            The KISSY System Framework                                *
-
-             ****************************************************************************************/
-
-            /**
-             * Initializes KISSY
-             */
-            __init: function() {
-                this.Config = this.Config || {};
-                this.Env = this.Env || {};
-
-                // NOTICE: '@DEBUG@' will replace with '' when compressing.
-                // So, if loading source file, debug is on by default.
-                // If loading min version, debug is turned off automatically.
-                this.Config.debug = '@DEBUG@';
-            },
-
-            /**
-             * Returns the namespace specified and creates it if it doesn't exist. Be careful
-             * when naming packages. Reserved words may work in some browsers and not others.
-             * <code>
-             * S.namespace('KISSY.app'); // returns KISSY.app
-             * S.namespace('app.Shop'); // returns KISSY.app.Shop
-             * S.namespace('TB.app.Shop', true); // returns TB.app.Shop
-             * </code>
-             * @return {Object}  A reference to the last namespace object created
-             */
-            namespace: function() {
-                var args = S.makeArray(arguments),
-                    l = args.length,
-                    o = null, i, j, p,
-                    global = (args[l - 1] === true && l--);
-
-                for (i = 0; i < l; i++) {
-                    p = (EMPTY + args[i]).split('.');
-                    o = global ? host : this;
-                    for (j = (host[p[0]] === o) ? 1 : 0; j < p.length; ++j) {
-                        o = o[p[j]] = o[p[j]] || { };
-                    }
-                }
-                return o;
-            },
-
-            /**
-             * create app based on KISSY.
-             * @param name {String} the app name
-             * @param sx {Object} static properties to add/override
-             * <code>
-             * S.app('TB');
-             * TB.namespace('app'); // returns TB.app
-             * </code>
-             * @return {Object}  A reference to the app global object
-             */
-            app: function(name, sx) {
-                var isStr = S.isString(name),
-                    O = isStr ? host[name] || {} : name,
-                    i = 0,
-                    len = S.__APP_INIT_METHODS.length;
-
-                S.mix(O, this, true, S.__APP_MEMBERS);
-                for (; i < len; i++) {
-                    S[S.__APP_INIT_METHODS[i]].call(O);
-                }
-
-                S.mix(O, S.isFunction(sx) ? sx() : sx);
-                isStr && (host[name] = O);
-
-                return O;
-            },
-
-
-            config:function(c) {
-                for (var p in c) {
-                    if (this["_" + p]) {
-                        this["_" + p](c[p]);
-                    }
-                }
-            },
-
-            /**
-             * Prints debug info.
-             * @param msg {String} the message to log.
-             * @param cat {String} the log category for the message. Default
-             *        categories are "info", "warn", "error", "time" etc.
-             * @param src {String} the source of the the message (opt)
-             */
-            log: function(msg, cat, src) {
-                if (S.Config.debug) {
-                    if (src) {
-                        msg = src + ': ' + msg;
-                    }
-                    if (host['console'] !== undefined && console.log) {
-                        console[cat && console[cat] ? cat : 'log'](msg);
-                    }
-                }
-            },
-
-            /**
-             * Throws error message.
-             */
-            error: function(msg) {
-                if (S.Config.debug) {
-                    throw msg;
-                }
-            },
-
-            /*
-             * Generate a global unique id.
-             * @param pre {String} optional guid prefix
-             * @return {String} the guid
-             */
-            guid: function(pre) {
-                return (pre || EMPTY) + guid++;
+        /**
+         * Returns a new object containing all of the properties of
+         * all the supplied objects. The properties from later objects
+         * will overwrite those in earlier objects. Passing in a
+         * single object will create a shallow copy of it.
+         * @return {Object} the new merged object
+         */
+        merge: function() {
+            var o = {}, i, l = arguments.length;
+            for (i = 0; i < l; i++) {
+                S.mix(o, arguments[i]);
             }
-        });
+            return o;
+        },
+
+        /**
+         * Applies prototype properties from the supplier to the receiver.
+         * @return {Object} the augmented object
+         */
+        augment: function(/*r, s1, s2, ..., ov, wl*/) {
+            var args = S.makeArray(arguments),
+                len = args.length - 2,
+                r = args[0],
+                ov = args[len],
+                wl = args[len + 1],
+                i = 1;
+
+            if (!S.isArray(wl)) {
+                ov = wl;
+                wl = undefined;
+                len++;
+            }
+            if (!S.isBoolean(ov)) {
+                ov = undefined;
+                len++;
+            }
+
+            for (; i < len; i++) {
+                S.mix(r.prototype, args[i].prototype || args[i], ov, wl);
+            }
+
+            return r;
+        },
+
+        /**
+         * Utility to set up the prototype, constructor and superclass properties to
+         * support an inheritance strategy that can chain constructors and methods.
+         * Static members will not be inherited.
+         * @param r {Function} the object to modify
+         * @param s {Function} the object to inherit
+         * @param px {Object} prototype properties to add/override
+         * @param sx {Object} static properties to add/override
+         * @return r {Object}
+         */
+        extend: function(r, s, px, sx) {
+            if (!s || !r) {
+                return r;
+            }
+
+            var create = Object.create ?
+                function(proto, c) {
+                    return Object.create(proto, {
+                        constructor: {
+                            value: c
+                        }
+                    });
+                } :
+                function (proto, c) {
+                    function F() {
+                    }
+
+                    F.prototype = proto;
+
+                    var o = new F();
+                    o.constructor = c;
+                    return o;
+                },
+                sp = s.prototype,
+                rp;
+
+            // add prototype chain
+            rp = create(sp, r);
+            r.prototype = S.mix(rp, r.prototype);
+            r.superclass = create(sp, s);
+
+            // add prototype overrides
+            if (px) {
+                S.mix(rp, px);
+            }
+
+            // add object overrides
+            if (sx) {
+                S.mix(r, sx);
+            }
+
+            return r;
+        },
+
+        /****************************************************************************************
+
+         *                            The KISSY System Framework                                *
+
+         ****************************************************************************************/
+
+        /**
+         * Initializes KISSY
+         */
+        __init: function() {
+            this.Config = this.Config || {};
+            this.Env = this.Env || {};
+
+            // NOTICE: '@DEBUG@' will replace with '' when compressing.
+            // So, if loading source file, debug is on by default.
+            // If loading min version, debug is turned off automatically.
+            this.Config.debug = '@DEBUG@';
+        },
+
+        /**
+         * Returns the namespace specified and creates it if it doesn't exist. Be careful
+         * when naming packages. Reserved words may work in some browsers and not others.
+         * <code>
+         * S.namespace('KISSY.app'); // returns KISSY.app
+         * S.namespace('app.Shop'); // returns KISSY.app.Shop
+         * S.namespace('TB.app.Shop', true); // returns TB.app.Shop
+         * </code>
+         * @return {Object}  A reference to the last namespace object created
+         */
+        namespace: function() {
+            var args = S.makeArray(arguments),
+                l = args.length,
+                o = null, i, j, p,
+                global = (args[l - 1] === true && l--);
+
+            for (i = 0; i < l; i++) {
+                p = (EMPTY + args[i]).split('.');
+                o = global ? host : this;
+                for (j = (host[p[0]] === o) ? 1 : 0; j < p.length; ++j) {
+                    o = o[p[j]] = o[p[j]] || { };
+                }
+            }
+            return o;
+        },
+
+        /**
+         * create app based on KISSY.
+         * @param name {String} the app name
+         * @param sx {Object} static properties to add/override
+         * <code>
+         * S.app('TB');
+         * TB.namespace('app'); // returns TB.app
+         * </code>
+         * @return {Object}  A reference to the app global object
+         */
+        app: function(name, sx) {
+            var isStr = S.isString(name),
+                O = isStr ? host[name] || {} : name,
+                i = 0,
+                len = S.__APP_INIT_METHODS.length;
+
+            S.mix(O, this, true, S.__APP_MEMBERS);
+            for (; i < len; i++) {
+                S[S.__APP_INIT_METHODS[i]].call(O);
+            }
+
+            S.mix(O, S.isFunction(sx) ? sx() : sx);
+            isStr && (host[name] = O);
+
+            return O;
+        },
+
+
+        config:function(c) {
+            for (var p in c) {
+                if (this["_" + p]) {
+                    this["_" + p](c[p]);
+                }
+            }
+        },
+
+        /**
+         * Prints debug info.
+         * @param msg {String} the message to log.
+         * @param cat {String} the log category for the message. Default
+         *        categories are "info", "warn", "error", "time" etc.
+         * @param src {String} the source of the the message (opt)
+         */
+        log: function(msg, cat, src) {
+            if (S.Config.debug) {
+                if (src) {
+                    msg = src + ': ' + msg;
+                }
+                if (host['console'] !== undefined && console.log) {
+                    console[cat && console[cat] ? cat : 'log'](msg);
+                }
+            }
+        },
+
+        /**
+         * Throws error message.
+         */
+        error: function(msg) {
+            if (S.Config.debug) {
+                throw msg;
+            }
+        },
+
+        /*
+         * Generate a global unique id.
+         * @param pre {String} optional guid prefix
+         * @return {String} the guid
+         */
+        guid: function(pre) {
+            return (pre || EMPTY) + guid++;
+        }
+    });
 
     S.__init();
     return S;
 
-})('KISSY',undefined);
+})('KISSY', undefined);
 /**
  * @module  lang
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
@@ -534,25 +533,27 @@ build time: Aug 9 20:36
          * @param context {Object} (opt)
          */
         each: function(object, fn, context) {
-            var key,
-                val,
-                i = 0,
-                length = object && object.length,
-                isObj = length === undefined || S.type(object) === 'function';
-            context = context || host;
+            if (object) {
+                var key,
+                    val,
+                    i = 0,
+                    length = object && object.length,
+                    isObj = length === undefined || S.type(object) === 'function';
 
-            if (isObj) {
-                for (key in object) {
-                    if (fn.call(context, object[key], key, object) === false) {
-                        break;
+                context = context || host;
+
+                if (isObj) {
+                    for (key in object) {
+                        if (fn.call(context, object[key], key, object) === false) {
+                            break;
+                        }
+                    }
+                } else {
+                    for (val = object[0];
+                         i < length && fn.call(context, val, i, object) !== false; val = object[++i]) {
                     }
                 }
-            } else {
-                for (val = object[0];
-                     i < length && fn.call(context, val, i, object) !== false; val = object[++i]) {
-                }
             }
-
             return object;
         },
 
@@ -1172,13 +1173,22 @@ build time: Aug 9 20:36
         removePostfix:function (path) {
             return path.replace(/(-min)?\.js[^/]*$/i, "");
         },
-        //路径正则化，不能是相对地址
-        //相对地址则转换成相对页面的绝对地址
+        /**
+         * 路径正则化，不能是相对地址
+         * 相对地址则转换成相对页面的绝对地址
+         * 用途:
+         * 1. package path 相对地址则相对于当前页面获取绝对地址
+         * 2. kissy.js 相对引用如何获取.
+         */
         normalBasePath:function (path) {
             if (path.charAt(path.length - 1) != '/') {
                 path += "/";
             }
             path = S.trim(path);
+            /**
+             * 一定要正则化，防止出现 ../ 等相对路径
+             * 考虑本地路径
+             */
             if (!path.match(/^(http(s)?)|(file):/i)
                 && !startsWith(path, "/")) {
                 path = loader.__pagePath + path;
@@ -1843,8 +1853,8 @@ build time: Aug 9 20:36
  * @author lifesinger@gmail.com, lijing00333@163.com, yiminghe@gmail.com
  * @description: constant member and common method holder
  */
-(function(S, loader,data) {
-    if("require" in this) {
+(function(S, loader, data) {
+    if ("require" in this) {
         return;
     }
     var win = S.__HOST,
@@ -1855,11 +1865,11 @@ build time: Aug 9 20:36
 
     mix(loader, {
 
-        //当前页面所在的目录
-        // http://xx.com/y/z.htm
+        // 当前页面所在的目录
+        // http://xx.com/y/z.htm#!/f/g
         // ->
         // http://xx.com/y/
-        __pagePath:location.href.replace(/[^/]*$/i, ""),
+        __pagePath:location.href.replace(location.hash, "").replace(/[^/]*$/i, ""),
 
         //firefox,ie9,chrome 如果add没有模块名，模块定义先暂存这里
         __currentModule:null,
@@ -1885,7 +1895,7 @@ build time: Aug 9 20:36
     });
 
 
-})(KISSY, KISSY.__loader,KISSY.__loaderData);
+})(KISSY, KISSY.__loader, KISSY.__loaderData);
 
 /**
  * 2011-01-04 chengyu<yiminghe@gmail.com> refactor:
@@ -2290,10 +2300,9 @@ build time: Aug 9 20:36
      * @notice: custom combo rules, such as yui3:
      *  <script src="path/to/kissy" data-combo-prefix="combo?" data-combo-sep="&"></script>
      */
-    // notice: timestamp
+        // notice: timestamp
     var baseReg = /^(.*)(seed|kissy)(-aio)?(-min)?\.js[^/]*/i,
-        baseTestReg = /(seed|kissy)(-aio)?(-min)?\.js/i,
-        pagePath = S.__pagePath;
+        baseTestReg = /(seed|kissy)(-aio)?(-min)?\.js/i;
 
     function getBaseUrl(script) {
         var src = script.src,
@@ -2324,14 +2333,6 @@ build time: Aug 9 20:36
                     }
                 });
             }
-        }
-        /**
-         * 一定要正则化，防止出现 ../ 等相对路径
-         * 考虑本地路径
-         */
-        if (!base.match(/^(http(s)?)|(file):/i)
-            && !S.startsWith(base, "/")) {
-            base = pagePath + base;
         }
         return base;
     }
@@ -2663,12 +2664,12 @@ D:\code\kissy_git\kissy\src\node\anim-plugin.js
 D:\code\kissy_git\kissy\src\node.js
 D:\code\kissy_git\kissy\src\json\json2.js
 D:\code\kissy_git\kissy\src\json.js
+D:\code\kissy_git\kissy\src\ajax\form-serializer.js
 D:\code\kissy_git\kissy\src\ajax\xhrobject.js
 D:\code\kissy_git\kissy\src\ajax\base.js
 D:\code\kissy_git\kissy\src\ajax\xhr.js
 D:\code\kissy_git\kissy\src\ajax\script.js
 D:\code\kissy_git\kissy\src\ajax\jsonp.js
-D:\code\kissy_git\kissy\src\ajax\form-serializer.js
 D:\code\kissy_git\kissy\src\ajax\form.js
 D:\code\kissy_git\kissy\src\ajax\iframe-upload.js
 D:\code\kissy_git\kissy\src\ajax.js
@@ -3447,9 +3448,6 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                 }
             }
         });
-        if (1 > 2) {
-            DOM.removeProp().hasProp();
-        }
         return DOM;
     }, {
         requires:["./base","ua"]
@@ -3689,21 +3687,21 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
                 // Fix "XHTML"-style tags in all browsers
                 html = html.replace(rxhtmlTag, "<$1><" + "/$2>");
 
-                if ((m = RE_TAG.exec(html))
-                    && (k = m[1])
-                    && S.isFunction(creators[(k = k.toLowerCase())])) {
-                    tag = k;
+                if ((m = RE_TAG.exec(html)) && (k = m[1])) {
+                    tag = k.toLowerCase();
                 }
 
-                nodes = creators[tag](html, ownerDoc).childNodes;
+                nodes = (creators[tag] || creators[DIV])(html, ownerDoc).childNodes;
 
                 if (nodes.length === 1) {
                     // return single node, breaking parentNode ref from "fragment"
                     ret = nodes[0][PARENT_NODE].removeChild(nodes[0]);
                 }
-                else {
+                else if (nodes.length) {
                     // return multiple nodes as a fragment
                     ret = nl2frag(nodes, ownerDoc || doc);
+                } else {
+                    S.error(html + " : create node error");
                 }
             }
 
@@ -3714,7 +3712,7 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
             div: function(html, ownerDoc) {
                 var frag = ownerDoc ? ownerDoc.createElement(DIV) : DEFAULT_DIV;
                 // html 为 <style></style> 时不行，必须有其他元素？
-                frag['innerHTML'] = "w<div>" + html + "<" + "/div>";
+                frag['innerHTML'] = "m<div>" + html + "<" + "/div>";
                 return frag.lastChild;
             }
         },
@@ -3929,27 +3927,18 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
             })(creatorsMap[p]);
         }
 
-        if (ie) {
-            // IE 下不能单独添加 script 元素
-            creators.script = function(html, ownerDoc) {
-                var frag = ownerDoc ? ownerDoc.createElement(DIV) : DEFAULT_DIV;
-                frag['innerHTML'] = '-' + html;
-                frag.removeChild(frag.firstChild);
+
+        // IE7- adds TBODY when creating thead/tfoot/caption/col/colgroup elements
+        if (ie < 8) {
+            creators.tbody = function(html, ownerDoc) {
+                var frag = create(TABLE_OPEN + html + TABLE_CLOSE, null, ownerDoc),
+                    tbody = frag.children['tags']('tbody')[0];
+
+                if (frag.children.length > 1 && tbody && !RE_TBODY.test(html)) {
+                    tbody[PARENT_NODE].removeChild(tbody); // strip extraneous tbody
+                }
                 return frag;
             };
-
-            // IE7- adds TBODY when creating thead/tfoot/caption/col/colgroup elements
-            if (ie < 8) {
-                creators.tbody = function(html, ownerDoc) {
-                    var frag = create(TABLE_OPEN + html + TABLE_CLOSE, null, ownerDoc),
-                        tbody = frag.children['tags']('tbody')[0];
-
-                    if (frag.children.length > 1 && tbody && !RE_TBODY.test(html)) {
-                        tbody[PARENT_NODE].removeChild(tbody); // strip extraneous tbody
-                    }
-                    return frag;
-                };
-            }
         }
 
         S.mix(creators, {
@@ -4665,10 +4654,12 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
         _CUSTOM_STYLES: CUSTOM_STYLES,
 
         _getComputedStyle: function(elem, name) {
-            var val = '', d = elem.ownerDocument;
+            var val = '', computedStyle = {},d = elem.ownerDocument;
 
-            if (elem[STYLE]) {
-                val = d.defaultView.getComputedStyle(elem, null)[name];
+            if (elem[STYLE] &&
+                // https://github.com/kissyteam/kissy/issues/61
+                (computedStyle = d.defaultView.getComputedStyle(elem, null))) {
+                val = computedStyle[name];
             }
             return val;
         },
@@ -6344,6 +6335,10 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         // { handler: eventHandler, events:  {type:[{scope:scope,fn:fn}]}  } }
         EVENT_GUID = 'ksEventTargetId' + S.now();
 
+    /**
+     * @name Event
+     * @namespace
+     */
     var Event = {
         _data:function(elem) {
             var args = makeArray(arguments);
@@ -6731,35 +6726,62 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 KISSY.add('event/target', function(S, Event) {
 
     /**
-     * EventTarget provides the implementation for any object to publish,
-     * subscribe and fire to custom events.
+     * 提供事件发布和订阅机制
+     * @name Target
+     * @memberOf Event
      */
-    return {
+    var Target =
+    /**
+     * @lends Event.Target
+     */
+    {
 
         isCustomEventTarget: true,
 
+        /**
+         * 触发事件
+         * @param {String} type 事件名
+         * @param {Object} eventData 事件附加信息对象
+         * @returns 如果一个 listener 返回false，则返回 false ，否则返回最后一个 listener 的值.
+         */
         fire: function(type, eventData) {
             // no chain ,need data returned
             return Event.fire(this, type, eventData);
         },
 
+        /**
+         * 监听事件
+         * @param {String} type 事件名
+         * @param {Function} fn 事件处理器
+         * @param {Object} scope 事件处理器内的 this 值，默认当前实例
+         * @returns 当前实例
+         */
         on: function(type, fn, scope) {
             Event.add(this, type, fn, scope);
             return this; // chain
         },
 
+        /**
+         * 取消监听事件
+         * @param {String} type 事件名
+         * @param {Function} fn 事件处理器
+         * @param {Object} scope 事件处理器内的 this 值，默认当前实例
+         * @returns 当前实例
+         */
         detach: function(type, fn, scope) {
             Event.remove(this, type, fn, scope);
             return this; // chain
         }
     };
+
+    return Target;
 }, {
-        /*
-         实际上只需要 dom/data ，但是不要跨模块引用另一模块的子模块，
-         否则会导致build打包文件 dom 和 dom-data 重复载入
-         */
-        requires:["./base"]
-    });
+    /*
+     实际上只需要 dom/data ，但是不要跨模块引用另一模块的子模块，
+     否则会导致build打包文件 dom 和 dom-data 重复载入
+     */
+    requires:["./base"]
+});
 
 /**
  * NOTES:
@@ -7528,10 +7550,6 @@ KISSY.add("node/base", function(S, DOM, undefined) {
         }
     });
 
-    if (1 > 2) {
-        DOM.getDOMNodes();
-    }
-
     return NodeList;
 }, {
     requires:["dom"]
@@ -7963,7 +7981,7 @@ KISSY.add("anim/manager", function(S) {
         return anim[tag];
     }
 
-    var manager = {
+    return {
         interval:20,
         runnings:{},
         timer:null,
@@ -8024,12 +8042,6 @@ KISSY.add("anim/manager", function(S) {
             return done;
         }
     };
-
-    if (1 > 2) {
-        manager.pause().resume();
-    }
-
-    return manager;
 });
 
 /**
@@ -8877,10 +8889,9 @@ KISSY.add('node/anim-plugin', function(S, DOM, Anim, N, undefined) {
                     var self = this;
 
                     // 没有参数时，调用 DOM 中的对应方法
-                    if (DOM[k] && arguments.length === 0) {
+                    if (DOM[k] && !speed) {
                         DOM[k](self);
-                    }
-                    else {
+                    } else {
                         // 原生支持问题很多，默认不采用原生
                         if (nativeSupport === undefined) {
                             nativeSupport = false;
@@ -9502,6 +9513,62 @@ KISSY.add('json', function (S, JSON) {
     };
 }, {
     requires:["json/json2"]
+});
+
+/**
+ * form data  serialization util
+ * @author  yiminghe@gmail.com
+ */
+KISSY.add("ajax/form-serializer", function(S, DOM) {
+    var rselectTextarea = /^(?:select|textarea)/i,
+        rCRLF = /\r?\n/g,
+        rinput = /^(?:color|date|datetime|email|hidden|month|number|password|range|search|tel|text|time|url|week)$/i;
+    return {
+        /**
+         * 序列化表单元素
+         * @param {String|HTMLElement[]|HTMLElement|Node} forms
+         */
+        serialize:function(forms) {
+            var elements = [],data = {};
+            DOM.query(forms).each(function(el) {
+                // form 取其表单元素集合
+                // 其他直接取自身
+                var subs = el.elements ? S.makeArray(el.elements) : [el];
+                elements.push.apply(elements, subs);
+            });
+            // 对表单元素进行过滤，具备有效值的才保留
+            elements = S.filter(elements, function(el) {
+                // 有名字
+                return el.name &&
+                    // 不被禁用
+                    !el.disabled &&
+                    (
+                        // radio,checkbox 被选择了
+                        el.checked ||
+                            // select 或者 textarea
+                            rselectTextarea.test(el.nodeName) ||
+                            // input 类型
+                            rinput.test(el.type)
+                        );
+
+                // 这样子才取值
+            });
+            S.each(elements, function(el) {
+                var val = DOM.val(el),vs;
+                // 字符串换行平台归一化
+                val = S.map(S.makeArray(val), function(v) {
+                    return v.replace(rCRLF, "\r\n");
+                });
+                // 全部搞成数组，防止同名
+                vs = data[el.name] = data[el.name] || [];
+                vs.push.apply(vs, val);
+            });
+            // 名值键值对序列化,数组元素名字前不加 []
+            return S.param(data, undefined, undefined, false);
+        }
+    };
+}, {
+    requires:['dom']
 });
 
 /**
@@ -10242,7 +10309,9 @@ KISSY.add("ajax/script", function(S, io) {
 
                 // Remove the script
                 if (head && script.parentNode) {
-                    script.src = "#";
+                    // ie 报错载入无效 js
+                    // 怎么 abort ??
+                    // script.src = "#";
                     head.removeChild(script);
                 }
 
@@ -10348,29 +10417,6 @@ KISSY.add("ajax/jsonp", function(S, io) {
 }, {
     requires:['./base']
 });
-
-/**
- * form data  serialization util
- * @author  yiminghe@gmail.com
- */
-KISSY.add("ajax/form-serializer", function(S, DOM) {
-    return {
-        serialize:function(form) {
-            form = DOM.get(form);
-            var data = {};
-            S.each(form.elements, function(e) {
-                var d = e.disabled;
-                //必须编码
-                if (!d) {
-                    data[e.name] = DOM.val(e);
-                }
-            });
-            return S.param(data, undefined, undefined, false);
-        }
-    };
-}, {
-        requires:['dom']
-    });
 
 KISSY.add("ajax/form", function(S, io, DOM, FormSerializer) {
 
@@ -10561,10 +10607,17 @@ KISSY.add("ajax/iframe-upload", function(S, DOM, Event, io) {
     requires:["dom","event","./base"]
 });
 
-KISSY.add("ajax", function(S, io) {
+KISSY.add("ajax", function(S, serializer, io) {
     var undef = undefined;
     // some shortcut
     S.mix(io, {
+
+        /**
+         * form 序列化
+         * @param formElement {HTMLFormElement} 将要序列化的 form 元素
+         */
+        serialize:serializer.serialize,
+
         get: function(url, data, callback, dataType, _t) {
             // data 参数可省略
             if (S.isFunction(data)) {
@@ -10635,7 +10688,9 @@ KISSY.add("ajax", function(S, io) {
 
     return io;
 }, {
-    requires:["ajax/base",
+    requires:[
+        "ajax/form-serializer",
+        "ajax/base",
         "ajax/xhrobject",
         "ajax/xhr",
         "ajax/script",
@@ -10651,8 +10706,9 @@ KISSY.add("ajax", function(S, io) {
 KISSY.add('base/attribute', function(S, undef) {
 
     /**
-     * Attribute provides the implementation for any object
-     * to deal with its attribute in aop ways.
+     * 提供属性管理机制
+     * @name Attribute
+     * @class
      */
     function Attribute() {
         /**
@@ -10677,206 +10733,208 @@ KISSY.add('base/attribute', function(S, undef) {
         this.__attrVals = {};
     }
 
-    S.augment(Attribute, {
-
-        __getDefAttrs: function() {
-            return S.clone(this.__attrs);
-        },
-
+    S.augment(Attribute,
         /**
-         * Adds an attribute with the provided configuration to the host object.
-         * The config supports the following properties:
-         * {
-         *     value: 'the default value',
-         *     valueFn: function
-         *     setter: function
-         *     getter: function
-         * }
-         * @param {boolean} override whether override existing attribute config ,default true
+         * @lends Attribute.prototype
          */
-        addAttr: function(name, attrConfig, override) {
-            var host = this;
-            if (!host.__attrs[name]) {
-                host.__attrs[name] = S.clone(attrConfig || {});
-            } else {
-                S.mix(host.__attrs[name], attrConfig, override);
-            }
-            return host;
-        },
+        {
 
-        /**
-         * Configures a group of attributes, and sets initial values.
-         * @param {Object} attrConfigs  An object with attribute name/configuration pairs.
-         * @param {Object} values An object with attribute name/value pairs, defining the initial values to apply.
-         *        Values defined in the cfgs argument will be over-written by values in this argument.
-         */
-        addAttrs: function(attrConfigs, values) {
-            var host = this;
+            __getDefAttrs: function() {
+                return S.clone(this.__attrs);
+            },
 
-            S.each(attrConfigs, function(attrConfig, name) {
-                if (name in values) {
-                    attrConfig.value = values[name];
+            /**
+             * Adds an attribute with the provided configuration to the host object.
+             * The config supports the following properties:
+             * {
+             *     value: 'the default value',
+             *     valueFn: function
+             *     setter: function
+             *     getter: function
+             * }
+             * @param {boolean} override whether override existing attribute config ,default true
+             */
+            addAttr: function(name, attrConfig, override) {
+                var host = this;
+                if (!host.__attrs[name]) {
+                    host.__attrs[name] = S.clone(attrConfig || {});
+                } else {
+                    S.mix(host.__attrs[name], attrConfig, override);
                 }
-                host.addAttr(name, attrConfig);
-            });
+                return host;
+            },
 
-            return host;
-        },
+            /**
+             * Configures a group of attributes, and sets initial values.
+             * @param {Object} attrConfigs  An object with attribute name/configuration pairs.
+             * @param {Object} values An object with attribute name/value pairs, defining the initial values to apply.
+             *        Values defined in the cfgs argument will be over-written by values in this argument.
+             */
+            addAttrs: function(attrConfigs, values) {
+                var host = this;
 
-        /**
-         * Checks if the given attribute has been added to the host.
-         */
-        hasAttr: function(name) {
-            return name && this.__attrs.hasOwnProperty(name);
-        },
+                S.each(attrConfigs, function(attrConfig, name) {
+                    if (name in values) {
+                        attrConfig.value = values[name];
+                    }
+                    host.addAttr(name, attrConfig);
+                });
 
-        /**
-         * Removes an attribute from the host object.
-         */
-        removeAttr: function(name) {
-            var host = this;
+                return host;
+            },
 
-            if (host.hasAttr(name)) {
-                delete host.__attrs[name];
-                delete host.__attrVals[name];
-            }
+            /**
+             * Checks if the given attribute has been added to the host.
+             */
+            hasAttr: function(name) {
+                return name && this.__attrs.hasOwnProperty(name);
+            },
 
-            return host;
-        },
+            /**
+             * Removes an attribute from the host object.
+             */
+            removeAttr: function(name) {
+                var host = this;
 
-        /**
-         * Sets the value of an attribute.
-         */
-        set: function(name, value) {
-            var host = this,
-                prevVal = host.get(name);
-
-            // if no change, just return
-            if (prevVal === value) {
-                return;
-            }
-
-            // check before event
-            if (false === host.__fireAttrChange('before', name, prevVal, value)) {
-                return;
-            }
-
-            // set it
-            host.__set(name, value);
-
-            // fire after event
-            host.__fireAttrChange('after', name, prevVal, host.__attrVals[name]);
-
-            return host;
-        },
-
-        __fireAttrChange: function(when, name, prevVal, newVal) {
-            return this.fire(when + capitalFirst(name) + 'Change', {
-                attrName: name,
-                prevVal: prevVal,
-                newVal: newVal
-            });
-        },
-
-        /**
-         * internal use, no event involved, just set.
-         */
-        __set: function(name, value) {
-            var host = this,
-                setValue,
-                // if host does not have meta info corresponding to (name,value)
-                // then register on demand in order to collect all data meta info
-                // 一定要注册属性元数据，否则其他模块通过 _attrs 不能枚举到所有有效属性
-                // 因为属性在声明注册前可以直接设置值
-                attrConfig = host.__attrs[name] = host.__attrs[name] || {},
-                setter = attrConfig['setter'];
-
-            // if setter has effect
-            if (setter) {
-                setValue = setter.call(host, value);
-            }
-            if (setValue !== undef) {
-                value = setValue;
-            }
-
-            // finally set
-            host.__attrVals[name] = value;
-        },
-
-        /**
-         * Gets the current value of the attribute.
-         */
-        get: function(name) {
-            var host = this, attrConfig, getter, ret;
-
-            attrConfig = host.__attrs[name];
-            getter = attrConfig && attrConfig['getter'];
-
-            // get user-set value or default value
-            //user-set value takes privilege
-            ret = name in host.__attrVals ?
-                host.__attrVals[name] :
-                host.__getDefAttrVal(name);
-
-            // invoke getter for this attribute
-            if (getter) {
-                ret = getter.call(host, ret);
-            }
-
-            return ret;
-        },
-
-        __getDefAttrVal: function(name) {
-            var host = this,
-                attrConfig = host.__attrs[name],
-                valFn, val;
-
-            if (!attrConfig) {
-                return;
-            }
-
-            if ((valFn = attrConfig.valueFn)) {
-                val = valFn.call(host);
-                if (val !== undef) {
-                    attrConfig.value = val;
-                }
-                delete attrConfig.valueFn;
-            }
-
-            return attrConfig.value;
-        },
-
-        /**
-         * Resets the value of an attribute.
-         * @note just reset what addAttr set  (not what invoker set when call new Xx(cfg))
-         */
-        reset: function (name) {
-            var host = this;
-
-            if (host.hasAttr(name)) {
-                // if attribute does not have default value, then set to undefined.
-                return host.set(name, host.__getDefAttrVal(name));
-            }
-
-            // reset all
-            for (name in host.__attrs) {
                 if (host.hasAttr(name)) {
-                    host.reset(name);
+                    delete host.__attrs[name];
+                    delete host.__attrVals[name];
                 }
-            }
 
-            return host;
-        }
-    });
+                return host;
+            },
+
+            /**
+             * Sets the value of an attribute.
+             */
+            set: function(name, value) {
+                var host = this,
+                    prevVal = host.get(name);
+
+                // if no change, just return
+                if (prevVal === value) {
+                    return;
+                }
+
+                // check before event
+                if (false === host.__fireAttrChange('before', name, prevVal, value)) {
+                    return;
+                }
+
+                // set it
+                host.__set(name, value);
+
+                // fire after event
+                host.__fireAttrChange('after', name, prevVal, host.__attrVals[name]);
+
+                return host;
+            },
+
+            __fireAttrChange: function(when, name, prevVal, newVal) {
+                return this.fire(when + capitalFirst(name) + 'Change', {
+                    attrName: name,
+                    prevVal: prevVal,
+                    newVal: newVal
+                });
+            },
+
+            /**
+             * internal use, no event involved, just set.
+             * @private
+             */
+            __set: function(name, value) {
+                var host = this,
+                    setValue,
+                    // if host does not have meta info corresponding to (name,value)
+                    // then register on demand in order to collect all data meta info
+                    // 一定要注册属性元数据，否则其他模块通过 _attrs 不能枚举到所有有效属性
+                    // 因为属性在声明注册前可以直接设置值
+                    attrConfig = host.__attrs[name] = host.__attrs[name] || {},
+                    setter = attrConfig['setter'];
+
+                // if setter has effect
+                if (setter) {
+                    setValue = setter.call(host, value);
+                }
+                if (setValue !== undef) {
+                    value = setValue;
+                }
+
+                // finally set
+                host.__attrVals[name] = value;
+            },
+
+            /**
+             * Gets the current value of the attribute.
+             */
+            get: function(name) {
+                var host = this, attrConfig, getter, ret;
+
+                attrConfig = host.__attrs[name];
+                getter = attrConfig && attrConfig['getter'];
+
+                // get user-set value or default value
+                //user-set value takes privilege
+                ret = name in host.__attrVals ?
+                    host.__attrVals[name] :
+                    host.__getDefAttrVal(name);
+
+                // invoke getter for this attribute
+                if (getter) {
+                    ret = getter.call(host, ret);
+                }
+
+                return ret;
+            },
+
+            __getDefAttrVal: function(name) {
+                var host = this,
+                    attrConfig = host.__attrs[name],
+                    valFn, val;
+
+                if (!attrConfig) {
+                    return;
+                }
+
+                if ((valFn = attrConfig.valueFn)) {
+                    val = valFn.call(host);
+                    if (val !== undef) {
+                        attrConfig.value = val;
+                    }
+                    delete attrConfig.valueFn;
+                }
+
+                return attrConfig.value;
+            },
+
+            /**
+             * Resets the value of an attribute.just reset what addAttr set  (not what invoker set when call new Xx(cfg))
+             * @param {String} name name of attribute
+             */
+            reset: function (name) {
+                var host = this;
+
+                if (host.hasAttr(name)) {
+                    // if attribute does not have default value, then set to undefined.
+                    return host.set(name, host.__getDefAttrVal(name));
+                }
+
+                // reset all
+                for (name in host.__attrs) {
+                    if (host.hasAttr(name)) {
+                        host.reset(name);
+                    }
+                }
+
+                return host;
+            }
+        });
 
     function capitalFirst(s) {
         s += '';
         return s.charAt(0).toUpperCase() + s.substring(1);
     }
 
-    if (1 > 2) {
-        Attribute.addAttrs();
-    }
     Attribute['__capitalFirst'] = capitalFirst;
 
     return Attribute;
@@ -10888,8 +10946,12 @@ KISSY.add('base/attribute', function(S, undef) {
  */
 KISSY.add('base/base', function (S, Attribute, Event) {
 
-    /*
+    /**
      * Base for class-based component
+     * @name Base
+     * @extends Event.Target
+     * @extends Attribute
+     * @class
      */
     function Base(config) {
         Attribute.call(this);
@@ -10900,7 +10962,6 @@ KISSY.add('base/base', function (S, Attribute, Event) {
             addAttrs(this, c['ATTRS']);
             c = c.superclass ? c.superclass.constructor : null;
         }
-
         // initial
         initAttrs(this, config);
     }
@@ -10932,8 +10993,8 @@ KISSY.add('base/base', function (S, Attribute, Event) {
     S.augment(Base, Event.Target, Attribute);
     return Base;
 }, {
-        requires:["./attribute","event"]
-    });
+    requires:["./attribute","event"]
+});
 
 KISSY.add("base", function(S, Base) {
     return Base;
@@ -11079,7 +11140,7 @@ KISSY.use('core');
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 /*!
  * Sizzle CSS Selector Engine
@@ -12504,7 +12565,7 @@ KISSY.add("sizzle", function(S, sizzle) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:38
+build time: Aug 13 21:43
 */
 /**
  * 数据延迟加载组件
@@ -13007,7 +13068,7 @@ KISSY.add("datalazyload", function(S, D) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 /**
  * @fileoverview KISSY Template Engine.
@@ -13245,7 +13306,7 @@ KISSY.add("template", function(S, T) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 /**
  * @module   Flash 全局静态类
@@ -13756,7 +13817,7 @@ KISSY.add("flash", function(S, F) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:38
+build time: Aug 13 21:43
 */
 /**
  * dd support for kissy , dd objects central management module
@@ -14999,7 +15060,7 @@ KISSY.add("dd", function(S, DDM, Draggable, Droppable, Proxy, Delegate, Droppabl
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 /**
  * resizable support for kissy
@@ -15173,7 +15234,7 @@ KISSY.add("resizable", function(S, R) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 20:30
+build time: Aug 15 21:53
 */
 /**
  * UIBase.Align
@@ -15493,8 +15554,8 @@ KISSY.add('uibase/align', function(S, UA, DOM, Node) {
 
         /**
          * 对齐 Overlay 到 node 的 points 点, 偏移 offset 处
-         * @param {Element} [node] 参照元素, 可取配置选项中的设置, 也可是一元素
-         * @param {String[]} [points] 对齐方式
+         * @param {Element} node 参照元素, 可取配置选项中的设置, 也可是一元素
+         * @param {String[]} points 对齐方式
          * @param {Number[]} [offset] 偏移
          */
         align: function(node, points, offset, overflow) {
@@ -15565,10 +15626,6 @@ KISSY.add('uibase/align', function(S, UA, DOM, Node) {
         }
     };
 
-    if (1 > 2) {
-        Align._uiSetAlign();
-    }
-
     return Align;
 }, {
     requires:["ua","dom","node"]
@@ -15595,8 +15652,12 @@ KISSY.add('uibase/base', function (S, Base, DOM, Node) {
         return s.charAt(0).toUpperCase() + s.substring(1);
     }
 
-    /*
+    /**
      * UIBase for class-based component
+     * @class
+     * @extends Base
+     * @name UIBase
+     * @namespace
      */
     function UIBase(config) {
         // 读取用户设置的属性值并设置到自身
@@ -15751,116 +15812,142 @@ KISSY.add('uibase/base', function (S, Base, DOM, Node) {
         }
     };
 
-    S.extend(UIBase, Base, {
-
+    S.extend(UIBase, Base,
         /**
-         * 建立节点，先不放在 dom 树中，为了性能!
+         * @lends UIBase.prototype
          */
-        create:function() {
-            var self = this;
-            // 是否生成过节点
-            if (!self.get("created")) {
-                self._createDom();
-                self.fire('createDom');
-                callMethodByHierarchy(self, "createDom", "__createDom");
-                self.fire('afterCreateDom');
-                self.set("created", true);
-            }
-        },
+        {
 
-        render: function() {
-            var self = this;
-            // 是否已经渲染过
-            if (!self.get("rendered")) {
-                self.create();
-                self._renderUI();
-                // 实际上是 beforeRenderUI
-                self.fire('renderUI');
-                callMethodByHierarchy(self, "renderUI", "__renderUI");
-                self.fire('afterRenderUI');
-                self._bindUI();
-                // 实际上是 beforeBindUI
-                self.fire('bindUI');
-                callMethodByHierarchy(self, "bindUI", "__bindUI");
-                self.fire('afterBindUI');
-                self._syncUI();
-                // 实际上是 beforeSyncUI
-                self.fire('syncUI');
-                callMethodByHierarchy(self, "syncUI", "__syncUI");
-                self.fire('afterSyncUI');
-                self.set("rendered", true);
-            }
-        },
+            /**
+             * 建立节点，先不放在 dom 树中，为了性能!
+             */
+            create:function() {
+                var self = this;
+                // 是否生成过节点
+                if (!self.get("created")) {
+                    self._createDom();
+                    self.fire('createDom');
+                    callMethodByHierarchy(self, "createDom", "__createDom");
+                    self.fire('afterCreateDom');
+                    self.set("created", true);
+                }
+            },
 
-        /**
-         * 创建 dom 节点，但不放在 document 中
-         */
-        _createDom:noop,
+            /**
+             * 渲染组件到 dom 结构
+             */
+            render: function() {
+                var self = this;
+                // 是否已经渲染过
+                if (!self.get("rendered")) {
+                    self.create();
+                    self._renderUI();
+                    // 实际上是 beforeRenderUI
+                    self.fire('renderUI');
+                    callMethodByHierarchy(self, "renderUI", "__renderUI");
+                    self.fire('afterRenderUI');
+                    self._bindUI();
+                    // 实际上是 beforeBindUI
+                    self.fire('bindUI');
+                    callMethodByHierarchy(self, "bindUI", "__bindUI");
+                    self.fire('afterBindUI');
+                    self._syncUI();
+                    // 实际上是 beforeSyncUI
+                    self.fire('syncUI');
+                    callMethodByHierarchy(self, "syncUI", "__syncUI");
+                    self.fire('afterSyncUI');
+                    self.set("rendered", true);
+                }
+            },
 
-        /**
-         * 节点已经创建完毕，可以放在 document 中了
-         */
-        _renderUI: noop,
-        renderUI: noop,
+            /**
+             * 创建 dom 节点，但不放在 document 中
+             */
+            _createDom:noop,
 
-        /**
-         * 根据属性变化设置 UI
-         */
-        _bindUI: function() {
-            var self = this,
-                attrs = self.__attrs,
-                attr, m;
+            /**
+             * 节点已经创建完毕，可以放在 document 中了
+             */
+            _renderUI: noop,
 
-            for (attr in attrs) {
-                if (attrs.hasOwnProperty(attr)) {
-                    m = UI_SET + capitalFirst(attr);
-                    if (self[m]) {
-                        // 自动绑定事件到对应函数
-                        (function(attr, m) {
-                            self.on('after' + capitalFirst(attr) + 'Change', function(ev) {
-                                self[m](ev.newVal, ev);
-                            });
-                        })(attr, m);
+            /**
+             * @protected
+             */
+            renderUI: noop,
+
+            /**
+             * 根据属性变化设置 UI
+             */
+            _bindUI: function() {
+                var self = this,
+                    attrs = self.__attrs,
+                    attr, m;
+
+                for (attr in attrs) {
+                    if (attrs.hasOwnProperty(attr)) {
+                        m = UI_SET + capitalFirst(attr);
+                        if (self[m]) {
+                            // 自动绑定事件到对应函数
+                            (function(attr, m) {
+                                self.on('after' + capitalFirst(attr) + 'Change', function(ev) {
+                                    self[m](ev.newVal, ev);
+                                });
+                            })(attr, m);
+                        }
                     }
                 }
-            }
-        },
-        bindUI: noop,
+            },
 
-        /**
-         * 根据当前（初始化）状态来设置 UI
-         */
-        _syncUI: function() {
-            var self = this,
-                attrs = self.__attrs;
-            for (var a in attrs) {
-                if (attrs.hasOwnProperty(a)) {
-                    var m = UI_SET + capitalFirst(a);
-                    //存在方法，并且用户设置了初始值或者存在默认值，就同步状态
-                    if (self[m]
-                        // 用户如果设置了显式不同步，就不同步，比如一些值从 html 中读取，不需要同步再次设置
-                        && attrs[a].sync !== false
-                        && self.get(a) !== undefined) {
-                        self[m](self.get(a));
+            /**
+             * @protected
+             */
+            bindUI: noop,
+
+            /**
+             * 根据当前（初始化）状态来设置 UI
+             */
+            _syncUI: function() {
+                var self = this,
+                    attrs = self.__attrs;
+                for (var a in attrs) {
+                    if (attrs.hasOwnProperty(a)) {
+                        var m = UI_SET + capitalFirst(a);
+                        //存在方法，并且用户设置了初始值或者存在默认值，就同步状态
+                        if (self[m]
+                            // 用户如果设置了显式不同步，就不同步，比如一些值从 html 中读取，不需要同步再次设置
+                            && attrs[a].sync !== false
+                            && self.get(a) !== undefined) {
+                            self[m](self.get(a));
+                        }
                     }
                 }
-            }
-        },
-        syncUI: noop,
+            },
 
-        destroy: function() {
-            destroyHierarchy(this);
-            this.fire('destroy');
-            this.detach();
-        }
-    });
+            /**
+             * protected
+             */
+            syncUI: noop,
+
+
+            /**
+             * 销毁组件
+             */
+            destroy: function() {
+                destroyHierarchy(this);
+                this.fire('destroy');
+                this.detach();
+            }
+        });
 
     /**
      * 根据基类以及扩展类得到新类
-     * @param {function} base 基类
-     * @param exts 扩展类
+     * @name UIBase.create
+     * @static
+     * @param {Function} base 基类
+     * @param {Function[]} exts 扩展类
      * @param {Object} px 原型 mix 对象
      * @param {Object} sx 静态 mix 对象
+     * @returns {UIBase} 组合 后 的 新类
      */
     UIBase.create = function(base, exts, px, sx) {
         if (S.isArray(base)) {
@@ -15887,7 +15974,7 @@ KISSY.add('uibase/base', function (S, Base, DOM, Node) {
 
             // [ex1,ex2],扩展类前面的优先，ex1 定义的覆盖 ex2 定义的
             S.each(exts, function(ext) {
-                if (!ext){
+                if (!ext) {
                     return;
                 }
                 // 合并 ATTRS/HTML_PARSER 到主类
@@ -16144,6 +16231,7 @@ KISSY.add('uibase/boxrender', function(S, Node) {
          * 通过 render 来重建原有的内容
          */
         __createDom:function() {
+
             var self = this,
                 el = self.get("el");
             if (!el) {
@@ -16170,6 +16258,7 @@ KISSY.add('uibase/boxrender', function(S, Node) {
         },
 
         _uiSetElStyle:function(style) {
+
             this.get("el").css(style);
         },
 
@@ -16215,11 +16304,6 @@ KISSY.add('uibase/boxrender', function(S, Node) {
             }
         }
     };
-
-    if (1 > 2) {
-        Box._uiSetElAttrs()._uiSetElCls()._uiSetElStyle().
-            _uiSetWidth()._uiSetHeight()._uiSetHtml();
-    }
 
     return Box;
 }, {
@@ -16312,7 +16396,7 @@ KISSY.add("uibase/closerender", function(S, Node) {
                     "<span class='" +
                     this.get("prefixCls") + CLS_PREFIX + "close-x" +
                     "'>关闭<" + "/span>" +
-                    "<"+"/a>").appendTo(el);
+                    "<" + "/a>").appendTo(el);
                 self.set("closeBtn", closeBtn);
             }
         },
@@ -16324,10 +16408,6 @@ KISSY.add("uibase/closerender", function(S, Node) {
             closeBtn && closeBtn.detach();
         }
     };
-
-    if (1 > 2) {
-        Close._uiSetClosable();
-    }
 
     return Close;
 
@@ -16556,10 +16636,6 @@ KISSY.add("uibase/contentboxrender", function(S, Node, BoxRender) {
         c && contentEl.append(c);
     }
 
-    if (1 > 2) {
-        ContentBox._uiSetContentElCls()._uiSetContentElAttrs()._uiSetContentElStyle();
-    }
-
     return ContentBox;
 }, {
     requires:["node","./boxrender"]
@@ -16626,11 +16702,6 @@ KISSY.add("uibase/drag", function(S) {
         }
 
     };
-
-    if(1>2){
-        Drag._uiSetDraggable();
-    }
-
     return Drag;
 
 });/**
@@ -16724,9 +16795,6 @@ KISSY.add("uibase/mask", function() {
         }
     };
 
-    if(1>2){
-        Mask._uiSetMask();
-    }
 
     return Mask;
 }, {requires:["ua"]});/**
@@ -16900,7 +16968,7 @@ KISSY.add("uibase/position", function(S) {
  */
 KISSY.add("uibase/positionrender", function() {
 
-    var ZINDEX=9999;
+    var ZINDEX = 9999;
 
     function Position() {
     }
@@ -16909,6 +16977,9 @@ KISSY.add("uibase/positionrender", function() {
         x: {
             // 水平方向绝对位置
             valueFn:function() {
+                // 读到这里时，el 一定是已经加到 dom 树中了，否则报未知错误
+                // el 不在 dom 树中 offset 报错的
+                // 最早读就是在 syncUI 中，一点重复设置(读取自身 X 再调用 _uiSetX)无所谓了
                 return this.get("el") && this.get("el").offset().left;
             }
         },
@@ -16927,16 +16998,7 @@ KISSY.add("uibase/positionrender", function() {
     Position.prototype = {
 
         __renderUI:function() {
-            var el = this.get("el");
-            el.addClass(this.get("prefixCls") + "ext-position");
-            el.css({
-                visibility:"visible",
-                display: "",
-                left:-9999,
-                top:-9999,
-                bottom:"",
-                right:""
-            });
+            this.get("el").addClass(this.get("prefixCls") + "ext-position");
         },
 
         _uiSetZIndex:function(x) {
@@ -16989,9 +17051,6 @@ KISSY.add("uibase/resize", function(S) {
         }
     };
 
-    if(1>2){
-       Resize._uiSetResize();
-    }
 
     return Resize;
 });/**
@@ -17031,10 +17090,6 @@ KISSY.add("uibase/shimrender", function(S, Node) {
             }
         }
     };
-
-    if (1 > 2) {
-        Shim._uiSetShim();
-    }
 
     return Shim;
 }, {
@@ -17178,12 +17233,6 @@ KISSY.add("uibase/stdmodrender", function(S, Node) {
         }
     };
 
-    if (1 > 2) {
-        StdMod._uiSetHeaderStyle()._uiSetFooterStyle()
-            ._uiSetBodyStyle()
-            ._uiSetBodyContent()._uiSetHeaderContent()._uiSetFooterContent();
-    }
-
     return StdMod;
 
 }, {
@@ -17239,7 +17288,7 @@ KISSY.add("uibase/stdmodrender", function(S, Node) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:38
+build time: Aug 13 21:42
 */
 /**
  * container can delegate event for its children
@@ -17413,502 +17462,531 @@ KISSY.add("component/delegatechildren", function(S) {
  */
 KISSY.add("component/modelcontrol", function(S, Event, UIBase, UIStore, Render) {
 
-    function wrapperViewSetter(attrName) {
-        return function(ev) {
-            var value = ev.newVal;
-            this.get("view") && this.get("view").set(attrName, value);
-        };
-    }
-
-    function wrapperViewGetter(attrName) {
-        return function(v) {
-            return v === undefined ? this.get("view") && this.get("view").get(attrName) : v;
-        };
-    }
-
-
-    /**
-     * 不使用 valueFn
-     * 只有 render 时需要找到默认，其他时候不需要，防止莫名其妙初始化
-     */
-    function getDefaultView() {
-        // 逐层找默认渲染器
-        var self = this,
-            c = self.constructor,
-            DefaultRender;
-
-        while (c && !DefaultRender) {
-            DefaultRender = c['DefaultRender'];
-            c = c.superclass && c.superclass.constructor;
+        function wrapperViewSetter(attrName) {
+            return function(ev) {
+                var value = ev.newVal,self = this;
+                self.get("view") && self.get("view").set(attrName, value);
+            };
         }
-        if (DefaultRender) {
-            /**
-             * 将渲染层初始化所需要的属性，直接构造器设置过去
-             */
-            var attrs = self.__attrs,
-                // attrVals = self.__attrVals,
-                cfg = {};
-            for (var attrName in attrs) {
-                if (attrs.hasOwnProperty(attrName)) {
-                    var attrCfg = attrs[attrName],v;
-                    if (attrCfg.view) {
-                        // 只设置用户设置的值
-                        // 考虑 c 上的默认值
-                        if (
-                        // (v = attrVals[attrName])
-                            ( v = self.get(attrName) )
-                                !== undefined) {
-                            cfg[attrName] = v;
-                        }
-                    }
-                }
+
+        function wrapperViewGetter(attrName) {
+            return function(v) {
+                var self = this;
+                return v === undefined ?
+                    self.get("view") && self.get("view").get(attrName) :
+                    v;
+            };
+        }
+
+
+        function initChild(self, c, elBefore) {
+            // If this (parent) component doesn't have a DOM yet, call createDom now
+            // to make sure we render the child component's element into the correct
+            // parent element (otherwise render_ with a null first argument would
+            // render the child into the document body, which is almost certainly not
+            // what we want).
+            self.create();
+            var contentEl = self.getContentElement();
+            c.set("parent", self);
+            c.set("render", contentEl);
+            c.set("elBefore", elBefore);
+            // 如果 parent 已经渲染好了子组件也要立即渲染，就 创建 dom ，绑定事件
+            if (self.get("rendered")) {
+                c.render();
             }
-            return new DefaultRender(cfg);
+            // 如果 parent 也没渲染，子组件 create 出来和 parent 节点关联
+            // 子组件和 parent 组件一起渲染
+            else {
+// 之前设好属性，view ，logic 同步还没 bind ,create 不是 render ，还没有 bindUI
+                c.create();
+                contentEl[0].insertBefore(c.get("el")[0], elBefore && elBefore[0] || null);
+
+            }
         }
-        return 0;
-    }
 
-    function capitalFirst(s) {
-        s += '';
-        return s.charAt(0).toUpperCase() + s.substring(1);
-    }
+        /**
+         * 不使用 valueFn
+         * 只有 render 时需要找到默认，其他时候不需要，防止莫名其妙初始化
+         */
+        function getDefaultView() {
+            // 逐层找默认渲染器
+            var self = this,
+                c = self.constructor,
+                DefaultRender;
 
-    /**
-     * model and control for component
-     * @constructor
-     */
-    var ModelControl = UIBase.create([UIBase.Box], {
-
-            getCls:UIStore.getCls,
-
-            initializer:function() {
+            while (c && !DefaultRender) {
+                DefaultRender = c['DefaultRender'];
+                c = c.superclass && c.superclass.constructor;
+            }
+            if (DefaultRender) {
                 /**
-                 * 整理属性，对纯属于 view 的属性，添加 getter setter 直接到 view
+                 * 将渲染层初始化所需要的属性，直接构造器设置过去
                  */
-                var self = this,
-                    attrs = self.__attrs;
+                var attrs = self.__attrs,
+                    cfg = {};
                 for (var attrName in attrs) {
                     if (attrs.hasOwnProperty(attrName)) {
-                        var attrCfg = attrs[attrName];
+                        var attrCfg = attrs[attrName],v;
                         if (attrCfg.view) {
-                            // setter 不应该有实际操作，仅用于正规化比较好
-                            // attrCfg.setter = wrapperViewSetter(attrName);
-                            self.on("after" + capitalFirst(attrName) + "Change",
-                                wrapperViewSetter(attrName));
-                            // 逻辑层读值直接从 view 层读
-                            // 那么如果存在默认值也设置在 view 层
-                            attrCfg.getter = wrapperViewGetter(attrName);
+                            // 只设置用户设置的值
+                            // 考虑 c 上的默认值
+                            if (( v = self.get(attrName) ) !== undefined) {
+                                cfg[attrName] = v;
+                            }
                         }
                     }
                 }
-
-            },
-
-            /**
-             * control 层的渲染 ui 就是 render view
-             */
-            renderUI:function() {
-                var self = this;
-                self.get("view").render();
-                //then render my children
-                var children = self.get("children");
-                S.each(children, function(child) {
-                    child.render();
-                });
-            },
-
-            /**
-             * 控制层的 createDom 实际上就是调用 view 层的 create 来创建真正的节点
-             */
-            createDom:function() {
-                var self = this;
-                var view = self.get("view") || getDefaultView.call(self);
-                if (!view) {
-                    S.error("no view for");
-                    S.error(self.constructor);
-                    return;
-                }
-                view.create();
-                if (!self.get("allowTextSelection_")) {
-                    view.get("el").unselectable();
-                }
-                self.set("view", view);
-            },
-
-            /**
-             * Returns the DOM element into which child components are to be rendered,
-             or null if the container itself hasn't been rendered yet.  Overrides
-             */
-            getContentElement:function() {
-                var view = this.get('view');
-                return view && view.getContentElement();
-            },
-
-
-
-            _initChild:function(c, elBefore) {
-                var self = this;
-                // If this (parent) component doesn't have a DOM yet, call createDom now
-                // to make sure we render the child component's element into the correct
-                // parent element (otherwise render_ with a null first argument would
-                // render the child into the document body, which is almost certainly not
-                // what we want).
-                self.create();
-                var contentEl = self.getContentElement();
-                c.set("parent", self);
-                c.set("render", contentEl);
-                c.set("elBefore", elBefore);
-                // 如果 parent 已经渲染好了子组件也要立即渲染，就 创建 dom ，绑定事件
-                if (this.get("rendered")) {
-                    c.render();
-                }
-                // 如果 parent 也没渲染，子组件 create 出来和 parent 节点关联
-                // 子组件和 parent 组件一起渲染
-                else {
-                    // 之前设好属性，view ，logic 同步还没 bind ,create 不是 render ，还没有 bindUI
-                    c.create();
-                    contentEl[0].insertBefore(c.get("el")[0], elBefore && elBefore[0] || null);
-
-                }
-            },
-
-            /**
-             *
-             * @param c  children to be added
-             * @param {int=} index  position to be inserted
-             */
-            addChild:function(c, index) {
-                var self = this,
-                    children = self.get("children"),
-                    elBefore = children[index];
-                if (index) {
-                    children.splice(index, 0, c);
-                } else {
-                    children.push(c);
-                }
-                self._initChild(c, elBefore);
-            },
-
-            removeChild:function(c, destroy) {
-                var children = this.get("children"),
-                    index = S.indexOf(c, children);
-                if (index != -1) {
-                    children.splice(index, 1);
-                }
-                if (destroy) {
-                    c.destroy();
-                }
-            },
-
-            removeChildren:function(destroy) {
-                var t = [];
-                S.each(this.get("children"), function(c) {
-                    t.push(c);
-                });
-                var self = this;
-                S.each(t, function(c) {
-                    self.removeChild(c, destroy);
-                });
-                this.set("children", []);
-            },
-
-            getChildAt:function(index) {
-                var children = this.get("children");
-                return children[index];
-            },
-
-            _uiSetHandleMouseEvents:function(v) {
-                var self = this,
-                    view = self.get("view"),
-                    el = view.get("el");
-                if (v) {
-                    el.on("mouseenter", self._handleMouseEnter, self);
-                    el.on("mouseleave", self._handleMouseLeave, self);
-                    el.on("mousedown", self._handleMouseDown, self);
-                    el.on("mouseup", self._handleMouseUp, self);
-                    el.on("dblclick", self._handleDblClick, self);
-                } else {
-                    el.detach("mouseenter", self._handleMouseEnter, self);
-                    el.detach("mouseleave", self._handleMouseLeave, self);
-                    el.detach("mousedown", self._handleMouseDown, self);
-                    el.detach("mouseup", self._handleMouseUp, self);
-                    el.detach("dblclick", self._handleDblClick, self);
-                }
-            },
-
-            _handleDblClick:function(e) {
-                if (!this.get("disabled")) {
-                    this._performInternal(e);
-                }
-            },
-            isMouseEventWithinElement_:function(e, elem) {
-                var relatedTarget = e.relatedTarget;
-                relatedTarget = relatedTarget && S.one(relatedTarget)[0];
-                if (!relatedTarget) {
-                    return false;
-                }
-                // 在里面或等于自身都不算 mouseenter/leave
-                if (relatedTarget === elem[0] || elem.contains(relatedTarget)) {
-                    return true;
-                }
-            },
-            _handleMouseOver:function(e) {
-                if (this.get("disabled")) {
-                    return true;
-                }
-                var self = this,
-                    view = self.get("view"),
-                    el = view.get("el");
-                if (!self.isMouseEventWithinElement_(e, el)) {
-                    self._handleMouseEnter(e);
-                }
-            },
-
-
-            _handleMouseOut:function(e) {
-                if (this.get("disabled")) {
-                    return true;
-                }
-                var self = this,
-                    view = self.get("view"),
-                    el = view.get("el");
-                if (!self.isMouseEventWithinElement_(e, el)) {
-                    self._handleMouseLeave(e);
-                }
-            },
-
-            /**
-             * root element handler for mouse enter
-             */
-            _handleMouseEnter:function() {
-                if (this.get("disabled")) {
-                    return true;
-                }
-                this.set("highlighted", true);
-            },
-            /**
-             * root element handler for mouse leave
-             */
-            _handleMouseLeave:function() {
-                if (this.get("disabled")) {
-                    return true;
-                }
-                this.set("active", false);
-                this.set("highlighted", false);
-            },
-            /**
-             * root element handler for mouse down
-             * @param ev
-             */
-            _handleMouseDown:function(ev) {
-                if (this.get("disabled")) {
-                    return true;
-                }
-                if (ev.which == 1 && this.get("activeable")) {
-                    this.set("active", true);
-                }
-                var el = this.getKeyEventTarget();
-                // 左键，否则 unselectable 在 ie 下鼠标点击获得不到焦点
-                if (ev.which == 1 && el.attr("tabindex") >= 0) {
-                    this.getKeyEventTarget()[0].focus();
-                }
-                // Cancel the default action unless the control
-                // allows text selection.
-                if (ev.which == 1 && !this.get("allowTextSelection_")) {
-                    // firefox 不会引起焦点转移
-                    ev.preventDefault();
-                }
-            },
-            /**
-             * whether component can receive focus
-             */
-            _uiSetFocusable:function(v) {
-                var self = this,
-                    el = self.getKeyEventTarget();
-                if (v) {
-                    el.on("focus", self._handleFocus, self);
-                    el.on("blur", self._handleBlur, self);
-                    el.on("keydown", self._handleKeydown, self);
-                } else {
-                    el.detach("focus", self._handleFocus, self);
-                    el.detach("blur", self._handleBlur, self);
-                    el.detach("keydown", self._handleKeydown, self);
-                }
-            },
-
-            /**
-             * 焦点所在元素即键盘事件处理元素
-             */
-            getKeyEventTarget:function() {
-                return this.get("view").getKeyEventTarget();
-            },
-            /**
-             * root element handler for mouse up
-             */
-            _handleMouseUp:function(ev) {
-                if (this.get("disabled")) {
-                    return true;
-                }
-                // 左键
-                if (this.get("active") && ev.which == 1) {
-                    this._performInternal(ev);
-                    this.set("active", false);
-                }
-            },
-            /**
-             * root element handler for focus
-             */
-            _handleFocus:function() {
-                this.set("focused", true);
-            },
-            /**
-             * root element handler for blur
-             */
-            _handleBlur:function() {
-                this.set("focused", false);
-            },
-
-            _handleKeyEventInternal:function(ev) {
-                if (ev.keyCode == Event.KeyCodes.ENTER) {
-                    return this._performInternal(ev);
-                }
-            },
-            /**
-             * root element handler for keydown
-             * @param ev
-             */
-            _handleKeydown:function(ev) {
-                if (this.get("disabled")) {
-                    return true;
-                }
-                if (this._handleKeyEventInternal(ev)) {
-                    ev.halt();
-                    return true;
-                }
-            },
-
-            /**
-             * root element handler for click
-             */
-            _performInternal:function() {
-            },
-
-            destructor:function() {
-                var self = this;
-                var children = self.get("children");
-                S.each(children, function(child) {
-                    child.destroy();
-                });
-                var view = self.get("view");
-                if (view) {
-                    view.destroy();
-                }
+                return new DefaultRender(cfg);
             }
-        },
-        {
-            ATTRS:{
-                /**
-                 *  session state
-                 */
+            return 0;
+        }
 
-                    // 是否绑定鼠标事件
-                handleMouseEvents:{
-                    value:true
-                },
+        function getClsByHierarch(self) {
+            if (self.__componentClasses) {
+                return self.__componentClasses;
+            }
+            var constructor = self.constructor,re = [];
+            while (constructor && constructor != ModelControl) {
+                var cls = UIStore.getClsByUI(constructor);
+                if (cls) {
+                    re.push(cls);
+                }
+                constructor = constructor.superclass && constructor.superclass.constructor;
+            }
+            return self.__componentClasses = re.join(" ");
+        }
 
-                // 是否支持焦点处理
-                focusable:{
-                    /*
-                     *  observer synchronization , model 分成两类：
-                     *                view 负责监听 view 类 model 变化更新界面
-                     *                control 负责监听 control 类变化改变逻辑
-                     *  problem : Observer behavior is hard to understand and debug because it's implicit behavior.
-                     *
-                     *  Keeping screen state and session state synchronized is an important task
-                     *  Data Binding
-                     */
-                    view:true,
-                    value:true
+
+        function capitalFirst(s) {
+            return s.charAt(0).toUpperCase() + s.substring(1);
+        }
+
+        /**
+         * model and control for component
+         * @name ModelControl
+         * @constructor
+         */
+        var ModelControl = UIBase.create([UIBase.Box], {
+
+                getCls:UIStore.getCls,
+
+                initializer:function() {
                     /**
-                     * In general data binding gets tricky
-                     * because if you have to avoid cycles where a change to the control,
-                     * changes the record set, which updates the control,
-                     * which updates the record set....
-                     * The flow of usage helps avoid these -
-                     * we load from the session state to the screen when the screen is opened,
-                     * after that any changes to the screen state propagate back to the session state.
-                     * It's unusual for the session state to be updated directly once the screen is up.
-                     * As a result data binding might not be entirely bi-directional -
-                     * just confined to initial upload and
-                     * then propagating changes from the controls to the session state.
+                     * 整理属性，对纯属于 view 的属性，添加 getter setter 直接到 view
                      */
-                    // sync
-                },
-
-                activeable:{
-                    value:true
-                },
-
-                focused:{
-                    view:true
-                },
-                active:{
-                    view:true
-                },
-
-                highlighted:{
-                    view:true
-                },
-
-                //子组件
-                children:{
-                    value:[],
-                    setter:function(v) {
-                        var self = this;
-                        //自动给儿子组件加入父亲链
-                        S.each(v, function(c) {
-                            self._initChild(c);
-                        });
+                    var self = this,
+                        attrs = self.__attrs;
+                    for (var attrName in attrs) {
+                        if (attrs.hasOwnProperty(attrName)) {
+                            var attrCfg = attrs[attrName];
+                            if (attrCfg.view) {
+// setter 不应该有实际操作，仅用于正规化比较好
+// attrCfg.setter = wrapperViewSetter(attrName);
+                                self.on("after" + capitalFirst(attrName) + "Change",
+                                    wrapperViewSetter(attrName));
+// 逻辑层读值直接从 view 层读
+// 那么如果存在默认值也设置在 view 层
+// 逻辑层不要设置 getter
+                                attrCfg.getter = wrapperViewGetter(attrName);
+                            }
+                        }
                     }
                 },
 
-                // 转交给渲染层
-                prefixCls:{
-                    view:true,
-                    value:"ks-"
+                /**
+                 * control 层的渲染 ui 就是 render view
+                 * finally，不能被 override
+                 */
+                renderUI:function() {
+                    var self = this;
+                    self.get("view").render();
+                    //then render my children
+                    var children = self.get("children");
+                    S.each(children, function(child) {
+                        // 不在 Base 初始化设置属性时运行，防止和其他初始化属性冲突
+                        initChild(self, child);
+                        child.render();
+                    });
                 },
 
-                // 父组件
-                // Parent component to which events will be propagated.
-                parent:{
+                /**
+                 * 控制层的 createDom 实际上就是调用 view 层的 create 来创建真正的节点
+                 */
+                createDom:function() {
+                    var self = this;
+                    var view = self.get("view") || getDefaultView.call(self);
+                    if (!view) {
+                        S.error("no view for");
+                        S.error(self.constructor);
+                        return;
+                    }
+                    view.create();
+                    view._renderCls(getClsByHierarch(self));
+                    if (!self.get("allowTextSelection_")) {
+                        view.get("el").unselectable();
+                    }
+                    self.set("view", view);
                 },
 
-                //渲染层
-                view:{
+                /**
+                 * Returns the DOM element into which child components are to be rendered,
+                 or null if the container itself hasn't been rendered yet.  Overrides
+                 */
+                getContentElement:function() {
+                    var view = this.get('view');
+                    return view && view.getContentElement();
                 },
 
-                //是否禁用
-                disabled:{
-                    view:true
+                /**
+                 *
+                 * @param c  children to be added
+                 * @param {int=} index  position to be inserted
+                 */
+                addChild:function(c, index) {
+                    var self = this,
+                        children = self.get("children"),
+                        elBefore = children[index];
+                    if (index) {
+                        children.splice(index, 0, c);
+                    } else {
+                        children.push(c);
+                    }
+                    initChild(self, c, elBefore);
                 },
 
-                // 是否允许 DOM 结构内的文字选定
-                allowTextSelection_:{
-                    value:false
+                removeChild:function(c, destroy) {
+                    var children = this.get("children"),
+                        index = S.indexOf(c, children);
+                    if (index != -1) {
+                        children.splice(index, 1);
+                    }
+                    if (destroy) {
+                        c.destroy();
+                    }
+                },
+
+                removeChildren:function(destroy) {
+                    var self = this,
+                        t = [].concat(self.get("children"));
+                    S.each(t, function(c) {
+                        self.removeChild(c, destroy);
+                    });
+                    self.set("children", []);
+                },
+
+                getChildAt:function(index) {
+                    var children = this.get("children");
+                    return children[index];
+                },
+
+                _uiSetHandleMouseEvents:function(v) {
+                    var self = this,
+                        el = self.get("el");
+                    if (v) {
+                        el.on("mouseenter", self._handleMouseEnter, self);
+                        el.on("mouseleave", self._handleMouseLeave, self);
+                        el.on("mousedown", self._handleMouseDown, self);
+                        el.on("mouseup", self._handleMouseUp, self);
+                        el.on("dblclick", self._handleDblClick, self);
+                    } else {
+                        el.detach("mouseenter", self._handleMouseEnter, self);
+                        el.detach("mouseleave", self._handleMouseLeave, self);
+                        el.detach("mousedown", self._handleMouseDown, self);
+                        el.detach("mouseup", self._handleMouseUp, self);
+                        el.detach("dblclick", self._handleDblClick, self);
+                    }
+                },
+
+                _handleDblClick:function(e) {
+                    var self = this;
+                    if (!self.get("disabled")) {
+                        self._performInternal(e);
+                    }
+                },
+
+                _isMouseEventWithinElement:function(e, elem) {
+                    var relatedTarget = e.relatedTarget;
+                    if (!relatedTarget) {
+                        return false;
+                    }
+                    // 在里面或等于自身都不算 mouseenter/leave
+                    if (relatedTarget === elem[0]
+                        || elem.contains(relatedTarget)) {
+                        return true;
+                    }
+                },
+
+                _handleMouseOver:function(e) {
+                    var self = this,
+                        el = self.get("el");
+                    if (self.get("disabled")) {
+                        return true;
+                    }
+                    if (!self._isMouseEventWithinElement(e, el)) {
+                        self._handleMouseEnter(e);
+                    }
+                },
+
+
+                _handleMouseOut:function(e) {
+                    var self = this,
+                        el = self.get("el");
+                    if (self.get("disabled")) {
+                        return true;
+                    }
+                    if (!self._isMouseEventWithinElement(e, el)) {
+                        self._handleMouseLeave(e);
+                    }
+                },
+
+                /**
+                 * root element handler for mouse enter
+                 */
+                _handleMouseEnter:function() {
+                    var self = this;
+                    if (self.get("disabled")) {
+                        return true;
+                    }
+                    self.set("highlighted", true);
+                },
+
+                /**
+                 * root element handler for mouse leave
+                 */
+                _handleMouseLeave:function() {
+                    var self = this;
+                    if (self.get("disabled")) {
+                        return true;
+                    }
+                    self.set("active", false);
+                    self.set("highlighted", false);
+                },
+
+                /**
+                 * root element handler for mouse down
+                 * @param ev
+                 */
+                _handleMouseDown:function(ev) {
+                    var self = this;
+                    if (self.get("disabled")) {
+                        return true;
+                    }
+                    if (ev.which == 1 && self.get("activeable")) {
+                        self.set("active", true);
+                    }
+                    var el = self.getKeyEventTarget();
+                    // 左键，否则 unselectable 在 ie 下鼠标点击获得不到焦点
+                    if (ev.which == 1 && el.attr("tabindex") >= 0) {
+                        self.getKeyEventTarget()[0].focus();
+                    }
+                    // Cancel the default action unless the control
+                    // allows text selection.
+                    if (ev.which == 1 && !self.get("allowTextSelection_")) {
+                        // firefox 不会引起焦点转移
+                        ev.preventDefault();
+                    }
+                },
+
+                /**
+                 * whether component can receive focus
+                 */
+                _uiSetFocusable:function(v) {
+                    var self = this,
+                        el = self.getKeyEventTarget();
+                    if (v) {
+                        el.on("focus", self._handleFocus, self);
+                        el.on("blur", self._handleBlur, self);
+                        el.on("keydown", self._handleKeydown, self);
+                    } else {
+                        el.detach("focus", self._handleFocus, self);
+                        el.detach("blur", self._handleBlur, self);
+                        el.detach("keydown", self._handleKeydown, self);
+                    }
+                },
+
+                _uiSetFocused:function(v) {
+                    this._forwardSetAttrToView("focused", v);
+                },
+
+                _uiSetHighlighted:function(v) {
+                    this._forwardSetAttrToView("highlighted", v);
+                },
+
+                _forwardSetAttrToView:function(attrName, v) {
+                    var view = this.get("view");
+                    view["_set" + capitalFirst(attrName)].call(view, v, getClsByHierarch(this));
+                },
+
+
+                _uiSetDisabled:function(v) {
+                    this._forwardSetAttrToView("disabled", v);
+                },
+
+
+                _uiSetActive:function(v) {
+                    this._forwardSetAttrToView("active", v);
+                },
+
+                /**
+                 * 焦点所在元素即键盘事件处理元素
+                 */
+                getKeyEventTarget:function() {
+                    return this.get("view").getKeyEventTarget();
+                },
+                /**
+                 * root element handler for mouse up
+                 */
+                _handleMouseUp:function(ev) {
+                    var self = this;
+                    if (self.get("disabled")) {
+                        return true;
+                    }
+                    // 左键
+                    if (self.get("active") && ev.which == 1) {
+                        self._performInternal(ev);
+                        self.set("active", false);
+                    }
+                },
+                /**
+                 * root element handler for focus
+                 */
+                _handleFocus:function() {
+                    this.set("focused", true);
+                },
+                /**
+                 * root element handler for blur
+                 */
+                _handleBlur:function() {
+                    this.set("focused", false);
+                },
+
+                _handleKeyEventInternal:function(ev) {
+                    if (ev.keyCode == Event.KeyCodes.ENTER) {
+                        return this._performInternal(ev);
+                    }
+                },
+                /**
+                 * root element handler for keydown
+                 * @param ev
+                 */
+                _handleKeydown:function(ev) {
+                    var self = this;
+                    if (self.get("disabled")) {
+                        return true;
+                    }
+                    if (self._handleKeyEventInternal(ev)) {
+                        ev.halt();
+                        return true;
+                    }
+                },
+
+                /**
+                 * root element handler for click
+                 */
+                _performInternal:function() {
+                },
+
+                destructor:function() {
+                    var self = this,
+                        children = self.get("children");
+                    S.each(children, function(child) {
+                        child.destroy();
+                    });
+                    var view = self.get("view");
+                    if (view) {
+                        view.destroy();
+                    }
                 }
             },
+            {
+                ATTRS:{
+                    /**
+                     *  session state
+                     */
 
-            DefaultRender:Render
-        });
+                        // 是否绑定鼠标事件
+                    handleMouseEvents:{
+                        value:true
+                    },
 
-    if (1 > 2) {
-        ModelControl._uiSetHandleMouseEvents();
+                    // 是否支持焦点处理
+                    focusable:{
+                        /*
+                         *  observer synchronization , model 分成两类：
+                         *view 负责监听 view 类 model 变化更新界面
+                         *control 负责监听 control 类变化改变逻辑
+                         *  problem : Observer behavior is hard to understand and debug because it's implicit behavior.
+                         *
+                         *  Keeping screen state and session state synchronized is an important task
+                         *  Data Binding
+                         */
+                        view:true,
+                        value:true
+                        /**
+                         * In general data binding gets tricky
+                         * because if you have to avoid cycles where a change to the control,
+                         * changes the record set, which updates the control,
+                         * which updates the record set....
+                         * The flow of usage helps avoid these -
+                         * we load from the session state to the screen when the screen is opened,
+                         * after that any changes to the screen state propagate back to the session state.
+                         * It's unusual for the session state to be updated directly once the screen is up.
+                         * As a result data binding might not be entirely bi-directional -
+                         * just confined to initial upload and
+                         * then propagating changes from the controls to the session state.
+                         */
+                        // sync
+                    },
+
+                    activeable:{
+                        value:true
+                    },
+
+                    focused:{},
+
+                    active:{},
+
+                    highlighted:{},
+
+                    //子组件
+                    children:{
+                        value:[]
+                    },
+
+                    // 转交给渲染层
+                    prefixCls:{
+                        view:true,
+                        value:"ks-"
+                    },
+
+                    // 父组件
+                    // Parent component to which events will be propagated.
+                    parent:{
+                    },
+
+                    //渲染层
+                    view:{
+                    },
+
+                    //是否禁用
+                    disabled:{},
+
+                    // 是否允许 DOM 结构内的文字选定
+                    allowTextSelection_:{
+                        value:false
+                    }
+                },
+
+                DefaultRender:Render
+            });
+
+        return ModelControl;
+    },
+    {
+        requires:['event','uibase','./uistore','./render']
     }
-
-    return ModelControl;
-}, {
-    requires:['event','uibase','./uistore','./render']
-});
+)
+    ;
 /**
  *  Note:
  *  控制层元属性配置中 view 的作用
@@ -17920,7 +17998,24 @@ KISSY.add("component/modelcontrol", function(S, Event, UIBase, UIStore, Render) 
  * @refer http://martinfowler.com/eaaDev/uiArchs.html
  */
 KISSY.add("component/render", function(S, UIBase, UIStore) {
+
+    function tagFunc(self, classes, tag) {
+        return self.getCls(classes.split(/\s+/).join(tag + " ") + tag);
+    }
+
     return UIBase.create([UIBase.Box.Render], {
+
+        _completeClasses:function(classes, tag) {
+            return tagFunc(this, classes, tag);
+        },
+
+        /**
+         * @protected
+         */
+        _renderCls:function(componentCls) {
+            var self = this;
+            self.get("el").addClass(self.getCls(componentCls));
+        },
 
         getCls:UIStore.getCls,
 
@@ -17932,6 +18027,9 @@ KISSY.add("component/render", function(S, UIBase, UIStore) {
             return this.get("contentEl") || this.get("el");
         },
 
+        /**
+         * @protected
+         */
         _uiSetFocusable:function(v) {
             var el = this.getKeyEventTarget(),
                 tabindex = el.attr("tabindex");
@@ -17940,19 +18038,53 @@ KISSY.add("component/render", function(S, UIBase, UIStore) {
             } else if (!(tabindex >= 0) && v) {
                 el.attr("tabindex", 0);
             }
+        },
+
+        /**
+         * @protected
+         */
+        _setHighlighted:function(v, componentCls) {
+            var self = this,el = self.get("el");
+            el[v ? 'addClass' : 'removeClass'](tagFunc(self, componentCls, "-hover"));
+        },
+
+        /**
+         * @protected
+         */
+        _setDisabled:function(v, componentCls) {
+            var self = this,el = self.get("el");
+            el[v ? 'addClass' : 'removeClass'](tagFunc(self, componentCls, "-disabled"))
+                //不能被 tab focus 到
+                //support aria
+                .attr({
+                    "tabindex": v ? -1 : 0,
+                    "aria-disabled": v
+                });
+
+        },
+        /**
+         * @protected
+         */
+        _setActive:function(v, componentCls) {
+            var self = this;
+            self.get("el")[v ? 'addClass' : 'removeClass'](tagFunc(self, componentCls, "-active"))
+                .attr("aria-pressed", !!v);
+        },
+        /**
+         * @protected
+         */
+        _setFocused:function(v, componentCls) {
+            var self = this,el = self.get("el");
+            el[v ? 'addClass' : 'removeClass'](tagFunc(self, componentCls, "-focused"));
         }
+
     }, {
         ATTRS:{
             /**
              *  screen state
              */
             prefixCls:{},
-            focusable:{},
-            highlighted:{},
-            focused:{},
-            active:{},
-            //是否禁用
-            disabled:{}
+            focusable:{}
         }
     });
 }, {
@@ -17979,6 +18111,20 @@ KISSY.add("component/render", function(S, UIBase, UIStore) {
         return ui;
     }
 
+    function getClsByUI(constructor) {
+        for (var u in uis) {
+            var ui = uis[u];
+            if (ui.ui == constructor) {
+                return u;
+            }
+        }
+        return 0;
+    }
+
+    function getClsByInstance(self) {
+        return getClsByUI(self.constructor);
+    }
+
     function setUIByClass(cls, uic) {
         uis[cls] = uic;
     }
@@ -17987,13 +18133,17 @@ KISSY.add("component/render", function(S, UIBase, UIStore) {
     function getCls(cls) {
         var cs = S.trim(cls).split(/\s+/);
         for (var i = 0; i < cs.length; i++) {
-            cs[i] = this.get("prefixCls") + cs[i];
+            if (cs[i]) {
+                cs[i] = this.get("prefixCls") + cs[i];
+            }
         }
         return cs.join(" ");
     }
 
     return {
         getCls:getCls,
+        getClsByUI:getClsByUI,
+        getClsByInstance:getClsByInstance,
         getUIByClass:getUIByClass,
         setUIByClass:setUIByClass,
         PRIORITY:{
@@ -18012,9 +18162,10 @@ KISSY.add("component/render", function(S, UIBase, UIStore) {
 KISSY.add("component", function(KISSY, ModelControl, Render, Container, UIStore, DelegateChildren, DecorateChildren, DecorateChild) {
 
     /**
-     * @exports Component as KISSY.Component
+     * @name Component
+     * @namespace
      */
-    var Component = {
+    return {
         ModelControl:ModelControl,
         Render:Render,
         Container:Container,
@@ -18023,10 +18174,6 @@ KISSY.add("component", function(KISSY, ModelControl, Render, Container, UIStore,
         DecorateChild:DecorateChild,
         DecorateChildren:DecorateChildren
     };
-    if (1 > 2) {
-        Component.DecorateChildren;
-    }
-    return Component;
 }, {
     requires:['component/modelcontrol',
         'component/render',
@@ -18039,7 +18186,7 @@ KISSY.add("component", function(KISSY, ModelControl, Render, Container, UIStore,
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 /**
  * Switchable
@@ -20639,11 +20786,11 @@ KISSY.add("switchable", function(S, Switchable, Aria, Accordion, AAria, autoplay
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 20:30
+build time: Aug 13 22:54
 */
 /**
  * KISSY Overlay
- * @author  玉伯<lifesinger@gmail.com>, 承玉<yiminghe@gmail.com>,乔花<qiaohua@taobao.com>
+ * @author  承玉<yiminghe@gmail.com>,乔花<qiaohua@taobao.com>
  */
 KISSY.add("overlay/overlayrender", function(S, UA, UIBase, Component) {
 
@@ -20658,11 +20805,7 @@ KISSY.add("overlay/overlayrender", function(S, UA, UIBase, Component) {
         UA['ie'] === 6 ? require("shimrender") : null,
         require("closerender"),
         require("maskrender")
-    ], {
-        renderUI:function() {
-            this.get("el").addClass(this.get("prefixCls") + "overlay");
-        }
-    });
+    ]);
 }, {
     requires: ["ua","uibase","component"]
 });
@@ -20809,7 +20952,11 @@ KISSY.add("overlay/aria", function(S,Event) {
     return Aria;
 },{
     requires:['event']
-});KISSY.add("overlay/effect", function(S) {
+});/**
+ * effect applied when overlay shows or hides
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("overlay/effect", function(S) {
     var NONE = 'none',DURATION = 0.5;
     var effects = {fade:["Out","In"],slide:["Up","Down"]};
 
@@ -20902,10 +21049,20 @@ KISSY.add("overlay/overlay", function(S, UIBase, Component, OverlayRender, Effec
 
     Overlay.DefaultRender = OverlayRender;
 
+
+    Component.UIStore.setUIByClass("overlay", {
+        priority:Component.UIStore.PRIORITY.LEVEL1,
+        ui:Overlay
+    });
+
     return Overlay;
 }, {
     requires:['uibase','component','./overlayrender','./effect']
-});KISSY.add("overlay/dialogrender", function(S, UIBase, OverlayRender, AriaRender) {
+});/**
+ * render for dialog
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("overlay/dialogrender", function(S, UIBase, OverlayRender, AriaRender) {
     function require(s) {
         return S.require("uibase/" + s);
     }
@@ -20920,7 +21077,7 @@ KISSY.add("overlay/overlay", function(S, UIBase, Component, OverlayRender, Effec
  * KISSY.Dialog
  * @author  承玉<yiminghe@gmail.com>, 乔花<qiaohua@taobao.com>
  */
-KISSY.add('overlay/dialog', function(S, Overlay, UIBase, DialogRender, Aria) {
+KISSY.add('overlay/dialog', function(S, Component, Overlay, UIBase, DialogRender, Aria) {
 
     function require(s) {
         return S.require("uibase/" + s);
@@ -20934,7 +21091,6 @@ KISSY.add('overlay/dialog', function(S, Overlay, UIBase, DialogRender, Aria) {
     ], {
         renderUI:function() {
             var self = this;
-            self.get("el").addClass(this.get("prefixCls") + "dialog");
             //设置值，drag-ext 绑定时用到
             self.set("handlers", [self.get("header")]);
         }
@@ -20948,10 +21104,15 @@ KISSY.add('overlay/dialog', function(S, Overlay, UIBase, DialogRender, Aria) {
 
     Dialog.DefaultRender = DialogRender;
 
+    Component.UIStore.setUIByClass("dialog", {
+        priority:Component.UIStore.PRIORITY.LEVEL2,
+        ui:Dialog
+    });
+
     return Dialog;
 
 }, {
-    requires:[ "overlay/overlay","uibase",'overlay/dialogrender','./aria']
+    requires:[ "component","overlay/overlay","uibase",'overlay/dialogrender','./aria']
 });
 
 /**
@@ -20964,7 +21125,7 @@ KISSY.add('overlay/dialog', function(S, Overlay, UIBase, DialogRender, Aria) {
  * KISSY.Popup
  * @author  乔花<qiaohua@taobao.com> , 承玉<yiminghe@gmail.com>
  */
-KISSY.add('overlay/popup', function(S, Overlay, undefined) {
+KISSY.add('overlay/popup', function(S, Component, Overlay, undefined) {
 
     var POPUP_DELAY = 100;
 
@@ -21091,9 +21252,14 @@ KISSY.add('overlay/popup', function(S, Overlay, undefined) {
     });
 
 
+    Component.UIStore.setUIByClass("popup", {
+        priority:Component.UIStore.PRIORITY.LEVEL1,
+        ui:Popup
+    });
+
     return Popup;
 }, {
-    requires:[ "./overlay"]
+    requires:[ "component","./overlay"]
 });
 
 /**
@@ -21114,7 +21280,7 @@ KISSY.add('overlay/popup', function(S, Overlay, undefined) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 KISSY.add("suggest", function(S, Sug) {
     S.Suggest = Sug;
@@ -22295,7 +22461,7 @@ KISSY.add('suggest/base', function(S, DOM, Event, UA,undefined) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 /**
  * @fileoverview 图像放大区域
@@ -22920,7 +23086,7 @@ KISSY.add("imagezoom", function(S, ImageZoom) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:38
+build time: Aug 13 21:42
 */
 /**
  * KISSY Calendar
@@ -24199,7 +24365,7 @@ KISSY.add("calendar", function(S, C, Page, Time, Date) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 /**
  * deletable menuitem
@@ -24209,16 +24375,27 @@ KISSY.add("menu/delmenuitem", function(S, Node, UIBase, Component, MenuItem, Del
     var $ = Node.all;
     var CLS = DelMenuItemRender.CLS,
         DEL_CLS = DelMenuItemRender.DEL_CLS;
+
+    function del(self) {
+        var parent = self.get("parent");
+        if (parent.fire("beforeDelete", {
+            target:self
+        }) === false) {
+            return;
+        }
+        parent.removeChild(self, true);
+        parent.set("highlightedItem", null);
+        parent.fire("delete", {
+            target:self
+        });
+    }
+
     var DelMenuItem = UIBase.create(MenuItem, {
         _performInternal:function(e) {
             var target = $(e.target);
             // 点击了删除
             if (target.hasClass(this.getCls(DEL_CLS))) {
-                this.get("parent").removeChild(this, true);
-                this.get("parent").set("highlightedItem", null);
-                this.get("parent").fire("delete", {
-                    target:this
-                });
+                del(this);
                 return true;
             }
             return MenuItem.prototype._performInternal.call(this, e);
@@ -24226,11 +24403,7 @@ KISSY.add("menu/delmenuitem", function(S, Node, UIBase, Component, MenuItem, Del
         _handleKeydown:function(e) {
             // d 键
             if (e.keyCode === Node.KeyCodes.D) {
-                this.get("parent").removeChild(this, true);
-                this.get("parent").set("highlightedItem", null);
-                this.get("parent").fire("delete", {
-                    target:this
-                });
+                del(this);
                 return true;
             }
         }
@@ -24267,10 +24440,7 @@ KISSY.add("menu/delmenuitemrender", function(S, Node, UIBase, Component, MenuIte
         }));
     }
 
-    var DelMenuItemRender = UIBase.create(MenuItemRender, {
-        renderUI:function() {
-            this.get("el").addClass(this.getCls(CLS))
-        },
+    return UIBase.create(MenuItemRender, {
         createDom:function() {
             addDel(this);
         },
@@ -24295,19 +24465,13 @@ KISSY.add("menu/delmenuitemrender", function(S, Node, UIBase, Component, MenuIte
         CLS:CLS,
         DEL_CLS:DEL_CLS
     });
-
-    if (1 > 2) {
-        DelMenuItemRender._uiSetDelTooltip().delEl;
-    }
-    return DelMenuItemRender;
-
 }, {
     requires:['node','uibase','component','./menuitemrender']
 });/**
  *  menu where items can be filtered based on user keyboard input
  *  @author yiminghe@gmail.com
  */
-KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
+KISSY.add("menu/filtermenu", function(S, UIBase, Component, Menu, FilterMenuRender) {
 
     var HIT_CLS = "menuitem-hit";
 
@@ -24379,7 +24543,7 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
                             //待补全的项
                             lastWord = items[items.length - 1];
                             var item = self.get("highlightedItem"),
-                                content = item && item.get("caption");
+                                content = item && item.get("content");
                             // 有高亮而且最后一项不为空补全
                             if (content && content.indexOf(lastWord) > -1
                                 && lastWord) {
@@ -24415,13 +24579,12 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
 
                 // 过滤所有子组件
                 S.each(children, function(c) {
-                    var content = c.get("caption"),
-                        view = c.get("view");
+                    var content = c.get("content");
                     if (!str) {
                         // 没有过滤条件
                         // 恢复原有内容
                         // 显示出来
-                        view.set("content", content);
+                        c.get("contentEl").html(content);
                         c.set("visible", true);
                     } else {
                         if (content.indexOf(str) > -1) {
@@ -24429,7 +24592,7 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
                             // 显示
                             c.set("visible", true);
                             // 匹配子串着重 wrap
-                            view.set("content", content.replace(strExp, function(m) {
+                            c.get("contentEl").html(content.replace(strExp, function(m) {
                                 return "<span class='" + hit + "'>" + m + "<" + "/span>";
                             }));
                         } else {
@@ -24476,13 +24639,14 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Menu, FilterMenuRender) {
         }
     );
 
-    if (1 > 2) {
-        FilterMenu._uiSetFilterStr();
-    }
+    Component.UIStore.setUIByClass("filtermenu", {
+        priority:Component.UIStore.PRIORITY.LEVEL2,
+        ui:FilterMenu
+    });
 
     return FilterMenu;
 }, {
-    requires:['uibase','./menu','./filtermenurender']
+    requires:['uibase','component','./menu','./filtermenurender']
 });/**
  * filter menu render
  * 1.create filter input
@@ -24495,7 +24659,7 @@ KISSY.add("menu/filtermenurender", function(S, Node, UIBase, MenuRender) {
         MENU_FILTER_LABEL = "menu-filter-label",
         MENU_CONTENT = "menu-content";
 
-    var FilterMenuRender = UIBase.create(MenuRender, {
+    return UIBase.create(MenuRender, {
         getContentElement:function() {
             return this.get("menuContent");
         },
@@ -24554,12 +24718,6 @@ KISSY.add("menu/filtermenurender", function(S, Node, UIBase, MenuRender) {
             }
         }
     });
-
-    if (1 > 2) {
-        FilterMenuRender._uiSetLabel();
-    }
-
-    return FilterMenuRender;
 
 }, {
     requires:['node','uibase','./menurender']
@@ -24740,11 +24898,6 @@ KISSY.add("menu/menu", function(S, Event, UIBase, Component, MenuRender) {
         priority:Component.UIStore.PRIORITY.LEVEL1,
         ui:Menu
     });
-
-    if (1 > 2) {
-        Menu._uiSetHighlightedItem();
-    }
-
     return Menu;
 
 }, {
@@ -24793,7 +24946,16 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
             return true;
         },
 
+        _uiSetChecked:function(v) {
+            this._forwardSetAttrToView("checked", v);
+        },
+
+        _uiSetSelected:function(v) {
+            this._forwardSetAttrToView("selected", v);
+        },
+
         _uiSetHighlighted:function(v) {
+            MenuItem.superclass._uiSetHighlighted.apply(this, arguments);
             // 是否要滚动到当前菜单项
             if (v) {
                 var el = this.get("el"),
@@ -24845,16 +25007,6 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
                 view:true
             },
 
-            caption:{
-                getter:function(v) {
-                    if (!v) {
-                        // 不使用 set ，会连锁
-                        this.__set("caption", v = this.get("content"));
-                    }
-                    return v;
-                }
-            },
-
             // @inheritedDoc
             // option.text
             // content:{},
@@ -24862,19 +25014,15 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
             // option.value
             value:{},
 
-            checked:{
-                view:true
-            },
-            selected:{
-                view:true
-            }
+            checked:{},
+            selected:{}
         }
     });
 
     MenuItem.DefaultRender = MenuItemRender;
 
     Component.UIStore.setUIByClass("menuitem", {
-        priority:10,
+        priority:Component.UIStore.PRIORITY.LEVEL1,
         ui:MenuItem
     });
 
@@ -24887,15 +25035,8 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
  */
 KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
 
-
-    var HIGHLIGHTED_CLS = "menuitem-highlight",
-        SELECTED_CLS = "menuitem-selected",
-        CHECKED_CLS = "menuitem-checked",
-        ACTIVE_CLS = "menuitem-active",
-        CHECK_CLS = "menuitem-checkbox",
-        CONTENT_CLS = "menuitem-content",
-        EL_CLS = "menuitem",
-        DISABLED_CLS = "menuitem-disabled";
+    var CHECK_CLS = "menuitem-checkbox",
+        CONTENT_CLS = "menuitem-content";
 
     function setUpCheckEl(self) {
         var el = self.get("el"),
@@ -24909,45 +25050,39 @@ KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
         return checkEl;
     }
 
-    var MenuItemRender = UIBase.create(Component.Render, [UIBase.Contentbox.Render], {
+    return UIBase.create(Component.Render, [UIBase.Contentbox.Render], {
         renderUI:function() {
             var self = this,
                 el = self.get("el");
-            el.addClass(self.getCls(EL_CLS))
-                .attr("role", "menuitem");
+            el.attr("role", "menuitem");
             self.get("contentEl").addClass(self.getCls(CONTENT_CLS));
             if (!el.attr("id")) {
                 el.attr("id", S.guid("ks-menuitem"));
             }
         },
 
-        _uiSetDisabled:function(v) {
-            var self = this,el = self.get("el").attr("aria-disabled", !!v);
-            if (v) {
-                el.addClass(self.getCls(DISABLED_CLS));
-            } else {
-                el.removeClass(self.getCls(DISABLED_CLS));
-            }
+        _setHighlighted:function(v, componentCls) {
+            var self = this,
+                tag = "-highlight",
+                el = self.get("el"),
+                cls = self._completeClasses(componentCls, tag);
+            el[v ? 'addClass' : 'removeClass'](cls);
         },
 
-        _uiSetHighlighted:function(v) {
-            var self = this,el = this.get("el");
-            if (v) {
-                el.addClass(self.getCls(HIGHLIGHTED_CLS));
-            } else {
-                el.removeClass(self.getCls(HIGHLIGHTED_CLS));
-            }
+        _setSelected:function(v, componentCls) {
+            var self = this,
+                tag = "-selected",
+                el = self.get("el"),
+                cls = self._completeClasses(componentCls, tag);
+            el[v ? 'addClass' : 'removeClass'](cls);
         },
 
-        _uiSetSelected:function(v) {
-            var self = this,el = self.get("el");
-            el[v ? "addClass" : "removeClass"](self.getCls(SELECTED_CLS));
-        },
-
-        _uiSetChecked:function(v) {
-            var self = this,el = self.get("el");
-            el[v ? "addClass" : "removeClass"](self.getCls(CHECKED_CLS));
-            v && setUpCheckEl(self);
+        _setChecked:function(v, componentCls) {
+            var self = this,
+                tag = "-checked",
+                el = self.get("el"),
+                cls = self._completeClasses(componentCls, tag);
+            el[v ? 'addClass' : 'removeClass'](cls);
         },
 
         _uiSetSelectable:function(v) {
@@ -24955,14 +25090,12 @@ KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
         },
 
         _uiSetCheckable:function(v) {
+            if (v) {
+                setUpCheckEl(this);
+            }
             this.get("el").attr("role", v ? 'menuitemcheckbox' : 'menuitem');
         },
 
-        _uiSetActive:function(v) {
-            var self = this,el = this.get("el");
-            el[v ? 'addClass' : 'removeClass'](self.getCls(ACTIVE_CLS))
-                .attr("aria-pressed", v);
-        },
         containsElement:function(element) {
             var el = this.get("el");
             return el[0] == element || el.contains(element);
@@ -24976,12 +25109,6 @@ KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
             checked:{}
         }
     });
-
-    if (1 > 2) {
-        MenuItemRender._uiSetSelectable()._uiSetChecked()._uiSetCheckable();
-    }
-
-    return MenuItemRender;
 }, {
     requires:['node','uibase','component']
 });/**
@@ -24990,16 +25117,13 @@ KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
  */
 KISSY.add("menu/menurender", function(S, UA, UIBase, Component) {
 
-    var CLS = "menu  menu-vertical";
-
     return UIBase.create(Component.Render, [
         UIBase.Contentbox.Render
     ], {
 
         renderUI:function() {
             var el = this.get("el");
-            el.addClass(this.getCls(CLS))
-                .attr("role", "menu")
+            el .attr("role", "menu")
                 .attr("aria-haspopup", true);
             if (!el.attr("id")) {
                 el.attr("id", S.guid("ks-menu"));
@@ -25067,15 +25191,10 @@ KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender
  * @author yiminghe@gmail.com
  */
 KISSY.add("menu/popupmenurender", function(S, UA, UIBase, MenuRender) {
-    var CLS = "popmenu";
     return UIBase.create(MenuRender, [
         UIBase.Position.Render,
         UA['ie'] === 6 ? UIBase.Shim.Render : null
-    ], {
-        renderUI:function() {
-            this.get("el").addClass(this.getCls(CLS));
-        }
-    });
+    ]);
 }, {
     requires:['ua','uibase','./menurender']
 });/**
@@ -25116,10 +25235,9 @@ KISSY.add("menu/separator", function(S, UIBase, Component, SeparatorRender) {
  */
 KISSY.add("menu/separatorrender", function(S, UIBase, Component) {
 
-    var CLS = "menuseparator";
     return UIBase.create(Component.Render, {
         createDom:function() {
-            this.get("el").attr("role", "separator").addClass(this.getCls(CLS));
+            this.get("el").attr("role", "separator");
         }
     });
 
@@ -25191,12 +25309,16 @@ KISSY.add(
                         return true;
                     }
                     this.clearTimers();
-                    this.showTimer_ = S.later(this.showMenu, this.get("menuDelay"), false, this);
+                    this.showTimer_ = S.later(this.showMenu,
+                        this.get("menuDelay"), false, this);
                 },
 
                 showMenu:function() {
                     var menu = this.get("menu");
-                    menu.set("align", {node:this.get("el"), points:['tr','tl']});
+                    menu.set("align", S.mix({
+                        node:this.get("el"),
+                        points:['tr','tl']
+                    }, this.get("menuAlign")));
                     menu.render();
                     /**
                      * If activation of your menuitem produces a popup menu,
@@ -25363,6 +25485,7 @@ KISSY.add(
                     externalSubMenu:{
                         value:false
                     },
+                    menuAlign:{},
                     menu:{
                         setter:function(m) {
                             m.set("parent", this);
@@ -25396,14 +25519,13 @@ KISSY.add(
  */
 KISSY.add("menu/submenurender", function(S, UIBase, MenuItemRender) {
         var SubMenuRender;
-        var ARROW_TMPL = '<span class="{prefixCls}submenu-arrow">►<'+'/span>';
+        var ARROW_TMPL = '<span class="{prefixCls}submenu-arrow">►<' + '/span>';
         SubMenuRender = UIBase.create(MenuItemRender, {
             renderUI:function() {
                 var self = this,
                     el = self.get("el"),
                     contentEl = self.get("contentEl");
-                el.addClass(this.get("prefixCls") + "submenu")
-                    .attr("aria-haspopup", "true");
+                el.attr("aria-haspopup", "true");
                 contentEl.append(S.substitute(ARROW_TMPL, {
                     prefixCls:this.get("prefixCls")
                 }));
@@ -25451,7 +25573,7 @@ KISSY.add("menu/submenurender", function(S, UIBase, MenuItemRender) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:38
+build time: Aug 13 21:42
 */
 /**
  * Model and Control for button
@@ -25503,6 +25625,12 @@ KISSY.add("button/base", function(S, Event, UIBase, Component, CustomRender) {
 
     Button.DefaultRender = CustomRender;
 
+
+    Component.UIStore.setUIByClass("button", {
+        priority:Component.UIStore.PRIORITY.LEVEL1,
+        ui:Button
+    });
+
     return Button;
 
 }, {
@@ -25513,10 +25641,10 @@ KISSY.add("button/base", function(S, Event, UIBase, Component, CustomRender) {
  */
 KISSY.add("button/buttonrender", function(S, UIBase, Component) {
     // http://www.w3.org/TR/wai-aria-practices/
-    var ButtonRender = UIBase.create(Component.Render, [UIBase.Contentbox.Render], {
+    return UIBase.create(Component.Render, [UIBase.Contentbox.Render], {
         renderUI:function() {
             //set wai-aria role
-            this.get("el").attr("role", "button");
+            this.get("el").addClass(this.getCls("inline-block")).attr("role", "button");
         },
         _uiSetTooltip:function(title) {
             this.get("el").attr("title", title);
@@ -25541,105 +25669,25 @@ KISSY.add("button/buttonrender", function(S, UIBase, Component) {
             tooltip:{}
         }
     });
-
-    if (1 > 2) {
-        ButtonRender._uiSetDescribedby();
-    }
-
-    return ButtonRender;
 }, {
     requires:['uibase','component']
-});/**
- * view : render button using div
- * @author yiminghe@gmail.com
- */
-KISSY.add("button/css3render", function(S, UIBase, ButtonRender) {
-
-    function getCls(self, str) {
-        return S.substitute(str, {
-            tag:self.__css_tag
-        });
-    }
-
-    var CLS = "inline-block " + " {tag}-button",
-        FOCUS_CLS = "{tag}-button-focused",
-        HOVER_CLS = "{tag}-button-hover",
-        ACTIVE_CLS = "{tag}-button-active",
-        DISABLED_CLS = "{tag}-button-disabled";
-
-    return UIBase.create(ButtonRender, {
-
-        __css_tag:"css3",
-
-        renderUI:function() {
-            var self = this,
-                el = self.get("el");
-            el.addClass(getCls(self,
-                self.getCls(CLS)));
-        },
-
-        /**
-         * @override
-         */
-        _uiSetFocused:function(v) {
-            var self = this,el = self.get("el");
-            el[v ? 'addClass' : 'removeClass'](getCls(self,
-                self.getCls(FOCUS_CLS)));
-        },
-
-        /**
-         * @override
-         */
-        _uiSetHighlighted:function(v) {
-            var self = this,el = self.get("el");
-            el[v ? 'addClass' : 'removeClass'](getCls(self,
-                self.getCls(HOVER_CLS)));
-        },
-
-        /**
-         * 模拟原生 disabled 机制
-         * @param v
-         */
-        _uiSetDisabled:function(v) {
-            var self = this,el = self.get("el");
-            el[v ? 'addClass' : 'removeClass'](getCls(self, self.getCls(DISABLED_CLS)))
-                //不能被 tab focus 到
-                //support aria
-                .attr({
-                    "tabindex": v ? -1 : 0,
-                    "aria-disabled": v
-                });
-
-        },
-
-        /**
-         * @override
-         */
-        _uiSetActive:function(v) {
-            var self = this;
-            self.get("el")[v ? 'addClass' : 'removeClass'](getCls(self,
-                self.getCls(ACTIVE_CLS)))
-                .attr("aria-pressed", !!v);
-        }
-
-    });
-
-}, {
-    requires:['uibase','./buttonrender']
 });/**
  * view for button , double div for pseudo-round corner
  * @author yiminghe@gmail.com
  */
-KISSY.add("button/customrender", function(S, Node, UIBase, Css3Render) {
+KISSY.add("button/customrender", function(S, Node, UIBase, ButtonRender) {
+
     //双层 div 模拟圆角
+    var CLS = "custom-button",
+        CONTENT_CLS = "inline-block " + CLS + "-outer-box",
+        INNER_CLS = "inline-block " + CLS + "-inner-box";
 
-    var CONTENT_CLS = "inline-block custom-button-outer-box",
-        INNER_CLS = "inline-block custom-button-inner-box";
 
+    var CustomRender = UIBase.create(ButtonRender, {
 
-    var CustomRender = UIBase.create(Css3Render, {
-
-            __css_tag:"custom",
+            renderUI:function() {
+                this.get("el").addClass(this.getCls(CLS));
+            },
 
             /**
              *  modelcontrol 会在 create 后进行 unselectable，需要所有的节点创建工作放在 createDom 中
@@ -25671,6 +25719,30 @@ KISSY.add("button/customrender", function(S, Node, UIBase, Css3Render) {
                 var innerEl = this.get("innerEl");
                 innerEl.html("");
                 v && innerEl.append(v);
+            },
+
+            _setHighlighted:function(v) {
+                var self = this;
+                CustomRender.superclass._setHighlighted.apply(self, arguments);
+                self.get("el")[v ? 'addClass' : 'removeClass'](self.getCls(CLS + "-hover"));
+            },
+
+            _setDisabled:function(v) {
+                var self = this;
+                CustomRender.superclass._setDisabled.apply(self, arguments);
+                self.get("el")[v ? 'addClass' : 'removeClass'](self.getCls(CLS + "-disabled"));
+            },
+
+            _setActive:function(v) {
+                var self = this;
+                CustomRender.superclass._setActive.apply(self, arguments);
+                self.get("el")[v ? 'addClass' : 'removeClass'](self.getCls(CLS + "-active"));
+            },
+
+            _setFocused:function(v) {
+                var self = this;
+                CustomRender.superclass._setFocused.apply(self, arguments);
+                self.get("el")[v ? 'addClass' : 'removeClass'](self.getCls(CLS + "-focused"));
             }
         }, {
             /**
@@ -25681,33 +25753,9 @@ KISSY.add("button/customrender", function(S, Node, UIBase, Css3Render) {
         }
     );
 
-    if (1 > 2) {
-        CustomRender.innerEL()
-    }
-
     return CustomRender;
 }, {
-    requires:['node','uibase','./css3render']
-});/**
- * view: render button using native button
- * @author yiminghe@gmail.com
- */
-KISSY.add("button/nativerender", function(S, UIBase, ButtonRender) {
-    return UIBase.create(ButtonRender, {
-        //使用原生 disabled 机制
-        _uiSetDisabled:function(v) {
-            this.get("el")[0].disabled = v;
-        }
-    }, {
-        ATTRS:{
-            //使用原生 button tag
-            elTagName:{
-                value:"button"
-            }
-        }
-    });
-}, {
-    requires:['uibase','./buttonrender']
+    requires:['node','uibase','./buttonrender']
 });/**
  * simulated button for kissy , inspired by goog button
  * @author yiminghe@gmail.com
@@ -25721,218 +25769,264 @@ KISSY.add("button", function(S, Button, Render) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:58
+build time: Aug 15 21:02
 */
 /**
  * combination of menu and button ,similar to native select
  * @author yiminghe@gmail.com
  */
 KISSY.add("menubutton/menubutton", function(S, UIBase, Node, Button, MenuButtonRender, Menu, Component) {
-    var $ = Node.all;
-    var KeyCodes = Node.KeyCodes;
-    var MenuButton = UIBase.create(Button, [Component.DecorateChild], {
-
-        hideMenu:function() {
-            this.get("menu") && this.get("menu").hide();
-        },
-
-        showMenu:function() {
-            var self = this,
-                view = self.get("view"),
-                el = view.get("el"),
-                menu = self.get("menu");
-            if (!menu.get("visible")) {
-                menu.set("align", S.mix({
-                    node:el
-                }, self.get("menuAlign")));
-                menu.show();
-                el.attr("aria-haspopup", menu.get("el").attr("id"));
-                view.set("collapsed", false);
+    var $ = Node.all,
+        KeyCodes = Node.KeyCodes,
+        ALIGN = {
+            points:["bl","tl"],
+            overflow:{
+                failX:1,
+                failY:1,
+                adjustX:1,
+                adjustY:1
             }
         },
+        MenuButton = UIBase.create(Button, [Component.DecorateChild], {
+
+            /**
+             * private
+             */
+            _hideMenu:function() {
+                var menu = this.get("menu");
+                if (menu) {
+                    menu.hide();
+                }
+            },
+
+            /**
+             * private
+             */
+            _showMenu:function() {
+                var self = this,
+                    el = self.get("el"),
+                    menu = self.get("menu");
+                if (menu && !menu.get("visible")) {
+                    menu.set("align", S.merge({
+                        node:el
+                    }, ALIGN, self.get("menuAlign")));
+                    menu.show();
+                    el.attr("aria-haspopup", menu.get("el").attr("id"));
+                }
+            },
+
+            _uiSetCollapsed:function(v) {
+                if (v) {
+                    this._hideMenu();
+                } else {
+                    this._showMenu();
+                }
+            },
 
 
-        _reposition:function() {
-            var self = this,menu = self.get("menu"),el = self.get("el");
-            if (menu && menu.get("visible")) {
-                menu.set("align", S.mix({
-                    node:el
-                }, self.get("menuAlign")));
-            }
-        },
+            _reposition:function() {
+                var self = this,
+                    menu = self.get("menu"),
+                    el = self.get("el");
+                if (menu && menu.get("visible")) {
+                    menu.set("align", S.mix({
+                        node:el
+                    }, self.get("menuAlign")));
+                }
+            },
 
-        bindUI:function() {
-            var self = this,
-                menu = this.get("menu");
+            /**
+             * 产生菜单时对菜单监听，只监听一次
+             * @protected
+             */
+            __bindMenu:function() {
+                var self = this,
+                    menu = this.get("menu");
+                if (menu) {
+                    menu.on("afterActiveItemChange", function(ev) {
+                        self.set("activeItem", ev.newVal);
+                    });
 
-            menu.on("afterActiveItemChange", function(ev) {
-                self.set("activeItem", ev.newVal);
-            });
+                    menu.on("click", self._handleMenuClick, self);
 
-            menu.on("click", function(e) {
-                self.fire("click", {
+                    //窗口改变大小，重新调整
+                    $(window).on("resize", self._reposition, self);
+                    /*
+                     bind 与 getMenu 都可能调用，时序不定
+                     */
+                    self.__bindMenu = S.noop;
+                }
+            },
+
+            /**
+             * @protected
+             */
+            _handleMenuClick:function(e) {
+                this.fire("click", {
                     target:e.target
                 });
-            });
+            },
 
-            menu.on("hide", function() {
-                self.get("view").set("collapsed", true);
-            });
+            /**
+             * @private
+             */
+            bindUI:function() {
+                this.__bindMenu();
+            },
 
-            //窗口改变大小，重新调整
-            $(window).on("resize", self._reposition, self);
-        },
+            /**
+             * @inheritDoc
+             */
+            _handleKeyEventInternal:function(e) {
+                var self = this,menu = self.get("menu");
 
-        /**
-         * @inheritDoc
-         */
-        _handleKeyEventInternal:function(e) {
-            var menu = this.get("menu");
-
-            // space 只在 keyup 时处理
-            if (e.keyCode == KeyCodes.SPACE) {
-                // Prevent page scrolling in Chrome.
-                e.preventDefault();
-                if (e.type != "keyup") {
+                // space 只在 keyup 时处理
+                if (e.keyCode == KeyCodes.SPACE) {
+                    // Prevent page scrolling in Chrome.
+                    e.preventDefault();
+                    if (e.type != "keyup") {
+                        return undefined;
+                    }
+                } else if (e.type != "keydown") {
                     return undefined;
                 }
-            } else if (e.type != "keydown") {
-                return undefined;
-            }
-            //转发给 menu 处理
-            if (menu && menu.get("visible")) {
-                var handledByMenu = menu._handleKeydown(e);
-                // esc
-                if (e.keyCode == KeyCodes.ESC) {
-                    this.hideMenu();
+                //转发给 menu 处理
+                if (menu && menu.get("visible")) {
+                    var handledByMenu = menu._handleKeydown(e);
+                    // esc
+                    if (e.keyCode == KeyCodes.ESC) {
+                        self.set("collapsed", true);
+                        return true;
+                    }
+                    return handledByMenu;
+                }
+
+                // Menu is closed, and the user hit the down/up/space key; open menu.
+                if (e.keyCode == KeyCodes.SPACE ||
+                    e.keyCode == KeyCodes.DOWN ||
+                    e.keyCode == KeyCodes.UP) {
+                    self.set("collapsed", false);
                     return true;
                 }
-                return handledByMenu;
-            }
-
-            // Menu is closed, and the user hit the down/up/space key; open menu.
-            if (e.keyCode == KeyCodes.SPACE ||
-                e.keyCode == KeyCodes.DOWN ||
-                e.keyCode == KeyCodes.UP) {
-                this.showMenu();
-                return true;
-            }
-            return undefined;
-        },
-
-        _performInternal:function() {
-            var menu = this.get("menu");
-            if (menu.get("visible")) {
-                // popup menu 监听 doc click ?
-                this.hideMenu();
-            }
-            else {
-                this.showMenu();
-            }
-        },
-
-        /**
-         * @inheritDoc
-         */
-        _handleBlur:function(e) {
-            MenuButton.superclass._handleBlur.call(this, e);
-            this.hideMenu();
-        },
-
-        /**
-         * if no menu , then construct
-         */
-        getMenu:function() {
-            var m = this.get("menu");
-            if (!m) {
-                m = new Menu.PopupMenu(S.mix({
-                    prefixCls:this.get("prefixCls")
-                }, this.get("menuCfg")));
-                this.set("menu", m);
-            }
-            return m;
-        },
-
-        /**
-         * Adds a new menu item at the end of the menu.
-         * @param item Menu item to add to the menu.
-         */
-        addItem:function(item, index) {
-            this.getMenu().addChild(item, index);
-        },
-
-        removeItem:function(c, destroy) {
-            this.get("menu") && this.get("menu").removeChild(c, destroy);
-        },
-
-        removeItems:function(destroy) {
-            this.get("menu") && this.get("menu").removeChildren(destroy);
-        },
-
-        getItemAt:function(index) {
-            return this.get("menu") && this.get("menu").getChildAt(index);
-        },
-
-        // 禁用时关闭已显示菜单
-        _uiSetDisabled:function(v) {
-            var o = MenuButton.superclass._uiSetDisabled;
-            o && o.apply(this, S.makeArray(arguments));
-            !v && this.hideMenu();
-        },
-
-        decorateChildrenInternal:function(ui, el, cls) {
-            el.hide();
-            var docBody = S.one(el[0].ownerDocument.body);
-            docBody.prepend(el);
-            var menu = new ui({
-                srcNode:el,
-                prefixCls:cls
-            });
-            this.set("menu", menu);
-        },
-
-        destructor:function() {
-            var self = this, menu = self.get("menu");
-            $(window).detach("resize", self._reposition, self);
-            menu && menu.destroy();
-        }
-
-    }, {
-        ATTRS:{
-            activeItem:{
-                view:true
+                return undefined;
             },
-            menuAlign:{
-                value:{
-                    points:["bl","tl"],
-                    overflow:{
-                        failX:1,
-                        failY:1,
-                        adjustX:1,
-                        adjustY:1
+
+            _performInternal:function() {
+                var self = this,menu = self.get("menu");
+                if (menu) {
+                    if (menu.get("visible")) {
+                        // popup menu 监听 doc click ?
+                        self.set("collapsed", true);
+                    } else {
+                        self.set("collapsed", false);
                     }
                 }
             },
-            decorateChildCls:{
-                value:"popupmenu"
+
+            /**
+             * @inheritDoc
+             */
+            _handleBlur:function(e) {
+                MenuButton.superclass._handleBlur.call(this, e);
+                this.set("collapsed", true);
             },
-            // 不关心选中元素 , 由 select 负责
-            // selectedItem
-            menu:{
-                setter:function(v) {
-                    v.set("parent", this);
+
+            /**
+             * if no menu , then construct
+             * @private
+             */
+            getMenu:function() {
+                var self = this,m = self.get("menu");
+                if (!m) {
+                    m = new Menu.PopupMenu(S.mix({
+                        prefixCls:this.get("prefixCls")
+                    }, self.get("menuCfg")));
+                    self.set("menu", m);
+                    self.__bindMenu();
+                }
+                return m;
+            },
+
+            /**
+             * Adds a new menu item at the end of the menu.
+             * @param item Menu item to add to the menu.
+             */
+            addItem:function(item, index) {
+                this.getMenu().addChild(item, index);
+            },
+
+            removeItem:function(c, destroy) {
+                this.get("menu") && this.get("menu").removeChild(c, destroy);
+            },
+
+            removeItems:function(destroy) {
+                this.get("menu") && this.get("menu").removeChildren(destroy);
+            },
+
+            getItemAt:function(index) {
+                return this.get("menu") && this.get("menu").getChildAt(index);
+            },
+
+            // 禁用时关闭已显示菜单
+            _uiSetDisabled:function(v) {
+                MenuButton.superclass._uiSetDisabled.apply(this, S.makeArray(arguments));
+                !v && this.set("collapsed", true);
+            },
+
+            /**
+             * @private
+             */
+            decorateChildrenInternal:function(ui, el, cls) {
+                el.hide();
+                var docBody = S.one(el[0].ownerDocument.body);
+                docBody.prepend(el);
+                var menu = new ui(S.mix({
+                    srcNode:el,
+                    prefixCls:cls
+                }, this.get("menuCfg")));
+                this.set("menu", menu);
+            },
+
+            /**
+             * @private
+             */
+            destructor:function() {
+                var self = this, menu = self.get("menu");
+                $(window).detach("resize", self._reposition, self);
+                menu && menu.destroy();
+            }
+
+        }, {
+            ATTRS:{
+                activeItem:{
+                    view:true
+                },
+                menuAlign:{
+                    value:{}
+                },
+                menuCfg:{},
+                decorateChildCls:{
+                    value:"popupmenu"
+                },
+                // 不关心选中元素 , 由 select 负责
+                // selectedItem
+                menu:{
+                    setter:function(v) {
+                        v.set("parent", this);
+                    }
+                },
+                collapsed:{
+                    value:true,
+                    view:true
                 }
             },
-            collapsed:{
-                value:true
-            }
-        },
-        DefaultRender:MenuButtonRender
-    });
+            DefaultRender:MenuButtonRender
+        });
 
-    if (1 > 2) {
-        MenuButton.getItemAt();
-    }
+    Component.UIStore.setUIByClass("menu-button", {
+        priority:Component.UIStore.PRIORITY.LEVEL2,
+        ui:MenuButton
+    });
 
     return MenuButton;
 }, {
@@ -25950,7 +26044,7 @@ KISSY.add("menubutton/menubuttonrender", function(S, UIBase, Button) {
         CAPTION_CLS = "menu-button-caption",
         COLLAPSE_CLS = "menu-button-open";
 
-    var MenuButtonRender = UIBase.create(Button.Render, {
+    return UIBase.create(Button.Render, {
 
         createDom:function() {
             var innerEl = this.get("innerEl"),
@@ -25971,14 +26065,10 @@ KISSY.add("menubutton/menubuttonrender", function(S, UIBase, Button) {
         },
 
         _uiSetCollapsed:function(v) {
-            var el = this.get("el"),cls = this.getCls(COLLAPSE_CLS);
-            if (!v) {
-                el.addClass(cls);
-                el.attr("aria-expanded", true);
-            } else {
-                el.removeClass(cls);
-                el.attr("aria-expanded", false);
-            }
+            var self = this,
+                el = self.get("el"),
+                cls = self.getCls(COLLAPSE_CLS);
+            el[v ? 'removeClass' : 'addClass'](cls).attr("aria-expanded", !v);
         },
 
         _uiSetActiveItem:function(v) {
@@ -25993,12 +26083,6 @@ KISSY.add("menubutton/menubuttonrender", function(S, UIBase, Button) {
             }
         }
     });
-
-    if (1 > 2) {
-        MenuButtonRender._uiSetCollapsed();
-    }
-
-    return MenuButtonRender;
 }, {
     requires:['uibase','button']
 });/**
@@ -26007,11 +26091,7 @@ KISSY.add("menubutton/menubuttonrender", function(S, UIBase, Button) {
  */
 KISSY.add("menubutton/option", function(S, UIBase, Component, Menu) {
     var MenuItem = Menu.Item;
-    var Option = UIBase.create(MenuItem, {
-        renderUI:function() {
-            this.get("el").addClass(this.getCls("option"));
-        }
-    }, {
+    var Option = UIBase.create(MenuItem, {}, {
         ATTRS:{
             selectable:{
                 value:true
@@ -26030,50 +26110,70 @@ KISSY.add("menubutton/option", function(S, UIBase, Component, Menu) {
  * manage a list of single-select options
  * @author yiminghe@gmail.com
  */
-KISSY.add("menubutton/select", function(S, Node, UIBase, MenuButton, Menu, Option) {
+KISSY.add("menubutton/select", function(S, Node, UIBase, Component, MenuButton, Menu, Option) {
+
+    function getMenuChildren(self) {
+        return self.get("menu") && self.get("menu").get("children") || [];
+    }
+
 
     var Select = UIBase.create(MenuButton, {
-            bindUI:function() {
-                var self = this;
-                self.on("click", self.handleMenuClick, self);
-                self.get("menu").on("show", self._handleMenuShow, self)
+
+            /**
+             * @protected
+             */
+            __bindMenu :function() {
+                var self = this,
+                    menu = self.get("menu");
+                Select.superclass.__bindMenu.call(self);
+                if (menu) {
+                    menu.on("show", self._handleMenuShow, self);
+                }
             },
             /**
              *  different from menubutton by highlighting the currently selected option
              *  on open menu.
              */
             _handleMenuShow:function() {
-                this.get("menu").set("highlightedItem",
-                    this.get("selectedItem") || this.get("menu").getChildAt(0));
-            },
-            updateCaption_:function() {
                 var self = this;
-                var item = self.get("selectedItem");
+                self.get("menu").set("highlightedItem",
+                    self.get("selectedItem") || self.get("menu").getChildAt(0));
+            },
+            /**
+             * @private
+             */
+            _updateCaption:function() {
+                var self = this,
+                    item = self.get("selectedItem");
                 self.set("content", item ? item.get("content") : self.get("defaultCaption"));
             },
-            handleMenuClick:function(e) {
+            _handleMenuClick:function(e) {
                 var self = this;
                 self.set("selectedItem", e.target);
-                self.hideMenu();
+                self.set("collapsed", true);
+                Select.superclass._handleMenuClick.call(self, e);
             },
+
             removeItems:function() {
-                Select.superclass.removeItems.apply(this, arguments);
-                this.set("selectedItem", null);
+                var self = this;
+                Select.superclass.removeItems.apply(self, arguments);
+                self.set("selectedItem", null);
             },
             removeItem:function(c) {
-                Select.superclass.removeItem.apply(this, arguments);
-                if (c == this.get("selectedItem")) {
-                    this.set("selectedItem", null);
+                var self = this;
+                Select.superclass.removeItem.apply(self, arguments);
+                if (c == self.get("selectedItem")) {
+                    self.set("selectedItem", null);
                 }
             },
             _uiSetSelectedItem:function(v, ev) {
                 if (ev && ev.prevVal) {
                     ev.prevVal.set("selected", false);
                 }
-                this.updateCaption_();
+                this._updateCaption();
             },
             _uiSetDefaultCaption:function() {
-                this.updateCaption_();
+                this._updateCaption();
             }
         },
         {
@@ -26087,7 +26187,7 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, MenuButton, Menu, Optio
                     },
                     setter:function(v) {
                         var self = this;
-                        var children = self.get("menu").get("children");
+                        var children = getMenuChildren(self);
                         for (var i = 0; i < children.length; i++) {
                             var item = children[i];
                             if (item.get("value") == v) {
@@ -26111,7 +26211,7 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, MenuButton, Menu, Optio
                 selectedIndex:{
                     setter:function(index) {
                         var self = this,
-                            children = self.get("menu").get("children");
+                            children = getMenuChildren(self);
                         if (index < 0 || index >= children.length) {
                             // 和原生保持一致
                             return -1;
@@ -26121,7 +26221,7 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, MenuButton, Menu, Optio
 
                     getter:function() {
                         return S.indexOf(this.get("selectedItem"),
-                            this.get("menu").get("children"));
+                            getMenuChildren(this));
                     }
                 },
 
@@ -26132,15 +26232,11 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, MenuButton, Menu, Optio
         }
     );
 
-    if (1 > 2) {
-        Select._uiSetDefaultCaption();
-    }
-
     Select.decorate = function(element, cfg) {
         element = S.one(element);
-        var optionMenu = new Menu.PopupMenu(S.mix({
-            prefixCls:cfg.prefixCls
-        }, cfg['menuCfg'])),
+        cfg.elBefore = element;
+        var select = new Select(cfg),
+            name,
             selectedItem,
             curValue = element.val(),
             options = element.all("option");
@@ -26154,18 +26250,11 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, MenuButton, Menu, Optio
             if (curValue == option.val()) {
                 selectedItem = item;
             }
-            optionMenu.addChild(item);
+            select.addItem(item);
         });
 
-        var select = new Select(S.mix({
-            selectedItem:selectedItem,
-            menu:optionMenu
-        }, cfg));
-
+        select.set("selectedItem", selectedItem);
         select.render();
-        select.get("el").insertBefore(element);
-
-        var name;
 
         if (name = element.attr("name")) {
             var input = new Node("<input type='hidden' name='" + name
@@ -26183,10 +26272,15 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, MenuButton, Menu, Optio
         return select;
     };
 
+    Component.UIStore.setUIByClass("select", {
+        priority:Component.UIStore.PRIORITY.LEVEL3,
+        ui:Select
+    });
+
     return Select;
 
 }, {
-    requires:['node','uibase','./menubutton','menu','./option']
+    requires:['node','uibase','component','./menubutton','menu','./option']
 });
 
 /**
@@ -26206,10 +26300,10 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, MenuButton, Menu, Optio
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 15 18:20
 */
 /**
- * @author  常胤 (lzlu.com)
+ * @author: 常胤 (lzlu.com)
  * @version: 2.0
  * @date: 2011.5.18
  */
@@ -26276,7 +26370,7 @@ KISSY.add("validation/base", function(S, DOM, Event, Util, Define, Field, Warn, 
                 var self = this, cfg = self.config;
                 S.each(self.form.elements, function(el) {
                     var attr = DOM.attr(el, cfg.attrname);
-                    if (attr)self.add(el, Util.toJSON(attr));
+                    if (attr)self.add(el, Util.toJSON(attr.replace(/'/g, '"')));
                 });
             },
 
@@ -26287,7 +26381,6 @@ KISSY.add("validation/base", function(S, DOM, Event, Util, Define, Field, Warn, 
              *     2.字段
              * @param {String|Element} field
              * @param {Object} config
-             * @return Validation实例
              */
             add: function(field, config) {
                 var self = this, fields = self.fields,
@@ -26299,19 +26392,12 @@ KISSY.add("validation/base", function(S, DOM, Event, Util, Define, Field, Warn, 
                     return self;
                 }
 
-
                 //实例化Validation.Field后增加
-
-                //DOM.get(#field)
-                if (S.isString(field) && field.substr(0, 1) != "#") {
-                    field = "#" + field;
-                }
-
-                var el = DOM.get(field), id = DOM.attr(el, "id");
+                var el = DOM.get(field) || DOM.get("#"+field), id = DOM.attr(el, "id");
 
                 if (!el || el.form != self.form) {
                     Util.log("字段" + field + "不存在或不属于该form");
-                    return undefined;
+                    return ;
                 }
 
                 //给对应的field生成一个id
@@ -26321,10 +26407,6 @@ KISSY.add("validation/base", function(S, DOM, Event, Util, Define, Field, Warn, 
                 }
 
                 fields.add(id, new Field(el, cfg));
-
-
-                //支持连写 ^^
-                return self;
             },
 
             /**
@@ -26392,9 +26474,6 @@ KISSY.add("validation/base", function(S, DOM, Event, Util, Define, Field, Warn, 
             Warn: Warn,
             Rule: Rule
         });
-    if (1 > 2) {
-        Validation.Define();
-    }
 
 
     /**
@@ -26406,7 +26485,7 @@ KISSY.add("validation/base", function(S, DOM, Event, Util, Define, Field, Warn, 
 }, { requires: ["dom","event","./utils","./define","./field","./warn","./rule"] });
 /**
  * Validation默认配置和常量
- * @author  常胤 (lzlu.com)
+ * @author: 常胤 (lzlu.com)
  */
 
 KISSY.add("validation/define",function(){
@@ -26447,25 +26526,17 @@ KISSY.add("validation/define",function(){
 		}
 	};
 
-    if(1>2){
-        Define.Config.defaultwarn();
-    }
-	
-
 	return Define
 	
 });
 /**
  * Validation.Field
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
-
 KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote, Warn){
-
 	var symbol = Define.Const.enumvalidsign,
 		doc = document;
-		
-	
+
     /**
      * @name Validation.Field类
      * @constructor
@@ -26482,6 +26553,7 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 
         /**
          * field对象
+         * @name
          * @type HTMLElement
          */
 		self.el = el;
@@ -26513,7 +26585,7 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 			S.mix(self,cfg,"label");
 			
 			//处理字段
-			self._initfield();
+			self._initField();
 			
 			//初始化字段的验证规则
 			self._initVType(cfg);
@@ -26532,23 +26604,19 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 		 * 初始化字段,如果是checkbox or radio 则将self.el保存为数组
 		 * @private
 		 */
-		_initfield: function(){
-			var self = this, el = self.el,
-				form = el.form,
-				elname = DOM.attr(el,"name"),
-				eltype = DOM.attr(el,"type");
-				
+		_initField: function(){
+			var self = this, el = self.el;
 			//如果为checkbox/radio则保存为数组
-			if("checkbox,radio".indexOf(eltype)<0){
-				return;
+			if("checkbox,radio".indexOf(DOM.attr(el,"type"))>-1){
+                var form = el.form, elName = DOM.attr(el,"name");
+                var els = [];
+                S.each(doc.getElementsByName(elName),function(item){
+                    if(item.form == form){
+                        els.push(item);
+                    }
+                });
+                self.el = els;
 			}
-			var els = [];
-			S.each(doc.getElementsByName(elname),function(item){
-				if(el.form == form){
-					els.push(item);
-				}
-			});
-			self.el = els;
 		},
 		
 		/**
@@ -26568,12 +26636,10 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 			
 			//ajax校验
 			if(vtype['remote']){
-				var ajaxcfg = S.isArray(vtype['remote'])?{url:vtype['remote'][0]}
-                    :vtype['remote'];
-				var callback = function(est,msg){
-					self.showMessage(est,msg);
-				};
-				var ajax = new Remote(el,ajaxcfg,callback);
+				var ajaxCfg = S.isArray(vtype['remote'])? {url:vtype['remote'][0]} : vtype['remote'];
+				var ajax = new Remote(el,ajaxCfg,function(est,msg){
+                    self.showMessage(est,msg);
+                });
 				self.addRule("ajax",function(value){
 					return ajax.check(value);
 				});
@@ -26589,46 +26655,42 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 		 */
 		_initWarn: function(config) {
 			var self = this,
-				cls_warn,	//Warn类
-				ins_warn,	//Warn实例
+				clsWarn,	//Warn类
+				insWarn,	//Warn实例
 				cfg = {};	//传入Warn的配置
 
-			
 			//如果配置Warn类
 			if(config.warn){
-				if(S.isFunction(config.warn)){
-					cls_warn = config.warn;
-				}else{
-					cls_warn =  Warn.get(config.warn);
-				}
+                clsWarn = S.isFunction(config.warn)? config.warn : Warn.get(config.warn);
 				cfg = S.merge(config,{});
 			}
 
-			
 			//配置样式
 			if(config.style && Warn.getStyle(config.style)){
 				var customize = Warn.getStyle(config.style);
-				cls_warn = Warn.get(customize.core);
+				clsWarn = Warn.get(customize.core);
 				cfg = S.merge(config,customize);
 			}
 			
-			if(!cls_warn){
+			if(!clsWarn){
 				Util.log("提示信息类配置错误.");
 				return;
 			}
-			
-			ins_warn = new cls_warn(self.el,cfg);
-			
-			
+
+			insWarn = new clsWarn(self.el,cfg);
+
 			//绑定验证事件
-			ins_warn.on("valid",function(ev){
-				return self._validateValue(ev.event);
-			});  
+            insWarn._bindEvent(self.el, insWarn.event, function() {
+                var result = self._validateValue();
+                if (S.isArray(result) && result.length == 2) {
+                    self.showMessage(result[1], result[0]);
+                }
+            });
 			
 			//将warn赋给field对象
 			S.mix(self,{
-				warn: ins_warn,
-				single: ins_warn.single
+				warn: insWarn,
+				single: insWarn.single
 			});
 
 		},
@@ -26643,28 +26705,13 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 			var self = this,
 				rule = self.rule,
 				value = self._getValue(),
-				rs = rule.getAll();
-				
-				
-				//格式化返回数据
-				make = function(estate,msg){return [msg,estate]},
-				
-				//执行校验
-				exec = function(rulename){
-					var r = rule.get(rulename);
-					if(!r)return true;
-					if(!S.isArray(r))r = [r];
-					for(var i=0; i<r.length; i++){
-						var result = r[i].call(this,value);
-						if(!Util.isEmpty(result))return result;
-					}
-					return true;
-				};
-			
+				rs = rule.getAll(),
 
+				//格式化返回数据
+				make = function(estate,msg){return [msg,estate]};
+			
 			//无需校验
-			if(DOM.attr(self.el,"disabled")
-                || DOM.hasClass(self.el,"disabled")){
+			if(DOM.attr(self.el,"disabled") || DOM.hasClass(self.el,"disabled")){
 				return make(symbol.ignore,undefined);
 			}
 			
@@ -26672,12 +26719,10 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 			if(rs["depend"] && rs["depend"].call(this,value)!==true){
 				return make(symbol.ignore,undefined);
 			}
-			
 
-			
 			//执行所有校验
-			
-			for(var v in rs){
+			for(var v in rs) {
+                //必填项的特殊处理
 				if(v=="required"){
 					var require = rs["required"].call(this,value);
 					if(require){
@@ -26686,8 +26731,7 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 						if(Util.isEmpty(value)) return make(symbol.ignore,"");
 					}
 				}
-				
-				//这个外面已经处理了
+				//依赖校验已经处理了
 				if("depend".indexOf(v)>-1){
 					continue;
 				}
@@ -26709,7 +26753,6 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 
 			//通过校验
 			return make(symbol.ok,self['okMsg']||"OK");
-			
 		},
 		
 		/**
@@ -26718,7 +26761,6 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 		_getValue: function(){
 			var self = this, ele = self.el,
 				val = [];
-				
 			switch( DOM.attr(ele,"type") ){
 				case "select-one":
 					val = ele[ele.selectedIndex].value;
@@ -26733,16 +26775,9 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 					S.each(ele,function(el){
 						if(el.checked)val.push(el.value);
 					});
-				break;
-				
-				//文本框、隐藏域和多行文本
-				case "file"	:
-				case "text"	:
-				case "hidden":
-				case "textarea":					
-				case "password":					
-					val = ele.value;						
-				break;
+				    break;
+                default:
+                    val = DOM.val(ele);
 			}
 			
 			return val;
@@ -26751,6 +26786,7 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 		/**
 		 * @description 给当前field对象增加一条验证规则
 		 * 如果Auth.Rule中存在直接增加
+		 * @name
 		 * @param {String} name 规则名称
 		 * @param {Object} argument 规则可配置
 		 */
@@ -26795,8 +26831,8 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 		 * 校验field
 		 */
 		isValid: function(){
-			var self = this, result = self._validateValue("submit");
-			self.showMessage(result[1],result[0],'submit');
+			var self = this, result = self._validateValue();
+			self.showMessage(result[1],result[0]);
 			return result[1]!=0;
 		}
 		
@@ -26807,7 +26843,7 @@ KISSY.add("validation/field",function(S, DOM, Event, Util, Define, Rule, Remote,
 		
 }, { requires: ['dom',"event","./utils","./define","./rule","./rule/remote","./warn"] });/**
  * 校验规则管理
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
 
 KISSY.add("validation/rule", function(S, Util, Rule) {
@@ -26819,7 +26855,7 @@ KISSY.add("validation/rule", function(S, Util, Rule) {
 
 /**
  * 规则管理类
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
 KISSY.add("validation/rule/base", function(S, DOM, Event, Util) {
 
@@ -26827,8 +26863,7 @@ KISSY.add("validation/rule/base", function(S, DOM, Event, Util) {
 		 * 规则对象
 		 */
 		return new function(){
-			var self = this,
-				store = new Util.storage();
+			var self = this, store = new Util.storage();
 			
 			/**
 			 * 增加规则
@@ -26853,14 +26888,11 @@ KISSY.add("validation/rule/base", function(S, DOM, Event, Util) {
 			 */
 			self.get = function(name,param){
 				var r = store.get(name);
-			
 				if(!r){
-					//Util.log("规则'"+name+"'不存在");
 					return null;
 				}
 				
 				var fun = r.fun, tip = r.text;
-				
 				/**
 				 * 前台调用传参: [param1,param2..tips]
 				 * rule定义为: function(value,tips,param1,param2..)
@@ -26890,7 +26922,6 @@ KISSY.add("validation/rule/base", function(S, DOM, Event, Util) {
 				return function(value){
 					return fun.apply(this,[value].concat(arg));
 				}	
-
 			};
 
 			/**
@@ -26904,39 +26935,33 @@ KISSY.add("validation/rule/base", function(S, DOM, Event, Util) {
 				if(r){
 					return Util.format(template, r.name, r.text, r.fun.toString());
 				}else{
-					return Util.format("规则[{0}]不存在",name);
+					//return Util.format("规则[{0}]不存在",name);
 				}
 			};
 	
 		};
 
 	
-}, { requires: ['dom',"event","../utils"] });
-
-
-
-
-
-/**
+}, { requires: ['dom',"event","../utils"] });/**
  * 增加常用校验规则
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
 KISSY.add("validation/rule/normal", function(S, DOM, Event, Util, Rule) {
 	
 	//自定义函数
 	Rule.add("func","校验失败。",function(value,text,fun){
 		var result = fun.call(this,value);
-		
+
 		if(result===false){
 			return text;
 		}
-		
+
 		if(!Util.isEmpty(result)){
 			return result;
 		}
 
 	});
-	
+
 	//正则校验
 	Rule.add("regex","校验失败。",function(value,text,reg){
 		if(!new RegExp(reg).test(value)){
@@ -27092,85 +27117,49 @@ KISSY.add("validation/rule/normal", function(S, DOM, Event, Util, Rule) {
 
 /**
  * 远程校验
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
 KISSY.add("validation/rule/remote", function(S, DOM, Event, Util) {
 
     function Remote(el, config, callback) {
         var timer = null,
-            remoteflag = null,
-
+            ajaxHandler = null,
             cache = new Util.storage(),
-
-            //ajax设置
-            elname = DOM.attr(el, "name"),
+            elName = DOM.attr(el, "name"),
             cfg = {
+                loading: "loading",
                 type: 'POST',
                 dataType: 'json',
                 data: {}
             };
-        cfg.data[elname] = null;
 
         S.mix(cfg, config);
-        cfg.data[elname] = null;
 
-
-        function success(flag) {
-            var thisflag = flag;
+        function success(val){
             return function(data, textStatus, xhr) {
-                if (thisflag != remoteflag)return;
-
-                //返回了错误的格式
-                if (!data && !data.state) {
-                    Util.log("返回数据格式错误，正确的格式如：\n\n {\"state\": false,\"message\": \"提示信息\"}");
-                    self.showMessage(0, '校验失败');
-                    return;
+                if (data && (data.state===true || data.state===false)) {
+                    callback(data.state, data.message);
+                    if(data.state) {
+                        cache.add(val, { est: data.state,msg: data.message});
+                    }
+                }else{
+                    callback(0,"failure");
                 }
-
-                //执行校验
-                if (data.state) {
-                    callback(1, data.message);
-                } else {
-                    callback(0, data.message);
-                }
-
                 //用户自定义回调方法
                 if (S.isFunction(config.success)) {
-                    config.success.call(self, data, textStatus, xhr);
-                }
-            }
-        }
-
-        function ajax(time, val) {
-            var elname = DOM.attr(el, "name"),
-                cfg = {
-                    type: 'POST',
-                    dataType: 'json',
-                    data: {}
-                };
-
-            //合并配置
-            S.mix(cfg, config);
-
-
-            //请求错误处理
-            cfg.error = function(data, textStatus, xhr) {
-                if (S.isFunction(config.error)) {
                     config.success.call(this, data, textStatus, xhr);
                 }
+                ajaxHandler = null;
             };
-            if (config.data && S.isFunction(config.data)) {
-                S.mix(cfg.data, config.data);
-            }
+        }
 
-            cfg.data[elname] = val;
-            cfg.success = function(data, textStatus, xhr) {
-                cache.add(val, {
-                        est: data.state,
-                        msg: data.message
-                    });
-                success(time).call(this, data, textStatus, xhr);
-            };
+        cfg.error = function(data, textStatus, xhr) {
+            if (S.isFunction(config.error)) {
+                config.success.call(this, data, textStatus, xhr);
+            }
+        };
+
+        function ajax(time, val) {
             S.io(cfg);
         }
 
@@ -27185,10 +27174,14 @@ KISSY.add("validation/rule/remote", function(S, DOM, Event, Util) {
             //延迟校验
             if (timer)timer.cancel();
             timer = S.later(function() {
-                remoteflag = S.guid();
-                ajax(remoteflag, val);
+                if(ajaxHandler){
+                    ajaxHandler.abort();
+                }
+                cfg.data[elName] = val;
+                cfg.success = success(val);
+                ajaxHandler = S.io(cfg);
             }, 500);
-            return ['loading',0];
+            return [cfg.loading,0];
         }
 
     }
@@ -27204,7 +27197,7 @@ KISSY.add("validation/rule/remote", function(S, DOM, Event, Util) {
 
 /**
  * 工具类
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
 
 KISSY.add("validation/utils", function(S, undefined) {
@@ -27213,6 +27206,8 @@ KISSY.add("validation/utils", function(S, undefined) {
      * 常用工具类
      */
     var utils = {
+
+        log: S.log,
 
         /**
          * 转化为JSON对象
@@ -27223,7 +27218,7 @@ KISSY.add("validation/utils", function(S, undefined) {
             try {
                 eval("var result=" + str);
             } catch(e) {
-                return null;
+                return {};
             }
             return result;
             //return S.JSON.parse(str);
@@ -27264,7 +27259,7 @@ KISSY.add("validation/utils", function(S, undefined) {
 
         /**
          * 获取字符串的长度
-         * @example getStrLen("a啊",true); //结果为3
+         * @example getStrLen('a啊',true); //结果为3
          * @param {Object} str
          * @param {Object} realLength
          * @return {number}
@@ -27273,69 +27268,6 @@ KISSY.add("validation/utils", function(S, undefined) {
             return realLength ? str.replace(/[^\x00-\xFF]/g, '**').length : str.length;
         },
 
-        /**
-         * 打印错误信息
-         * @param {Object} msg
-         */
-        log: S.log,
-
-        /**
-         * 获取form表单的值 checkbox,rado,select-multiple返回数组
-         * @param {Object} el
-         */
-        getValue: function(el) {
-            var eltype = S.DOM.attr(el, "type").toLowerCase(),
-                toarr = function(f) {
-                    return S.isArray(f) ? f : [f];
-                },
-                checkbox = function(el) {
-                    var val = [];
-                    S.each(el, function(item) {
-                        if (item.checked) val.push(item.value);
-                    });
-                },
-                radio = function(el) {
-                    var val = null;
-                    S.each(el, function(item) {
-                        if (item.checked) {
-                            val = item.value;
-                            return false;
-                        }
-                    });
-                    return null;
-                },
-                val,
-                select = function(el) {
-                    var val = [];
-                    S.each(el.options, function(item) {
-                        if (item.selected) val.push(item.value);
-                    });
-                    return val;
-                };
-
-            switch (eltype) {
-                case "text"    :
-                case "hidden":
-                case "textarea":
-                case "password":
-                    val = el.value;
-                    break;
-                case "select-one":
-                    val = el[el.selectedIndex].value;
-                    break;
-                case "radio":
-                    val = radio(toarr(el));
-                    break;
-                case "checkbox":
-                    val = checkbox(toarr(el));
-                    break;
-                case "select-multiple":
-                    val = select(el);
-                    break;
-            }
-
-            return val;
-        },
 
         /**
          * 简单的存储类
@@ -27401,10 +27333,6 @@ KISSY.add("validation/utils", function(S, undefined) {
 
         });
 
-    if (1 > 2) {
-        utils.getValue();
-    }
-
     return utils;
 
 });
@@ -27425,7 +27353,7 @@ KISSY.add("validation/utils", function(S, undefined) {
  * @validationor: 常胤 <lzlu.com>
  */
 
-KISSY.add("validation/warn", function(S, Util, Warn, BaseClass, Alert, Static, Float, Fixed) {
+KISSY.add("validation/warn", function(S, Util, Warn, BaseClass, Alert, Static, Float) {
 
     /**
      * 增加三种自带的样式
@@ -27433,20 +27361,15 @@ KISSY.add("validation/warn", function(S, Util, Warn, BaseClass, Alert, Static, F
     Warn.extend("Alert", Alert);
     Warn.extend("Static", Static);
     Warn.extend("Float", Float);
-    Warn.extend("Fixed", Fixed);
+
 
     //提示类基类，方便用户自己扩展
     Warn.BaseClass = BaseClass;
-
-    if (1 > 2) {
-        Warn.BaseClass();
-    }
     return Warn;
 
-}, { requires: ["./utils","./warn/base","./warn/baseclass","./warn/alert","./warn/static","./warn/float",
-        "./warn/fixed"] });/**
+}, { requires: ["./utils","./warn/base","./warn/baseclass","./warn/alert","./warn/static","./warn/float"] });/**
  * 扩展提示类:alert
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
 KISSY.add("validation/warn/alert", function(S, DOM, Event, Util, Define) {
 	var symbol = Define.Const.enumvalidsign;
@@ -27508,7 +27431,7 @@ KISSY.add("validation/warn/alert", function(S, DOM, Event, Util, Define) {
 
 /**
  * 提示类管理类
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
 KISSY.add("validation/warn/base", function(S, DOM, Event, Util, BaseClass) {
 
@@ -27517,8 +27440,6 @@ KISSY.add("validation/warn/base", function(S, DOM, Event, Util, BaseClass) {
 
     return{
 
-
-
         /**
          * 扩展你的信息提示类
          * @param name 类名称
@@ -27526,8 +27447,8 @@ KISSY.add("validation/warn/base", function(S, DOM, Event, Util, BaseClass) {
          */
         extend : function(name, extfun) {
             var newwarn = function(target, config) {
-                newwarn.superclass.constructor.call(this, target, config);
-            },
+                    newwarn.superclass.constructor.call(this, target, config);
+                },
                 ext = S.isFunction(extfun) ? extfun() : extfun;
 
             //保存样式
@@ -27599,7 +27520,7 @@ KISSY.add("validation/warn/base", function(S, DOM, Event, Util, BaseClass) {
 
 /**
  * 扩展类基类
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
 
 KISSY.add("validation/warn/baseclass", function(S, DOM, Event) {
@@ -27663,9 +27584,8 @@ KISSY.add("validation/warn/baseclass", function(S, DOM, Event) {
          * 显示出错信息
          * @param {Boolean} result
          * @param {String} msg
-         * @param  evttype
          */
-        showMessage: function(result, msg, evttype) {
+        showMessage: function(result, msg) {
             result = 1;
             msg = 1;
             evttype = 1;
@@ -27676,88 +27596,8 @@ KISSY.add("validation/warn/baseclass", function(S, DOM, Event) {
     return BaseClass;
 
 }, { requires: ['dom',"event"]});/**
- * 扩展提示类：fixed
- * @author  常胤 <lzlu.com>
- */
-KISSY.add("validation/warn/fixed", function(S, DOM, Event, Util, Define) {
-    var symbol = Define.Const.enumvalidsign;
-
-    function Fixed() {
-        return {
-            init: function() {
-                var self = this, tg = self.target,
-                    panel,label,estate;
-
-                panel = DOM.attr(tg, "data=for");
-                estate = DOM.get('.estate', panel);
-                label = DOM.get('.label', panel);
-
-                S.mix(self, {
-                        panel: panel,
-                        estate: estate,
-                        label: label
-                    });
-
-                self._bindEvent(self.el, self.event, function(ev) {
-                    var result = self.fire("valid", {event:ev.type});
-                    if (S.isArray(result) && result.length == 2) {
-                        self.showMessage(result[1], result[0], ev.type);
-                    }
-                })
-            },
-
-            showMessage: function(result, msg) {
-                var self = this,
-                    panel = self.panel, estate = self.estate, label = self.label;
-
-                if (self.invalidClass) {
-                    if (result == symbol.ignore && result == symbol.ok) {
-                        DOM.removeClass(self.el, self.invalidClass);
-                    } else {
-                        DOM.addClass(self.el, self.invalidClass);
-                    }
-                }
-
-                if (result == symbol.ignore) {
-                    DOM.hide(panel);
-                } else {
-                    var est = "error";
-                    if (result == symbol.error) {
-                        est = "error";
-                    } else if (result == symbol.ok) {
-                        est = "ok";
-                    } else if (result == symbol.hint) {
-                        est = "tip";
-                    }
-                    DOM.removeClass(estate, "ok tip error");
-                    DOM.addClass(estate, est);
-                    DOM.html(label, msg);
-                    DOM.show(panel);
-                }
-            },
-
-            style: {
-                text1: {
-                    template: '<label class="valid-text"><span class="estate"><em class="label"></em></span></label>',
-                    event: 'focus blur keyup'
-                }
-            }
-
-
-        };
-    }
-
-    if (1 > 2) {
-       symbol.text1();
-    }
-
-    return Fixed;
-
-}, { requires: ['dom',"event","../utils","../define"] });
-
-/**
  * 扩展提示类：float
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
 KISSY.add("validation/warn/float", function(S, DOM, Event, Util, Define) {
 	var symbol = Define.Const.enumvalidsign;
@@ -27781,14 +27621,7 @@ KISSY.add("validation/warn/float", function(S, DOM, Event, Util, Define) {
 					panel: S.one(panel),
 					msg: S.one(msg)
 				});
-				
-				self._bindEvent(self.el,'focus keyup',function(ev){
-					var result = self.fire("valid",{event:ev.type});
-					if(S.isArray(result) && result.length==2){
-						self.showMessage(result[1],result[0],ev.type,ev.target);
-					}
-				});
-				
+
 				//绑定对象的focus,blur事件来显示隐藏消息面板
 				Event.on(self.el,"focus",function(ev){
 					if(DOM.hasClass(tg,self.invalidCls)){
@@ -27836,6 +27669,7 @@ KISSY.add("validation/warn/float", function(S, DOM, Event, Util, Define) {
 					DOM.hide(panel);
 				}
 			},
+            
 			style:{
 				"float":{
 					template: '<div class="valid-float" style="display:none;"><div class="msg">&nbsp;</div><'+'s>◥◤</s></div>',
@@ -27879,63 +27713,77 @@ KISSY.add("validation/warn/float", function(S, DOM, Event, Util, Define) {
 
 /**
  * 提示类：Static
- * @author  常胤 <lzlu.com>
+ * @author: 常胤 <lzlu.com>
  */
-KISSY.add("validation/warn/static", function(S, DOM, Event, Util, Define) {
-    var symbol = Define.Const.enumvalidsign;
+KISSY.add("validation/warn/static", function(S, Node, Util, Define) {
+    var symbol = Define.Const.enumvalidsign,
+        $ = Node.all;
 
     function Static() {
         return {
-            init: function() {
-                var self = this, tg = self.target,
-                    panel,label,estate;
+            init: function(){
+                var self = this, tg = $(self.target), panel;
 
-                panel = DOM.create(self.template);
-                estate = DOM.get('.estate', panel),label = DOM.get('.label', panel);
-                tg.parentNode.appendChild(panel);
-                DOM.hide(panel);
+                //伪属性配置的id
+                if(tg.attr("data-message")) {
+                    panel = $(tg.attr("data-messagebox"));
+                }
+                //配置的id
+                else if(self.messagebox) {
+                    panel = $(self.messagebox);
+                }
+                //从模版创建
+                else {
+                    panel = Node(self.template).appendTo(tg.parent());
+                }
+                
+                if(panel) {
+                    self.panel = panel;
+                    self.estate = panel.one(".estate");
+                    self.label = panel.one(".label");
+                    if(!self.estate || !self.label) return;
+                    panel.hide();
+                }else{
+                    return;
+                }
 
-                S.mix(self, {
-                        panel: panel,
-                        estate: estate,
-                        label: label
-                    });
-
-                self._bindEvent(self.el, self.event, function(ev) {
-                    var result = self.fire("valid", {event:ev.type});
-                    if (S.isArray(result) && result.length == 2) {
-                        self.showMessage(result[1], result[0], ev.type);
-                    }
-                })
             },
 
             showMessage: function(result, msg) {
-                var self = this,
-                    panel = self.panel, estate = self.estate, label = self.label;
+                var self = this, tg = $(self.el),
+                    panel = self.panel, estate = self.estate, label = self.label,
+                    time = S.isNumber(self.anim)?self.anim:0.1;
 
                 if (self.invalidClass) {
                     if (result == symbol.ignore && result == symbol.ok) {
-                        DOM.removeClass(self.el, self.invalidClass);
+                        tg.removeClass(self.invalidClass);
                     } else {
-                        DOM.addClass(self.el, self.invalidClass);
+                        tg.addClass(self.invalidClass);
                     }
                 }
 
+                var display = panel.css("display")=="none"?false:true;
                 if (result == symbol.ignore) {
-                    DOM.hide(panel);
+                    display && panel.hide(time);
                 } else {
-                    var est = "error";
+                    estate.removeClass("ok tip error");
                     if (result == symbol.error) {
-                        est = "error";
+                        estate.addClass("error");
+                        label.html(msg);
+                        display || panel.show(time);
                     } else if (result == symbol.ok) {
-                        est = "ok";
+                        if(self.isok===false) {
+                            display && panel.hide(time);
+                        }else{
+                            display || panel.show(time);
+                            estate.addClass("ok");
+                            label.html(self.oktext?self.oktext:msg);
+                        }
                     } else if (result == symbol.hint) {
-                        est = "tip";
+                        estate.addClass("tip");
+                        label.html(msg);
+                        display || panel.show(time);
                     }
-                    DOM.removeClass(estate, "ok tip error");
-                    DOM.addClass(estate, est);
-                    DOM.html(label, msg);
-                    DOM.show(panel);
                 }
             },
 
@@ -27944,34 +27792,20 @@ KISSY.add("validation/warn/static", function(S, DOM, Event, Util, Define) {
                     template: '<label class="valid-text"><span class="estate"><em class="label"></em></span></label>',
                     event: 'focus blur keyup'
                 },
-                siderr: {
-                    template: '<div class="valid-siderr"><p class="estate"><' + 's></s><span class="label"></span></p></div>',
-                    event: 'focus blur keyup'
-                },
                 under: {
                     template: '<div class="valid-under"><p class="estate"><span class="label"></span></p></div>',
                     event: 'focus blur keyup'
-                },
-                sidebd: {
-                    template: '<div class="valid-sidebd"><p class="estate"><span class="label"></span></p></div>',
-                    event: 'focus blur'
                 }
             }
-
-
-        };
-    }
-
-    if (1 > 2) {
-        Static.sidebd();
+        }
     }
     return Static;
 
-}, { requires: ['dom',"event","../utils","../define"] });
+}, { requires: ['node',"../utils","../define"] });
 
 /**
  * @description 表单验证组件
- * @author  changyin@taobao.com (lzlu.com)
+ * @author: changyin@taobao.com (lzlu.com)
  * @version: 1.2
  * @date: 2011.06.21
  */

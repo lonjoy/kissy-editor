@@ -1,7 +1,7 @@
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 9 18:39
+build time: Aug 13 21:43
 */
 /**
  * @fileOverview abstraction of tree node ,root and other node will extend it
@@ -58,7 +58,7 @@ KISSY.add("tree/basenode", function(S, Node, UIBase, Component, BaseNodeRender) 
                     // 左
                     // 选择父节点或 collapse 当前节点
                     case KeyCodes.LEFT:
-                        if (this.get("expanded") && children.length) {
+                        if (this.get("expanded") && (children.length || this.get("isLeaf") === false)) {
                             this.set("expanded", false);
                         } else {
                             n = this.get("parent");
@@ -68,7 +68,7 @@ KISSY.add("tree/basenode", function(S, Node, UIBase, Component, BaseNodeRender) 
                     // 右
                     // expand 当前节点
                     case KeyCodes.RIGHT:
-                        if (children.length) {
+                        if (children.length || this.get("isLeaf") === false) {
                             if (!this.get("expanded")) {
                                 this.set("expanded", true);
                             } else {
@@ -244,6 +244,10 @@ KISSY.add("tree/basenode", function(S, Node, UIBase, Component, BaseNodeRender) 
                 }
             },
 
+            _uiSetSelected:function(v) {
+                this._forwardSetAttrToView("selected", v);
+            },
+
 
             expandAll:function() {
                 this.set("expanded", true);
@@ -298,7 +302,7 @@ KISSY.add("tree/basenode", function(S, Node, UIBase, Component, BaseNodeRender) 
                  * 是否选中
                  * @type Boolean
                  */
-                selected:{view:true},
+                selected:{},
 
                 expanded:{
                     value:false,
@@ -359,7 +363,6 @@ KISSY.add("tree/basenoderender", function(S, Node, UIBase, Component) {
         FOLDER_COLLAPSED = FILE_EXPAND + "plus",
 
         INLINE_BLOCK = "inline-block",
-        SELECTED_CLS = "tree-item-selected",
         ITEM_CLS = "tree-item",
 
         FOLDER_ICON_EXPANED = "tree-expanded-folder-icon",
@@ -377,10 +380,7 @@ KISSY.add("tree/basenoderender", function(S, Node, UIBase, Component) {
 
         ROW_CLS = "tree-row";
 
-    var BaseNodeRender = UIBase.create(Component.Render, {
-        renderUI:function() {
-            this.get("el").addClass(this.getCls(ITEM_CLS));
-        },
+    return UIBase.create(Component.Render, {
 
         _computeClass:function(children, parent
                                //, cause
@@ -467,6 +467,14 @@ KISSY.add("tree/basenoderender", function(S, Node, UIBase, Component) {
             this.get("el").attr("aria-expanded", v);
         },
 
+        _setSelected:function(v, classes) {
+            var self = this,
+                // selected 放在 row 上，防止由于子选择器而干扰节点的子节点显示
+                // .selected .label {background:xx;}
+                rowEl = self.get("rowEl");
+            rowEl[v ? "addClass" : "removeClass"](self._completeClasses(classes, "-selected"));
+        },
+
         _uiSetContent:function(c) {
             this.get("labelEl").html(c);
         },
@@ -481,14 +489,6 @@ KISSY.add("tree/basenoderender", function(S, Node, UIBase, Component) {
 
         _uiSetAriaPosInSet:function(v) {
             this.get("el").attr("aria-posinset", v);
-        },
-
-        _uiSetSelected:function(v) {
-            var self = this,
-                // selected 放在 row 上，防止由于子选择器而干扰节点的子节点显示
-                // .selected .label {background:xx;}
-                rowEl = self.get("rowEl");
-            rowEl[v ? "addClass" : "removeClass"](self.getCls(SELECTED_CLS));
         },
 
         _uiSetTooltip:function(v) {
@@ -516,9 +516,8 @@ KISSY.add("tree/basenoderender", function(S, Node, UIBase, Component) {
             expandIconEl:{},
             tooltip:{},
             iconEl:{},
-            rowEl:{},
-            selected:{},
             expanded:{},
+            rowEl:{},
             depth:{},
             labelEl:{},
             content:{},
@@ -549,14 +548,6 @@ KISSY.add("tree/basenoderender", function(S, Node, UIBase, Component) {
 
     });
 
-    if (1 > 2) {
-        BaseNodeRender._uiSetAriaPosInSet();
-        BaseNodeRender._uiSetDepth();
-        BaseNodeRender._uiSetAriaSize();
-    }
-
-    return BaseNodeRender;
-
 }, {
     requires:['node','uibase','component']
 });/**
@@ -566,7 +557,7 @@ KISSY.add("tree/basenoderender", function(S, Node, UIBase, Component) {
 KISSY.add("tree/checknode", function(S, Node, UIBase, Component, BaseNode, CheckNodeRender) {
     var $ = Node.all,
         PARTIAL_CHECK = 2,
-        CHECK_CLS = "tree-item-checked",
+        CHECK_CLS = "tree-item-check",
         CHECK = 1,
         EMPTY = 0;
 
@@ -605,6 +596,9 @@ KISSY.add("tree/checknode", function(S, Node, UIBase, Component, BaseNode, Check
                 checkState = CHECK;
             }
             this.set("checkState", checkState);
+            tree.fire("click", {
+                target:this
+            });
         },
 
         _uiSetCheckState:function(s) {
@@ -667,24 +661,16 @@ KISSY.add("tree/checknode", function(S, Node, UIBase, Component, BaseNode, Check
         ui:CheckNode
     });
 
-    if (1 > 2) {
-        Component.PARTIAL_CHECK = Component.CHECK = Component.EMPTY;
-    }
-
     return CheckNode;
 }, {
     requires:['node','uibase','component','./basenode','./checknoderender']
 });KISSY.add("tree/checknoderender", function(S, Node, UIBase, Component, BaseNodeRender) {
     var $ = Node.all,
         ICON_CLS = "tree-icon",
-        CHECK_CLS = "tree-item-checked",
+        CHECK_CLS = "tree-item-check",
         ALL_STATES_CLS = "tree-item-checked0 tree-item-checked1 tree-item-checked2",
         INLINE_BLOCK = "inline-block";
     return UIBase.create(BaseNodeRender, {
-
-        renderUI:function() {
-            this.get("el").addClass(this.getCls(CHECK_CLS));
-        },
 
         createDom:function() {
             var expandIconEl = this.get("expandIconEl"),
@@ -696,7 +682,7 @@ KISSY.add("tree/checknode", function(S, Node, UIBase, Component, BaseNode, Check
         _uiSetCheckState:function(s) {
             var checkEl = this.get("checkEl");
             checkEl.removeClass(this.getCls(ALL_STATES_CLS))
-                .addClass(this.getCls(CHECK_CLS + s));
+                .addClass(this.getCls(CHECK_CLS + "ed" + s));
         }
 
     }, {
@@ -714,14 +700,14 @@ KISSY.add("tree/checknode", function(S, Node, UIBase, Component, BaseNode, Check
  * @author yiminghe@gmail.com
  */
 KISSY.add("tree/checktree", function(S, UIBase, Component, CheckNode, CheckTreeRender, TreeMgr) {
-    var CHECKED_TREE_CLS = CheckTreeRender.CHECKED_TREE_CLS;
+    var CHECK_TREE_CLS = CheckTreeRender.CHECK_TREE_CLS;
     /*多继承*/
     var CheckTree = UIBase.create(CheckNode, [TreeMgr,Component.DelegateChildren], {
     }, {
         DefaultRender:CheckTreeRender
     });
 
-    Component.UIStore.setUIByClass(CHECKED_TREE_CLS, {
+    Component.UIStore.setUIByClass(CHECK_TREE_CLS, {
         priority:Component.UIStore.PRIORITY.LEVEL4,
         ui:CheckTree
     });
@@ -735,13 +721,10 @@ KISSY.add("tree/checktree", function(S, UIBase, Component, CheckNode, CheckTreeR
  * @author yiminghe@gmail.com
  */
 KISSY.add("tree/checktreerender", function(S, UIBase, Component, CheckNodeRender, TreeMgrRender) {
-    var CHECKED_TREE_CLS="tree-root-checked";
+    var CHECK_TREE_CLS="tree-root-check";
     return UIBase.create(CheckNodeRender, [TreeMgrRender],{
-        renderUI:function(){
-            this.get("el").addClass(this.getCls(CHECKED_TREE_CLS));
-        }
     },{
-        CHECKED_TREE_CLS:CHECKED_TREE_CLS
+        CHECK_TREE_CLS:CHECK_TREE_CLS
     });
 }, {
     requires:['uibase','component','./checknoderender','./treemgrrender']
@@ -775,7 +758,14 @@ KISSY.add("tree/tree", function(S, UIBase, Component, BaseNode, TreeRender, Tree
 
 }, {
     requires:['uibase','component','./basenode','./treerender','./treemgr']
-});/**
+});
+
+/**
+ * note bug:
+ *
+ * 1. checked tree 根节点总是 selected ！
+ * 2. 根节点 hover 后取消不了了
+ **//**
  * tree management utils
  * @author yiminghe@gmail.com
  */
@@ -840,9 +830,10 @@ KISSY.add("tree/treemgr", function(S, Event) {
         getOwnerControl:function(node) {
             var self = this,
                 n,
+                allNodes = self.__getAllNodes(),
                 elem = self.get("el")[0];
             while (node && node !== elem) {
-                if (n = self.__getAllNodes()[node.id]) {
+                if (n = allNodes[node.id]) {
                     return n;
                 }
                 node = node.parentNode;
@@ -861,12 +852,12 @@ KISSY.add("tree/treemgr", function(S, Event) {
 
 
         _uiSetFocused:function(v) {
-            if (v) {
-                // 得到焦点时没有选择节点
-                // 默认选择自己
-                if (!this.get("selectedItem")) {
-                    this.select();
-                }
+            var self = this;
+            self.constructor.superclass._uiSetFocused.call(self, v);
+            // 得到焦点时没有选择节点
+            // 默认选择自己
+            if (v && !self.get("selectedItem")) {
+                self.select();
             }
         }
     });
@@ -893,7 +884,7 @@ KISSY.add("tree/treemgrrender", function(S) {
 
     S.augment(TreeMgrRender, {
         __renderUI:function() {
-            this.get("el").addClass(this.getCls("tree-root")).attr("role", "tree")[0]['hideFocus'] = true;
+            this.get("el").attr("role", "tree")[0]['hideFocus'] = true;
             this.get("rowEl").addClass(this.getCls("tree-root-row"));
         },
 
@@ -905,10 +896,6 @@ KISSY.add("tree/treemgrrender", function(S) {
             this.get("el")[v ? "addClass" : "removeClass"](this.getCls(FOCUSED_CLS));
         }
     });
-
-    if (1 > 2) {
-        TreeMgrRender._uiSetShowRootNode();
-    }
 
     return TreeMgrRender;
 });/**
