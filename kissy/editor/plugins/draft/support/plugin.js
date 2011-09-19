@@ -1,3 +1,7 @@
+/**
+ * draft for kissy editor
+ * @author yiminghe@gmail.com
+ */
 KISSY.Editor.add("draft/support", function() {
     var S = KISSY,
         KE = S.Editor,
@@ -48,6 +52,14 @@ KISSY.Editor.add("draft/support", function() {
 
     var addRes = KE.Utils.addRes,destroyRes = KE.Utils.destroyRes;
     S.augment(Draft, {
+
+        _getSaveKey:function() {
+            var self = this,
+                editor = self.editor,
+                cfg = editor.cfg.pluginConfig;
+            return cfg.draft && cfg.draft['saveKey'] || DRAFT_SAVE;
+        },
+
         /**
          * parse 历史记录延后，点击 select 时才开始 parse
          */
@@ -55,7 +67,7 @@ KISSY.Editor.add("draft/support", function() {
             var localStorage = KE.localStorage;
             var self = this;
             if (!self.drafts) {
-                var str = localStorage.getItem(DRAFT_SAVE),
+                var str = localStorage.getItem(self._getSaveKey()),
                     drafts = [];
 
                 if (str) {
@@ -71,6 +83,7 @@ KISSY.Editor.add("draft/support", function() {
             return self.drafts;
         },
         _init:function() {
+
             var self = this,
                 editor = self.editor,
                 statusbar = editor.statusDiv,
@@ -82,7 +95,7 @@ KISSY.Editor.add("draft/support", function() {
                 = cfg.draft.limit || LIMIT;
             var holder = new Node(
                 "<div class='ke-draft'>" +
-                    "<spa class='ke-draft-title'>" +
+                    "<span class='ke-draft-title'>" +
                     "内容正文每" +
                     cfg.draft.interval
                     + "分钟自动保存一次。" +
@@ -102,7 +115,7 @@ KISSY.Editor.add("draft/support", function() {
                     "</span>" +
                     "<span>立即保存</span>" +
                     "</a>"
-                ).appendTo(holder),
+            ).appendTo(holder),
                 versions = new KE.Select({
                     container: holder,
                     menuContainer:document.body,
@@ -161,22 +174,26 @@ KISSY.Editor.add("draft/support", function() {
             addRes.call(self, versions);
             self.holder = holder;
             //KE.Utils.sourceDisable(editor, self);
+
             if (cfg.draft['helpHtml']) {
+
                 var help = new KE.TripleButton({
-                    cls:"ke-draft-help",
-                    title:"帮助",
-                    text:"帮助",
-                    container: holder
+                    elCls:"ke-draft-help",
+                    title:"点击查看帮助",
+                    text:"点击查看帮助",
+                    render: holder
                 });
+
+                help.render();
+
                 help.on("click", function(ev) {
                     self._prepareHelp();
                     ev && ev.halt();
                 });
                 addRes.call(self, help);
                 KE.Utils.lazyRun(self, "_prepareHelp", "_realHelp");
-                self.helpBtn = help.el;
+                self.helpBtn = help.get("el");
             }
-            self._holder = holder;
             addRes.call(self, holder);
         },
         _prepareHelp:function() {
@@ -216,7 +233,7 @@ KISSY.Editor.add("draft/support", function() {
                 width:help.width() + "px",
                 mask:false
             });
-            self._help.el.css("border", "none");
+            self._help.get("el").css("border", "none");
             self._help.arrow = arrow;
             function hideHelp(ev) {
                 ev && ev.halt();
@@ -239,9 +256,9 @@ KISSY.Editor.add("draft/support", function() {
                 arrow = win.arrow;
             win.show();
             var off = helpBtn.offset();
-            win.el.offset({
-                left:(off.left - win.el.width()) + 17,
-                top:(off.top - win.el.height()) - 7
+            win.get("el").offset({
+                left:(off.left - win.get("el").width()) + 17,
+                top:(off.top - win.get("el").height()) - 7
             });
             arrow.offset({
                 left:off.left - 2,
@@ -275,7 +292,7 @@ KISSY.Editor.add("draft/support", function() {
             }
             versions.set("items", items.reverse());
             timeTip.html(tip);
-            localStorage.setItem(DRAFT_SAVE,
+            localStorage.setItem(self._getSaveKey(),
                 (localStorage == window.localStorage) ?
                     encodeURIComponent(JSON.stringify(drafts))
                     : drafts);

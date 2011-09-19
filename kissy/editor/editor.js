@@ -1,11 +1,17 @@
 /**
  * @preserve Constructor for kissy editor,dependency moved to independent module
  *      thanks to CKSource's intelligent work on CKEditor
- * @author: yiminghe@gmail.com, lifesinger@gmail.com
+ * @author yiminghe@gmail.com, lifesinger@gmail.com
  * @version: 2.1.5
- * @buildtime: 2011-08-16 15:46:34
+ * @buildtime: 2011-09-19 16:08:55
  */
-KISSY.add("editor", function(S) {
+
+/**
+ * ugly declartion
+ */
+
+
+KISSY.add("editor/export", function(S) {
     var DOM = S.DOM,
         TRUE = true,
         FALSE = false;
@@ -63,28 +69,31 @@ KISSY.add("editor", function(S) {
                 //通过 add 里面的又一层 addPlugin 保证
                 //use : 下载，非图形为乱序并行
                 //plugin 的attach（按钮）为串行
-                S.use.call(self, mods.join(","), function() {
-                    //载入了插件的attach功能，现在按照顺序一个个attach
-                    for (var i = 0; i < mods.length; i++) {
-                        self.usePlugin(mods[i]);
-                    }
-                    callback && callback.call(self);
-                    //也用在窗口按需加载，只有在初始化时才进行内容设置
-                    if (!initial) {
 
-                        self.setData(textarea.val());
-                        //是否自动focus
-                        if (cfg["focus"]) {
-                            self.focus();
+                S.Editor.use("button,select", function() {
+                    S.use.call(self, mods.join(","), function() {
+                        //载入了插件的attach功能，现在按照顺序一个个attach
+                        for (var i = 0; i < mods.length; i++) {
+                            self.usePlugin(mods[i]);
                         }
-                        //否则清空选择区域
-                        else {
-                            var sel = self.getSelection();
-                            sel && sel.removeAllRanges();
+                        callback && callback.call(self);
+                        //也用在窗口按需加载，只有在初始化时才进行内容设置
+                        if (!initial) {
+                            self.setData(textarea.val());
+                            //是否自动focus
+                            if (cfg["focus"]) {
+                                self.focus();
+                            }
+                            //否则清空选择区域
+                            else {
+                                var sel = self.getSelection();
+                                sel && sel.removeAllRanges();
+                            }
+                            initial = TRUE;
                         }
-                        initial = TRUE;
-                    }
-                }, { "global":  Editor });
+                    }, { "global":  Editor });
+                });
+
             });
 
             return self;
@@ -101,11 +110,11 @@ KISSY.add("editor", function(S) {
     var getJSName;
     if (parseFloat(S.version) < 1.2) {
         getJSName = function () {
-            return "plugin-min.js?t=2011-08-16 15:46:34";
+            return "plugin-min.js?t=2011-09-19 16:08:55";
         };
     } else {
         getJSName = function (m, tag) {
-            return m + '/plugin-min.js' + (tag ? tag : '?t=2011-08-16 15:46:34');
+            return m + '/plugin-min.js' + (tag ? tag : '?t=2011-09-19 16:08:55');
         };
     }
 
@@ -124,6 +133,12 @@ KISSY.add("editor", function(S) {
      * @constructor
      */
     S["Editor"] = Editor;
+});
+
+KISSY.add("editor", function(S) {
+    return S.Editor;
+}, {
+    requires:['dd','overlay']
 });
 /**
  * 目标：分离，解耦，模块化，去除重复代码

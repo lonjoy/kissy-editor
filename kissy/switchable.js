@@ -1,7 +1,7 @@
-/*
+﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 13 21:43
+build time: Sep 5 21:41
 */
 /**
  * Switchable
@@ -1588,11 +1588,11 @@ KISSY.add('switchable/effect', function(S, DOM, Event, Anim, Switchable, undefin
      * 添加默认配置
      */
     S.mix(Switchable.Config, {
-            effect: NONE, // 'scrollx', 'scrolly', 'fade' 或者直接传入 custom effect fn
-            duration: .5, // 动画的时长
-            easing: 'easeNone', // easing method
-            nativeAnim: true
-        });
+        effect: NONE, // 'scrollx', 'scrolly', 'fade' 或者直接传入 custom effect fn
+        duration: .5, // 动画的时长
+        easing: 'easeNone', // easing method
+        nativeAnim: undefined
+    });
 
     /**
      * 定义效果集
@@ -1626,9 +1626,9 @@ KISSY.add('switchable/effect', function(S, DOM, Event, Anim, Switchable, undefin
                 self.anim.stop();
                 // 防止上个未完，放在最下层
                 DOM.css(self.anim.fromEl, {
-                        zIndex: 1,
-                        opacity:0
-                    });
+                    zIndex: 1,
+                    opacity:0
+                });
                 // 把上个的 toEl 放在最上面，防止 self.anim.toEl == fromEL
                 // 压不住后面了
                 DOM.css(self.anim.toEl, "zIndex", 9);
@@ -1697,96 +1697,96 @@ KISSY.add('switchable/effect', function(S, DOM, Event, Anim, Switchable, undefin
      */
     Switchable.Plugins.push({
 
-            name: 'effect',
+        name: 'effect',
 
-            /**
-             * 根据 effect, 调整初始状态
-             */
-            init: function(host) {
-                var cfg = host.config,
-                    effect = cfg.effect,
-                    panels = host.panels,
-                    content = host.content,
-                    steps = cfg.steps,
-                    activeIndex = host.activeIndex,
-                    len = panels.length;
+        /**
+         * 根据 effect, 调整初始状态
+         */
+        init: function(host) {
+            var cfg = host.config,
+                effect = cfg.effect,
+                panels = host.panels,
+                content = host.content,
+                steps = cfg.steps,
+                activeIndex = host.activeIndex,
+                len = panels.length;
 
-                // 1. 获取高宽
-                host.viewSize = [
-                    cfg.viewSize[0] || panels[0].offsetWidth * steps,
-                    cfg.viewSize[1] || panels[0].offsetHeight * steps
-                ];
-                // 注：所有 panel 的尺寸应该相同
-                // 最好指定第一个 panel 的 width 和 height, 因为 Safari 下，图片未加载时，读取的 offsetHeight 等值会不对
+            // 1. 获取高宽
+            host.viewSize = [
+                cfg.viewSize[0] || panels[0].offsetWidth * steps,
+                cfg.viewSize[1] || panels[0].offsetHeight * steps
+            ];
+            // 注：所有 panel 的尺寸应该相同
+            // 最好指定第一个 panel 的 width 和 height, 因为 Safari 下，图片未加载时，读取的 offsetHeight 等值会不对
 
-                // 2. 初始化 panels 样式
-                if (effect !== NONE) { // effect = scrollx, scrolly, fade
+            // 2. 初始化 panels 样式
+            if (effect !== NONE) { // effect = scrollx, scrolly, fade
 
-                    // 这些特效需要将 panels 都显示出来
-                    DOM.css(panels, DISPLAY, BLOCK);
+                // 这些特效需要将 panels 都显示出来
+                DOM.css(panels, DISPLAY, BLOCK);
 
-                    switch (effect) {
-                        // 如果是滚动效果
-                        case SCROLLX:
-                        case SCROLLY:
+                switch (effect) {
+                    // 如果是滚动效果
+                    case SCROLLX:
+                    case SCROLLY:
 
-                            // 设置定位信息，为滚动效果做铺垫
-                            DOM.css(content, POSITION, ABSOLUTE);
+                        // 设置定位信息，为滚动效果做铺垫
+                        DOM.css(content, POSITION, ABSOLUTE);
 
-                            // 注：content 的父级不一定是 container
-                            if (DOM.css(content.parentNode, POSITION) == "static") {
-                                DOM.css(content.parentNode, POSITION, RELATIVE);
-                            }
+                        // 注：content 的父级不一定是 container
+                        if (DOM.css(content.parentNode, POSITION) == "static") {
+                            DOM.css(content.parentNode, POSITION, RELATIVE);
+                        }
 
-                            // 水平排列
-                            if (effect === SCROLLX) {
-                                DOM.css(panels, FLOAT, LEFT);
-                                // 设置最大宽度，以保证有空间让 panels 水平排布
-                                DOM.width(content, host.viewSize[0] * (len / steps));
-                            }
-                            break;
+                        // 水平排列
+                        if (effect === SCROLLX) {
+                            DOM.css(panels, FLOAT, LEFT);
+                            // 设置最大宽度，以保证有空间让 panels 水平排布
+                            DOM.width(content, host.viewSize[0] * (len / steps));
+                        }
+                        break;
 
-                        // 如果是透明效果，则初始化透明
-                        case FADE:
-                            var min = activeIndex * steps,
-                                max = min + steps - 1,
-                                isActivePanel;
+                    // 如果是透明效果，则初始化透明
+                    case FADE:
+                        var min = activeIndex * steps,
+                            max = min + steps - 1,
+                            isActivePanel;
 
-                            S.each(panels, function(panel, i) {
-                                isActivePanel = i >= min && i <= max;
-                                DOM.css(panel, {
-                                        opacity: isActivePanel ? 1 : 0,
-                                        position: ABSOLUTE,
-                                        zIndex: isActivePanel ? 9 : 1
-                                    });
+                        S.each(panels, function(panel, i) {
+                            isActivePanel = i >= min && i <= max;
+                            DOM.css(panel, {
+                                opacity: isActivePanel ? 1 : 0,
+                                position: ABSOLUTE,
+                                zIndex: isActivePanel ? 9 : 1
                             });
-                            break;
-                    }
+                        });
+                        break;
                 }
-
-                // 3. 在 CSS 里，需要给 container 设定高宽和 overflow: hidden
             }
-        });
+
+            // 3. 在 CSS 里，需要给 container 设定高宽和 overflow: hidden
+        }
+    });
 
     /**
      * 覆盖切换方法
      */
     S.augment(Switchable, {
 
-            _switchView: function(fromEls, toEls, index, direction, ev, callback) {
+        _switchView: function(fromEls, toEls, index, direction, ev, callback) {
 
-                var self = this,
-                    cfg = self.config,
-                    effect = cfg.effect,
-                    fn = S.isFunction(effect) ? effect : Effects[effect];
+            var self = this,
+                cfg = self.config,
+                effect = cfg.effect,
+                fn = S.isFunction(effect) ? effect : Effects[effect];
 
-                fn.call(self, fromEls, toEls, function() {
-                    self._fireOnSwitch(index, ev);
-                    callback && callback.call(self);
-                }, index, direction);
-            }
+            fn.call(self, fromEls, toEls, function() {
+                self._fireOnSwitch(index, ev);
+                callback && callback.call(self);
+            }, index, direction);
+        }
 
-        });
+    });
 
     return Switchable;
 
@@ -2340,18 +2340,18 @@ KISSY.add('switchable/tabs/base', function(S, Switchable) {
  * Tabs aria support
  * @creator yiminghe@gmail.com
  */
-KISSY.add('switchable/tabs/aria', function(S, DOM, Event,Switchable, Aria, Tabs) {
+KISSY.add('switchable/tabs/aria', function(S, DOM, Event, Switchable, Aria, Tabs) {
 
-    var KEY_PAGEUP = 33;
-    var KEY_PAGEDOWN = 34;
-    var KEY_END = 35;
-    var KEY_HOME = 36;
+        var KEY_PAGEUP = 33;
+        var KEY_PAGEDOWN = 34;
+        var KEY_END = 35;
+        var KEY_HOME = 36;
 
-    var KEY_LEFT = 37;
-    var KEY_UP = 38;
-    var KEY_RIGHT = 39;
-    var KEY_DOWN = 40;
-    var KEY_TAB = 9;
+        var KEY_LEFT = 37;
+        var KEY_UP = 38;
+        var KEY_RIGHT = 39;
+        var KEY_DOWN = 40;
+        var KEY_TAB = 9;
 
 //    var KEY_SPACE = 32;
 //    var KEY_BACKSPACE = 8;
@@ -2360,11 +2360,11 @@ KISSY.add('switchable/tabs/aria', function(S, DOM, Event,Switchable, Aria, Tabs)
 //    var KEY_INSERT = 45;
 //    var KEY_ESCAPE = 27;
 
-    S.mix(Tabs.Config, {
+        S.mix(Tabs.Config, {
             aria:true
         });
 
-    Tabs.Plugins.push({
+        Tabs.Plugins.push({
             name:"aria",
             init:function(self) {
                 if (!self.config.aria) return;
@@ -2405,151 +2405,152 @@ KISSY.add('switchable/tabs/aria', function(S, DOM, Event,Switchable, Aria, Tabs)
             }
         });
 
-    var setTabIndex = Aria.setTabIndex;
+        var setTabIndex = Aria.setTabIndex;
 
 
-    function _currentTabFromEvent(t) {
-        var triggers = this.triggers,
-            trigger;
-        S.each(triggers, function(ct) {
-            if (ct == t || DOM.contains(ct, t)) {
-                trigger = ct;
+        function _currentTabFromEvent(t) {
+            var triggers = this.triggers,
+                trigger;
+            S.each(triggers, function(ct) {
+                if (ct == t || DOM.contains(ct, t)) {
+                    trigger = ct;
+                }
+            });
+            return trigger;
+        }
+
+        function _tabKeypress(e) {
+
+            switch (e.keyCode) {
+
+                case KEY_PAGEUP:
+                case KEY_PAGEDOWN:
+                    if (e.ctrlKey && !e.altKey && !e.shiftKey) {
+                        e.halt();
+                    } // endif
+                    break;
+
+                case KEY_TAB:
+                    if (e.ctrlKey && !e.altKey) {
+                        e.halt();
+                    } // endif
+                    break;
+
             }
-        });
-        return trigger;
-    }
-
-    function _tabKeypress(e) {
-
-        switch (e.keyCode) {
-
-            case KEY_PAGEUP:
-            case KEY_PAGEDOWN:
-                if (e.ctrlKey && !e.altKey && !e.shiftKey) {
-                    e.halt();
-                } // endif
-                break;
-
-            case KEY_TAB:
-                if (e.ctrlKey && !e.altKey) {
-                    e.halt();
-                } // endif
-                break;
-
         }
-    }
 
-    var getDomEvent=Switchable.getDomEvent;
+        var getDomEvent = Switchable.getDomEvent;
 
-    /**
-     * Keyboard commands for the Tab Panel
-     * @param e
-     */
-    function _tabKeydown(e) {
-        var t = e.target,self = this;
-        var triggers = self.triggers;
+        /**
+         * Keyboard commands for the Tab Panel
+         * @param e
+         */
+        function _tabKeydown(e) {
+            var t = e.target,self = this;
+            var triggers = self.triggers;
 
-        // Save information about a modifier key being pressed
-        // May want to ignore keyboard events that include modifier keys
-        var no_modifier_pressed_flag = !e.ctrlKey && !e.shiftKey && !e.altKey;
-        var control_modifier_pressed_flag = e.ctrlKey && !e.shiftKey && !e.altKey;
+            // Save information about a modifier key being pressed
+            // May want to ignore keyboard events that include modifier keys
+            var no_modifier_pressed_flag = !e.ctrlKey && !e.shiftKey && !e.altKey;
+            var control_modifier_pressed_flag = e.ctrlKey && !e.shiftKey && !e.altKey;
 
-        switch (e.keyCode) {
+            switch (e.keyCode) {
 
-            case KEY_LEFT:
-            case KEY_UP:
-                if (_currentTabFromEvent.call(self, t)
-                // 争渡读屏器阻止了上下左右键
-                //&& no_modifier_pressed_flag
-                    ) {
-                    self.prev(getDomEvent(e));
-                    e.halt();
-                } // endif
-                break;
-
-            case KEY_RIGHT:
-            case KEY_DOWN:
-                if (_currentTabFromEvent.call(self, t)
-                //&& no_modifier_pressed_flag
-                    ) {
-                    self.next(getDomEvent(e));
-                    e.halt();
-                } // endif
-                break;
-
-            case KEY_PAGEDOWN:
-
-                if (control_modifier_pressed_flag) {
-                    e.halt();
-                    self.next(getDomEvent(e));
-                }
-                break;
-
-            case KEY_PAGEUP:
-                if (control_modifier_pressed_flag) {
-                    e.halt();
-                    self.prev(getDomEvent(e));
-                }
-                break;
-
-            case KEY_HOME:
-                if (no_modifier_pressed_flag) {
-                    self.switchTo(0, undefined, getDomEvent(e));
-                    e.halt();
-                }
-                break;
-            case KEY_END:
-                if (no_modifier_pressed_flag) {
-                    self.switchTo(triggers.length - 1, undefined, getDomEvent(e));
-                    e.halt();
-                }
-
-                break;
-            case KEY_TAB:
-                if (e.ctrlKey && !e.altKey) {
-                    e.halt();
-                    if (e.shiftKey)
+                case KEY_LEFT:
+                case KEY_UP:
+                    if (_currentTabFromEvent.call(self, t)
+                    // 争渡读屏器阻止了上下左右键
+                    //&& no_modifier_pressed_flag
+                        ) {
                         self.prev(getDomEvent(e));
-                    else
+                        e.halt();
+                    } // endif
+                    break;
+
+                case KEY_RIGHT:
+                case KEY_DOWN:
+                    if (_currentTabFromEvent.call(self, t)
+                    //&& no_modifier_pressed_flag
+                        ) {
                         self.next(getDomEvent(e));
-                }
-                break;
+                        e.halt();
+                    } // endif
+                    break;
+
+                case KEY_PAGEDOWN:
+
+                    if (control_modifier_pressed_flag) {
+                        e.halt();
+                        self.next(getDomEvent(e));
+                    }
+                    break;
+
+                case KEY_PAGEUP:
+                    if (control_modifier_pressed_flag) {
+                        e.halt();
+                        self.prev(getDomEvent(e));
+                    }
+                    break;
+
+//            case KEY_HOME:
+//                if (no_modifier_pressed_flag) {
+//                    self.switchTo(0, undefined, getDomEvent(e));
+//                    e.halt();
+//                }
+//                break;
+//            case KEY_END:
+//                if (no_modifier_pressed_flag) {
+//                    self.switchTo(triggers.length - 1, undefined, getDomEvent(e));
+//                    e.halt();
+//                }
+//
+//                break;
+
+                case KEY_TAB:
+                    if (e.ctrlKey && !e.altKey) {
+                        e.halt();
+                        if (e.shiftKey)
+                            self.prev(getDomEvent(e));
+                        else
+                            self.next(getDomEvent(e));
+                    }
+                    break;
+            }
         }
-    }
 
-    function _tabSwitch(ev) {
-        var domEvent = !!(ev.originalEvent.target||ev.originalEvent.srcElement);
+        function _tabSwitch(ev) {
+            var domEvent = !!(ev.originalEvent.target || ev.originalEvent.srcElement);
 
-        var self = this;
-        // 上一个激活 tab
-        var lastActiveIndex = self.completedIndex;
+            var self = this;
+            // 上一个激活 tab
+            var lastActiveIndex = self.completedIndex;
 
-        // 当前激活 tab
-        var activeIndex = ev.currentIndex;
+            // 当前激活 tab
+            var activeIndex = ev.currentIndex;
 
-        if (lastActiveIndex == activeIndex) return;
+            if (lastActiveIndex == activeIndex) return;
 
-        var lastTrigger = self.triggers[lastActiveIndex];
-        var trigger = self.triggers[activeIndex];
-        var lastPanel = self.panels[lastActiveIndex];
-        var panel = self.panels[activeIndex];
-        if (lastTrigger) {
-            setTabIndex(lastTrigger, "-1");
+            var lastTrigger = self.triggers[lastActiveIndex];
+            var trigger = self.triggers[activeIndex];
+            var lastPanel = self.panels[lastActiveIndex];
+            var panel = self.panels[activeIndex];
+            if (lastTrigger) {
+                setTabIndex(lastTrigger, "-1");
+            }
+            setTabIndex(trigger, "0");
+
+            // move focus to current trigger if invoked by dom event
+            if (domEvent) {
+                trigger.focus();
+            }
+            if (lastPanel) {
+                lastPanel.setAttribute("aria-hidden", "true");
+            }
+            panel.setAttribute("aria-hidden", "false");
         }
-        setTabIndex(trigger, "0");
-
-        // move focus to current trigger if invoked by dom event
-        if (domEvent) {
-            trigger.focus();
-        }
-        if (lastPanel) {
-            lastPanel.setAttribute("aria-hidden", "true");
-        }
-        panel.setAttribute("aria-hidden", "false");
-    }
 
 
-},
+    },
     {
         requires:["dom","event","../base","../aria","./base"]
     });
@@ -2561,8 +2562,11 @@ KISSY.add('switchable/tabs/aria', function(S, DOM, Event,Switchable, Aria, Tabs)
  <ul class="list">
  <li>左/上键:当焦点在标签时转到上一个标签
  <li>右/下键:当焦点在标签时转到下一个标签
- <li>Home: 当焦点在标签时转到第一个标签
- <li>End: 当焦点在标签时转到最后一个标签
+ <li>Home: 当焦点在标签时转到第一个标签 -- 去除
+ 输入框内 home 跳到输入框第一个字符前面 ，
+ end 跳到输入框最后一个字符后面 ，
+ 不应该拦截
+ <li>End: 当焦点在标签时转到最后一个标签 -- 去除
  <li>Control + PgUp and Control + Shift + Tab: 当然焦点在容器内时转到当前标签上一个标签
  <li>Control + PgDn and Control + Tab: 当然焦点在容器内时转到当前标签下一个标签
  </ul>

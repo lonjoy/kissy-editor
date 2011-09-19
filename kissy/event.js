@@ -1,7 +1,7 @@
-/*
+﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 13 21:43
+build time: Sep 5 21:30
 */
 /**
  * @module  event
@@ -48,11 +48,31 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
      * @namespace
      */
     var Event = {
+
+        _clone:function(src, dest) {
+            if (dest.nodeType !== DOM.ELEMENT_NODE ||
+                !Event._hasData(src)) {
+                return;
+            }
+            var eventDesc = Event._data(src),
+                events = eventDesc.events;
+            S.each(events, function(handlers, type) {
+                S.each(handlers, function(handler) {
+                    Event.on(dest, type, handler.fn, handler.scope, handler.data);
+                });
+            });
+        },
+
+        _hasData:function(elem) {
+            return !!DOM.hasData(elem, EVENT_GUID);
+        },
+
         _data:function(elem) {
             var args = makeArray(arguments);
             args.splice(1, 0, EVENT_GUID);
             return DOM.data.apply(DOM, args);
         },
+
         _removeData:function(elem) {
             var args = makeArray(arguments);
             args.splice(1, 0, EVENT_GUID);
@@ -95,7 +115,11 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                 //事件 listeners
                 var events = eventDesc.events = eventDesc.events || {},
                     handlers = events[type] = events[type] || [],
-                    handleObj = {fn: fn, scope: scope || target,data:data},
+                    handleObj = {
+                        fn: fn,
+                        scope: scope,
+                        data:data
+                    },
                     eventHandler = eventDesc.handler;
                 // 该元素没有 handler ，并且该元素是 dom 节点时才需要注册 dom 事件
                 if (!eventHandler) {
@@ -175,9 +199,11 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                     // 移除 fn
                     if (fn && len) {
                         for (i = 0,j = 0,t = []; i < len; ++i) {
-                            var reserve = false,listener = listeners[i];
+                            var reserve = false,
+                                listener = listeners[i],
+                                listenerScope = listener.scope || target;
                             if (fn !== listener.fn
-                                || scope !== listener.scope) {
+                                || scope !== listenerScope) {
                                 t[j++] = listener;
                                 reserve = true;
                             } else if (data !== data2) {
@@ -244,7 +270,8 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 
             for (; i < len; ++i) {
                 listener = listeners[i];
-                ret = listener.fn.call(listener.scope, event, listener.data);
+                ret = listener.fn.call(listener.scope || target,
+                    event, listener.data);
                 // 和 jQuery 逻辑保持一致
 
                 if (ret !== undefined) {

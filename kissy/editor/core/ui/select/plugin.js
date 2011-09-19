@@ -1,6 +1,6 @@
 /**
  * select component for kissy editor
- * @author:yiminghe@gmail.com
+ * @author yiminghe@gmail.com
  */
 KISSY.Editor.add("select", function() {
     var S = KISSY,
@@ -505,4 +505,6 @@ KISSY.Editor.add("select", function() {
         }
         return context;
     };
+},{
+    attach:false
 });

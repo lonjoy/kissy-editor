@@ -1,6 +1,6 @@
 /**
  * localStorage support for ie<8
- * @author:yiminghe@gmail.com
+ * @author yiminghe@gmail.com
  */
 KISSY.Editor.add("localstorage", function() {
     var S = KISSY,
@@ -109,8 +109,8 @@ KISSY.Editor.add("localstorage", function() {
 
     //非原生，等待flash通知
     store.on("contentReady", function() {
-        complete();
         KE.localStorage = store;
+        complete();
     });
 
     /*

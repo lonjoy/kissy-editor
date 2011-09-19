@@ -1,7 +1,7 @@
-/*
+﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 13 21:43
+build time: Sep 13 16:23
 */
 /**
  * @module  dom-attr
@@ -16,9 +16,6 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                 'innerText' : 'textContent',
             EMPTY = '',
             isElementNode = DOM._isElementNode,
-            isTextNode = function(elem) {
-                return DOM._nodeTypeIs(elem, 3);
-            },
             rboolean = /^(?:autofocus|autoplay|async|checked|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped|selected)$/i,
             rfocusable = /^(?:button|input|object|select|textarea)$/i,
             rclickable = /^a(?:rea)?$/i,
@@ -157,6 +154,10 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                     }
                 }};
 
+        function isTextNode(elem) {
+            return DOM._nodeTypeIs(elem, DOM.TEXT_NODE);
+        }
+
         if (oldIE) {
 
             // get attribute value from attribute node for ie
@@ -175,6 +176,16 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                     var ret = elem.getAttributeNode(name);
                     if (ret) {
                         ret.nodeValue = value;
+                    } else {
+                        try {
+                            var attr = elem.ownerDocument.createAttribute(name);
+                            attr.value = value;
+                            elem.setAttributeNode(attr);
+                        }
+                        catch (e) {
+                            // It's a real failure only if setAttribute also fails.
+                            return elem.setAttribute(name, value, 0);
+                        }
                     }
                 }
             };
@@ -220,9 +231,6 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
         function getProp(elem, name) {
             name = propFix[ name ] || name;
             var hook = propHooks[ name ];
-            if (!elem) {
-                return undefined;
-            }
             if (hook && hook.get) {
                 return hook.get(elem, name);
 
@@ -252,7 +260,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                 name = propFix[ name ] || name;
                 var hook = propHooks[ name ];
                 if (value !== undefined) {
-                    S.each(elems, function(elem) {
+                    elems.each(function(elem) {
                         if (hook && hook.set) {
                             hook.set(elem, value, name);
                         } else {
@@ -260,15 +268,26 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                         }
                     });
                 } else {
-                    var elem = elems[0];
-                    if (!elem) {
-                        return;
+                    if (elems.length) {
+                        return getProp(elems[0], name);
                     }
-                    return getProp(elem, name);
                 }
             },
+
+            /**
+             * 是否其中一个元素包含指定 property
+             * @param selector
+             * @param name
+             */
             hasProp:function(selector, name) {
-                return getProp(selector, name) !== undefined;
+                var elems = DOM.query(selector);
+                for (var i = 0; i < elems.length; i++) {
+                    var el = elems[i];
+                    if (getProp(el, name) !== undefined) {
+                        return true;
+                    }
+                }
+                return false;
             },
 
             /**
@@ -294,9 +313,39 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
              * Sets an attribute for the set of matched elements.
              */
             attr:function(selector, name, val, pass) {
+                /*
+                 Hazards From Caja Note:
+
+                 - In IE[67], el.setAttribute doesn't work for attributes like
+                 'class' or 'for'.  IE[67] expects you to set 'className' or
+                 'htmlFor'.  Caja use setAttributeNode solves this problem.
+
+                 - In IE[67], <input> elements can shadow attributes.  If el is a
+                 form that contains an <input> named x, then el.setAttribute(x, y)
+                 will set x's value rather than setting el's attribute.  Using
+                 setAttributeNode solves this problem.
+
+                 - In IE[67], the style attribute can only be modified by setting
+                 el.style.cssText.  Neither setAttribute nor setAttributeNode will
+                 work.  el.style.cssText isn't bullet-proof, since it can be
+                 shadowed by <input> elements.
+
+                 - In IE[67], you can never change the type of an <button> element.
+                 setAttribute('type') silently fails, but setAttributeNode
+                 throws an exception.  caja : the silent failure. KISSY throws error.
+
+                 - In IE[67], you can never change the type of an <input> element.
+                 setAttribute('type') throws an exception.  We want the exception.
+
+                 - In IE[67], setAttribute is case-sensitive, unless you pass 0 as a
+                 3rd argument.  setAttributeNode is case-insensitive.
+
+                 - Trying to set an invalid name like ":" is supposed to throw an
+                 error.  In IE[678] and Opera 10, it fails without an error.
+                 */
                 // suports hash
                 if (S.isPlainObject(name)) {
-                    pass = val; // 塌缩参数
+                    pass = val;
                     for (var k in name) {
                         DOM.attr(selector, k, name[k], pass);
                     }
@@ -354,14 +403,18 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                     return ret === null ? undefined : ret;
                 } else {
                     // setter
-                    S.each(DOM.query(selector), function(el) {
+                    DOM.query(selector).each(function(el) {
                         // only set attributes on element nodes
                         if (!isElementNode(el)) {
                             return;
                         }
-
-                        if (attrNormalizer && attrNormalizer.set) {
-                            attrNormalizer.set(el, val, name);
+                        var normalizer = attrNormalizer;
+                        // browsers index elements by id/name on forms, give priority to attributes.
+                        if (el.nodeName.toLowerCase() == "form") {
+                            normalizer = attrNodeHook;
+                        }
+                        if (normalizer && normalizer.set) {
+                            normalizer.set(el, val, name);
                         } else {
                             // convert the value to a string (all browsers do this but IE)
                             el.setAttribute(name, EMPTY + val);
@@ -376,7 +429,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
             removeAttr: function(selector, name) {
                 name = name.toLowerCase();
                 name = attrFix[name] || name;
-                S.each(DOM.query(selector), function(el) {
+                DOM.query(selector).each(function(el) {
                     if (isElementNode(el)) {
                         var propName;
                         el.removeAttribute(name);
@@ -388,22 +441,36 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                 });
             },
 
+            /**
+             * 是否其中一个元素包含指定属性
+             */
             hasAttr: oldIE ?
                 function(selector, name) {
                     name = name.toLowerCase();
-                    var el = DOM.get(selector);
+                    var elems = DOM.query(selector);
                     // from ppk :http://www.quirksmode.org/dom/w3c_core.html
                     // IE5-7 doesn't return the value of a style attribute.
                     // var $attr = el.attributes[name];
-                    var $attr = el.getAttributeNode(name);
-                    return !!( $attr && $attr.specified );
+                    for (var i = 0; i < elems.length; i++) {
+                        var el = elems[i];
+                        var $attr = el.getAttributeNode(name);
+                        if ($attr && $attr.specified) {
+                            return true;
+                        }
+                    }
+                    return false;
                 }
                 :
                 function(selector, name) {
-                    name = name.toLowerCase();
-                    var el = DOM.get(selector);
-                    //使用原生实现
-                    return el.hasAttribute(name);
+                    var elems = DOM.query(selector);
+                    for (var i = 0; i < elems.length; i++) {
+                        var el = elems[i];
+                        //使用原生实现
+                        if (el.hasAttribute(name)) {
+                            return true;
+                        }
+                    }
+                    return false;
                 },
 
             /**
@@ -486,7 +553,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                 }
                 // setter
                 else {
-                    S.each(DOM.query(selector), function(el) {
+                    DOM.query(selector).each(function(el) {
                         if (isElementNode(el)) {
                             el[TEXT] = val;
                         }
@@ -524,7 +591,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
  */
 /**
  * @module  dom
- * @author  lifesinger@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 KISSY.add('dom/base', function(S, undefined) {
 
@@ -555,7 +622,7 @@ KISSY.add('dom/base', function(S, undefined) {
          * 是不是 element node
          */
         _isElementNode: function(elem) {
-            return nodeTypeIs(elem, 1);
+            return nodeTypeIs(elem, DOM.ELEMENT_NODE);
         },
 
         /**
@@ -567,7 +634,7 @@ KISSY.add('dom/base', function(S, undefined) {
         _getWin: function(elem) {
             return (elem && ('scrollTo' in elem) && elem['document']) ?
                 elem :
-                nodeTypeIs(elem, 9) ?
+                nodeTypeIs(elem, DOM.DOCUMENT_NODE) ?
                     elem.defaultView || elem.parentWindow :
                     (elem === undefined || elem === null) ?
                         window : false;
@@ -586,11 +653,14 @@ KISSY.add('dom/base', function(S, undefined) {
         }
     };
 
-    DOM.TEXT_NODE = 3;
-
     return DOM;
 
 });
+
+/**
+ * 2011-08
+ *  - 添加键盘枚举值，方便依赖程序清晰
+ */
 /**
  * @module  dom-class
  * @author  lifesinger@gmail.com
@@ -754,324 +824,470 @@ KISSY.add('dom/class', function(S, DOM, undefined) {
  */
 /**
  * @module  dom-create
- * @author  lifesinger@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 KISSY.add('dom/create', function(S, DOM, UA, undefined) {
 
-    var doc = document,
-        ie = UA['ie'],
-        nodeTypeIs = DOM._nodeTypeIs,
-        isElementNode = DOM._isElementNode,
-        DIV = 'div',
-        PARENT_NODE = 'parentNode',
-        DEFAULT_DIV = doc.createElement(DIV),
-        rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/ig,
-        RE_TAG = /<(\w+)/,
-        // Ref: http://jmrware.com/articles/2010/jqueryregex/jQueryRegexes.html#note_05
-        RE_SCRIPT = /<script([^>]*)>([^<]*(?:(?!<\/script>)<[^<]*)*)<\/script>/ig,
-        RE_SIMPLE_TAG = /^<(\w+)\s*\/?>(?:<\/\1>)?$/,
-        RE_SCRIPT_SRC = /\ssrc=(['"])(.*?)\1/i,
-        RE_SCRIPT_CHARSET = /\scharset=(['"])(.*?)\1/i;
+        var doc = document,
+            ie = UA['ie'],
+            nodeTypeIs = DOM._nodeTypeIs,
+            isElementNode = DOM._isElementNode,
+            DIV = 'div',
+            PARENT_NODE = 'parentNode',
+            DEFAULT_DIV = doc.createElement(DIV),
+            rxhtmlTag = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:]+)[^>]*)\/>/ig,
+            RE_TAG = /<(\w+)/,
+            // Ref: http://jmrware.com/articles/2010/jqueryregex/jQueryRegexes.html#note_05
+            RE_SCRIPT = /<script([^>]*)>([^<]*(?:(?!<\/script>)<[^<]*)*)<\/script>/ig,
+            RE_SIMPLE_TAG = /^<(\w+)\s*\/?>(?:<\/\1>)?$/,
+            RE_SCRIPT_SRC = /\ssrc=(['"])(.*?)\1/i,
+            RE_SCRIPT_CHARSET = /\scharset=(['"])(.*?)\1/i;
 
-    S.mix(DOM, {
+        S.mix(DOM, {
 
-        /**
-         * Creates a new HTMLElement using the provided html string.
-         */
-        create: function(html, props, ownerDoc) {
-            if (nodeTypeIs(html, 1) || nodeTypeIs(html, 3)) {
-                return cloneNode(html);
-            }
-
-            if (!(html = S.trim(html))) {
-                return null;
-            }
-
-            var ret = null,
-                creators = DOM._creators,
-                m,
-                tag = DIV,
-                k,
-                nodes;
-
-            // 简单 tag, 比如 DOM.create('<p>')
-            if ((m = RE_SIMPLE_TAG.exec(html))) {
-                ret = (ownerDoc || doc).createElement(m[1]);
-            }
-            // 复杂情况，比如 DOM.create('<img src="sprite.png" />')
-            else {
-                // Fix "XHTML"-style tags in all browsers
-                html = html.replace(rxhtmlTag, "<$1><" + "/$2>");
-
-                if ((m = RE_TAG.exec(html)) && (k = m[1])) {
-                    tag = k.toLowerCase();
+            /**
+             * Creates a new HTMLElement using the provided html string.
+             */
+            create: function(html, props, ownerDoc) {
+                if (nodeTypeIs(html, DOM.ELEMENT_NODE)
+                    || nodeTypeIs(html, DOM.TEXT_NODE)) {
+                    return DOM.clone(html);
                 }
 
-                nodes = (creators[tag] || creators[DIV])(html, ownerDoc).childNodes;
-
-                if (nodes.length === 1) {
-                    // return single node, breaking parentNode ref from "fragment"
-                    ret = nodes[0][PARENT_NODE].removeChild(nodes[0]);
+                if (!(html = S.trim(html))) {
+                    return null;
                 }
-                else if (nodes.length) {
-                    // return multiple nodes as a fragment
-                    ret = nl2frag(nodes, ownerDoc || doc);
-                } else {
-                    S.error(html + " : create node error");
+
+                var ret = null,
+                    creators = DOM._creators,
+                    m,
+                    tag = DIV,
+                    k,
+                    nodes;
+
+                // 简单 tag, 比如 DOM.create('<p>')
+                if ((m = RE_SIMPLE_TAG.exec(html))) {
+                    ret = (ownerDoc || doc).createElement(m[1]);
                 }
-            }
+                // 复杂情况，比如 DOM.create('<img src="sprite.png" />')
+                else {
+                    // Fix "XHTML"-style tags in all browsers
+                    html = html.replace(rxhtmlTag, "<$1><" + "/$2>");
 
-            return attachProps(ret, props);
-        },
+                    if ((m = RE_TAG.exec(html)) && (k = m[1])) {
+                        tag = k.toLowerCase();
+                    }
 
-        _creators: {
-            div: function(html, ownerDoc) {
-                var frag = ownerDoc ? ownerDoc.createElement(DIV) : DEFAULT_DIV;
-                // html 为 <style></style> 时不行，必须有其他元素？
-                frag['innerHTML'] = "m<div>" + html + "<" + "/div>";
-                return frag.lastChild;
-            }
-        },
+                    nodes = (creators[tag] || creators[DIV])(html, ownerDoc).childNodes;
 
-        /**
-         * Gets/Sets the HTML contents of the HTMLElement.
-         * @param {Boolean} loadScripts (optional) True to look for and process scripts (defaults to false).
-         * @param {Function} callback (optional) For async script loading you can be notified when the update completes.
-         */
-        html: function(selector, val, loadScripts, callback) {
-            // getter
-            if (val === undefined) {
-                // supports css selector/Node/NodeList
-                var el = DOM.get(selector);
-
-                // only gets value on element nodes
-                if (isElementNode(el)) {
-                    return el['innerHTML'];
+                    if (nodes.length === 1) {
+                        // return single node, breaking parentNode ref from "fragment"
+                        ret = nodes[0][PARENT_NODE].removeChild(nodes[0]);
+                    }
+                    else if (nodes.length) {
+                        // return multiple nodes as a fragment
+                        ret = nl2frag(nodes, ownerDoc || doc);
+                    } else {
+                        S.error(html + " : create node error");
+                    }
                 }
-            }
-            // setter
-            else {
-                S.each(DOM.query(selector), function(elem) {
-                    if (isElementNode(elem)) {
-                        setHTML(elem, val, loadScripts, callback);
+
+                return attachProps(ret, props);
+            },
+
+            _creators: {
+                div: function(html, ownerDoc) {
+                    var frag = ownerDoc ? ownerDoc.createElement(DIV) : DEFAULT_DIV;
+                    // html 为 <style></style> 时不行，必须有其他元素？
+                    frag['innerHTML'] = "m<div>" + html + "<" + "/div>";
+                    return frag.lastChild;
+                }
+            },
+
+            /**
+             * Gets/Sets the HTML contents of the HTMLElement.
+             * @param {Boolean} loadScripts (optional) True to look for and process scripts (defaults to false).
+             * @param {Function} callback (optional) For async script loading you can be notified when the update completes.
+             */
+            html: function(selector, val, loadScripts, callback) {
+                // getter
+                if (val === undefined) {
+                    // supports css selector/Node/NodeList
+                    var el = DOM.get(selector);
+
+                    // only gets value on element nodes
+                    if (isElementNode(el)) {
+                        return el['innerHTML'];
+                    }
+                }
+                // setter
+                else {
+                    DOM.query(selector).each(function(elem) {
+                        if (isElementNode(elem)) {
+                            setHTML(elem, val, loadScripts, callback);
+                        }
+                    });
+                }
+            },
+
+            /**
+             * Remove the set of matched elements from the DOM.
+             * 不要使用 innerHTML='' 来清除元素，可能会造成内存泄露，要使用 DOM.remove()
+             * @param selector 选择器或元素集合
+             * @param {Boolean} keepData 删除元素时是否保留其上的数据，用于离线操作，提高性能
+             */
+            remove: function(selector, keepData) {
+                DOM.query(selector).each(function(el) {
+                    if (!keepData && el.nodeType == DOM.ELEMENT_NODE) {
+                        // 清楚事件
+                        var Event = S.require("event");
+                        if (Event) {
+                            Event.detach(el.getElementsByTagName("*"));
+                            Event.detach(el);
+                        }
+                        DOM.removeData(el.getElementsByTagName("*"));
+                        DOM.removeData(el);
+                    }
+
+                    if (el.parentNode) {
+                        el.parentNode.removeChild(el);
                     }
                 });
+            },
+
+            /**
+             * clone node across browsers for the first node in selector
+             * @param selector 选择器或单个元素
+             * @param {Boolean} withDataAndEvent 复制节点是否包括和源节点同样的数据和事件
+             * @param {Boolean} deepWithDataAndEvent 复制节点的子孙节点是否包括和源节点子孙节点同样的数据和事件
+             * @refer https://developer.mozilla.org/En/DOM/Node.cloneNode
+             * @returns 复制后的节点
+             */
+            clone:function(selector, deep, withDataAndEvent, deepWithDataAndEvent) {
+                var elem = DOM.get(selector);
+
+                if (!elem) {
+                    return null;
+                }
+
+                var clone = elem.cloneNode(deep);
+
+                if (elem.nodeType == DOM.ELEMENT_NODE ||
+                    elem.nodeType == DOM.DOCUMENT_FRAGMENT_NODE) {
+                    // IE copies events bound via attachEvent when using cloneNode.
+                    // Calling detachEvent on the clone will also remove the events
+                    // from the original. In order to get around this, we use some
+                    // proprietary methods to clear the events. Thanks to MooTools
+                    // guys for this hotness.
+                    if (elem.nodeType == DOM.ELEMENT_NODE) {
+                        fixAttributes(elem, clone);
+                    }
+
+                    if (deep) {
+                        processAll(fixAttributes, elem, clone);
+                    }
+                }
+                // runtime 获得事件模块
+                if (withDataAndEvent) {
+                    cloneWidthDataAndEvent(elem, clone);
+                    if (deep && deepWithDataAndEvent) {
+                        processAll(cloneWidthDataAndEvent, elem, clone);
+                    }
+                }
+                return clone;
+            },
+
+            _nl2frag:nl2frag
+        });
+
+        function processAll(fn, elem, clone) {
+            if (elem.nodeType == DOM.DOCUMENT_FRAGMENT_NODE) {
+                var eCs = elem.childNodes,
+                    cloneCs = clone.childNodes,
+                    fIndex = 0;
+                while (eCs[fIndex]) {
+                    if (cloneCs[fIndex]) {
+                        processAll(fn, eCs[fIndex], cloneCs[fIndex]);
+                    }
+                    fIndex++;
+                }
+            } else if (elem.nodeType == DOM.ELEMENT_NODE) {
+                var elemChildren = elem.getElementsByTagName("*"),
+                    cloneChildren = clone.getElementsByTagName("*"),
+                    cIndex = 0;
+                while (elemChildren[cIndex]) {
+                    if (cloneChildren[cIndex]) {
+                        fn(elemChildren[cIndex], cloneChildren[cIndex]);
+                    }
+                    cIndex++;
+                }
             }
-        },
+        }
+
+
+        // 克隆除了事件的 data
+        function cloneWidthDataAndEvent(src, dest) {
+            var Event = S.require('event');
+
+            if (dest.nodeType !== DOM.ELEMENT_NODE && !DOM.hasData(src)) {
+                return;
+            }
+
+            var srcData = DOM.data(src);
+
+            // 浅克隆，data 也放在克隆节点上
+            for (var d in srcData) {
+                DOM.data(dest, d, srcData[d]);
+            }
+
+            // 事件要特殊点
+            if (Event) {
+                Event._removeData(dest);
+                Event._clone(src, dest);
+            }
+        }
+
+        // wierd ie cloneNode fix from jq
+        function fixAttributes(src, dest) {
+
+            // clearAttributes removes the attributes, which we don't want,
+            // but also removes the attachEvent events, which we *do* want
+            if (dest.clearAttributes) {
+                dest.clearAttributes();
+            }
+
+            // mergeAttributes, in contrast, only merges back on the
+            // original attributes, not the events
+            if (dest.mergeAttributes) {
+                dest.mergeAttributes(src);
+            }
+
+            var nodeName = dest.nodeName.toLowerCase();
+
+            // IE6-8 fail to clone children inside object elements that use
+            // the proprietary classid attribute value (rather than the type
+            // attribute) to identify the type of content to display
+            if (nodeName === "object" && !dest.childNodes.length) {
+                S.each(src.childNodes, function(c) {
+                    dest.appendChild(c);
+                });
+                // dest.outerHTML = src.outerHTML;
+            } else if (nodeName === "input" && (src.type === "checkbox" || src.type === "radio")) {
+                // IE6-8 fails to persist the checked state of a cloned checkbox
+                // or radio button. Worse, IE6-7 fail to give the cloned element
+                // a checked appearance if the defaultChecked value isn't also set
+                if (src.checked) {
+                    dest.defaultChecked = dest.checked = src.checked;
+                }
+
+                // IE6-7 get confused and end up setting the value of a cloned
+                // checkbox/radio button to an empty string instead of "on"
+                if (dest.value !== src.value) {
+                    dest.value = src.value;
+                }
+
+                // IE6-8 fails to return the selected option to the default selected
+                // state when cloning options
+            } else if (nodeName === "option") {
+                dest.selected = src.defaultSelected;
+                // IE6-8 fails to set the defaultValue to the correct value when
+                // cloning other types of input fields
+            } else if (nodeName === "input" || nodeName === "textarea") {
+                dest.defaultValue = src.defaultValue;
+            }
+
+            // Event data gets referenced instead of copied if the expando
+            // gets copied too
+            // 自定义 data 根据参数特殊处理，expando 只是个用于引用的属性
+            dest.removeAttribute(DOM.__EXPANDO);
+        }
+
+        // 添加成员到元素中
+        function attachProps(elem, props) {
+            if (S.isPlainObject(props)) {
+                if (isElementNode(elem)) {
+                    DOM.attr(elem, props, true);
+                }
+                // document fragment
+                else if (elem.nodeType == DOM.DOCUMENT_FRAGMENT_NODE) {
+                    S.each(elem.childNodes, function(child) {
+                        DOM.attr(child, props, true);
+                    });
+                }
+            }
+            return elem;
+        }
+
+        // 将 nodeList 转换为 fragment
+        function nl2frag(nodes, ownerDoc) {
+            var ret = null, i, len;
+
+            if (nodes
+                && (nodes.push || nodes.item)
+                && nodes[0]) {
+                ownerDoc = ownerDoc || nodes[0].ownerDocument;
+                ret = ownerDoc.createDocumentFragment();
+
+                if (nodes.item) { // convert live list to static array
+                    nodes = S.makeArray(nodes);
+                }
+
+                for (i = 0,len = nodes.length; i < len; i++) {
+                    ret.appendChild(nodes[i]);
+                }
+            }
+            else {
+                S.log('Unable to convert ' + nodes + ' to fragment.');
+            }
+            return ret;
+        }
+
+
+        // 直接通过 innerHTML 设置 html
+        function setHTMLSimple(elem, html) {
+            html = (html + '').replace(RE_SCRIPT, ''); // 过滤掉所有 script
+            try {
+                elem['innerHTML'] = html;
+            }
+            catch(ex) {
+                S.log("set innerHTML error : ");
+                S.log(ex);
+                // remove any remaining nodes
+                while (elem.firstChild) {
+                    elem.removeChild(elem.firstChild);
+                }
+                // html == '' 时，无需再 appendChild
+                if (html) {
+                    elem.appendChild(DOM.create(html));
+                }
+            }
+        }
 
         /**
-         * Remove the set of matched elements from the DOM.
+         * Update the innerHTML of this element, optionally searching for and processing scripts.
+         * @refer http://www.sencha.com/deploy/dev/docs/source/Element-more.html#method-Ext.Element-update
+         *        http://lifesinger.googlecode.com/svn/trunk/lab/2010/innerhtml-and-script-tags.html
          */
-        remove: function(selector) {
-            S.each(DOM.query(selector), function(el) {
-                if (el.parentNode) {
-                    el.parentNode.removeChild(el);
+        function setHTML(elem, html, loadScripts, callback) {
+            if (!loadScripts) {
+                setHTMLSimple(elem, html);
+                S.isFunction(callback) && callback();
+                return;
+            }
+
+            var id = S.guid('ks-tmp-'),
+                re_script = new RegExp(RE_SCRIPT); // 防止
+
+            html += '<span id="' + id + '"><' + '/span>';
+
+            // 确保脚本执行时，相关联的 DOM 元素已经准备好
+            // 不依赖于浏览器特性，正则表达式自己分析
+            S.available(id, function() {
+                var hd = DOM.get('head'),
+                    match,
+                    attrs,
+                    srcMatch,
+                    charsetMatch,
+                    t,
+                    s,
+                    text;
+
+                re_script['lastIndex'] = 0;
+                while ((match = re_script.exec(html))) {
+                    attrs = match[1];
+                    srcMatch = attrs ? attrs.match(RE_SCRIPT_SRC) : false;
+                    // script via src
+                    if (srcMatch && srcMatch[2]) {
+                        s = doc.createElement('script');
+                        s.src = srcMatch[2];
+                        // set charset
+                        if ((charsetMatch = attrs.match(RE_SCRIPT_CHARSET)) && charsetMatch[2]) {
+                            s.charset = charsetMatch[2];
+                        }
+                        s.async = true; // make sure async in gecko
+                        hd.appendChild(s);
+                    }
+                    // inline script
+                    else if ((text = match[2]) && text.length > 0) {
+                        // sync , 同步
+                        S.globalEval(text);
+                    }
                 }
+
+                // 删除探测节点
+                (t = doc.getElementById(id)) && DOM.remove(t);
+
+                // 回调
+                S.isFunction(callback) && callback();
             });
-        },
-        _nl2frag:nl2frag
+
+            setHTMLSimple(elem, html);
+        }
+
+        // only for gecko and ie
+        // 2010-10-22: 发现 chrome 也与 gecko 的处理一致了
+        if (ie || UA['gecko'] || UA['webkit']) {
+            // 定义 creators, 处理浏览器兼容
+            var creators = DOM._creators,
+                create = DOM.create,
+                TABLE_OPEN = '<table>',
+                TABLE_CLOSE = '<' + '/table>',
+                RE_TBODY = /(?:\/(?:thead|tfoot|caption|col|colgroup)>)+\s*<tbody/,
+                creatorsMap = {
+                    option: 'select',
+                    td: 'tr',
+                    tr: 'tbody',
+                    tbody: 'table',
+                    col: 'colgroup',
+                    legend: 'fieldset' // ie 支持，但 gecko 不支持
+                };
+
+            for (var p in creatorsMap) {
+                (function(tag) {
+                    creators[p] = function(html, ownerDoc) {
+                        return create('<' + tag + '>' + html + '<' + '/' + tag + '>', null, ownerDoc);
+                    }
+                })(creatorsMap[p]);
+            }
+
+
+            // IE7- adds TBODY when creating thead/tfoot/caption/col/colgroup elements
+            if (ie < 8) {
+                creators.tbody = function(html, ownerDoc) {
+                    var frag = create(TABLE_OPEN + html + TABLE_CLOSE, null, ownerDoc),
+                        tbody = frag.children['tags']('tbody')[0];
+
+                    if (frag.children.length > 1 && tbody && !RE_TBODY.test(html)) {
+                        tbody[PARENT_NODE].removeChild(tbody); // strip extraneous tbody
+                    }
+                    return frag;
+                };
+            }
+
+            S.mix(creators, {
+                optgroup: creators.option, // gecko 支持，但 ie 不支持
+                th: creators.td,
+                thead: creators.tbody,
+                tfoot: creators.tbody,
+                caption: creators.tbody,
+                colgroup: creators.tbody
+            });
+        }
+        return DOM;
+    },
+    {
+        requires:["./base","ua"]
     });
 
-    // 添加成员到元素中
-    function attachProps(elem, props) {
-        if (S.isPlainObject(props)) {
-            if (isElementNode(elem)) {
-                DOM.attr(elem, props, true);
-            }
-            // document fragment
-            else if (elem.nodeType == DOM.DOCUMENT_FRAGMENT_NODE) {
-                S.each(elem.childNodes, function(child) {
-                    DOM.attr(child, props, true);
-                });
-            }
-        }
-        return elem;
-    }
-
-    // 将 nodeList 转换为 fragment
-    function nl2frag(nodes, ownerDoc) {
-        var ret = null, i, len;
-
-        if (nodes
-            && (nodes.push || nodes.item)
-            && nodes[0]) {
-            ownerDoc = ownerDoc || nodes[0].ownerDocument;
-            ret = ownerDoc.createDocumentFragment();
-
-            if (nodes.item) { // convert live list to static array
-                nodes = S.makeArray(nodes);
-            }
-
-            for (i = 0,len = nodes.length; i < len; i++) {
-                ret.appendChild(nodes[i]);
-            }
-        }
-        else {
-            S.log('Unable to convert ' + nodes + ' to fragment.');
-        }
-
-        return ret;
-    }
-
-    function cloneNode(elem) {
-        var ret = elem.cloneNode(true);
-        /**
-         * if this is MSIE 6/7, then we need to copy the innerHTML to
-         * fix a bug related to some form field elements
-         */
-        if (UA['ie'] < 8) {
-            ret['innerHTML'] = elem['innerHTML'];
-        }
-        return ret;
-    }
-
-    /**
-     * Update the innerHTML of this element, optionally searching for and processing scripts.
-     * @refer http://www.sencha.com/deploy/dev/docs/source/Element-more.html#method-Ext.Element-update
-     *        http://lifesinger.googlecode.com/svn/trunk/lab/2010/innerhtml-and-script-tags.html
-     */
-    function setHTML(elem, html, loadScripts, callback) {
-        if (!loadScripts) {
-            setHTMLSimple(elem, html);
-            S.isFunction(callback) && callback();
-            return;
-        }
-
-        var id = S.guid('ks-tmp-'),
-            re_script = new RegExp(RE_SCRIPT); // 防止
-
-        html += '<span id="' + id + '"><' + '/span>';
-
-        // 确保脚本执行时，相关联的 DOM 元素已经准备好
-        // 不依赖于浏览器特性，正则表达式自己分析
-        S.available(id, function() {
-            var hd = DOM.get('head'),
-                match,
-                attrs,
-                srcMatch,
-                charsetMatch,
-                t,
-                s,
-                text;
-
-            re_script['lastIndex'] = 0;
-            while ((match = re_script.exec(html))) {
-                attrs = match[1];
-                srcMatch = attrs ? attrs.match(RE_SCRIPT_SRC) : false;
-                // script via src
-                if (srcMatch && srcMatch[2]) {
-                    s = doc.createElement('script');
-                    s.src = srcMatch[2];
-                    // set charset
-                    if ((charsetMatch = attrs.match(RE_SCRIPT_CHARSET)) && charsetMatch[2]) {
-                        s.charset = charsetMatch[2];
-                    }
-                    s.async = true; // make sure async in gecko
-                    hd.appendChild(s);
-                }
-                // inline script
-                else if ((text = match[2]) && text.length > 0) {
-                    // sync , 同步
-                    S.globalEval(text);
-                }
-            }
-
-            // 删除探测节点
-            (t = doc.getElementById(id)) && DOM.remove(t);
-
-            // 回调
-            S.isFunction(callback) && callback();
-        });
-
-        setHTMLSimple(elem, html);
-    }
-
-    // 直接通过 innerHTML 设置 html
-    function setHTMLSimple(elem, html) {
-        html = (html + '').replace(RE_SCRIPT, ''); // 过滤掉所有 script
-        try {
-            //if(UA.ie) {
-            elem['innerHTML'] = html;
-            //} else {
-            // Ref:
-            //  - http://blog.stevenlevithan.com/archives/faster-than-innerhtml
-            //  - http://fins.javaeye.com/blog/183373
-            //var tEl = elem.cloneNode(false);
-            //tEl.innerHTML = html;
-            //elem.parentNode.replaceChild(elem, tEl);
-            // 注：上面的方式会丢失掉 elem 上注册的事件，放类库里不妥当
-            //}
-        }
-            // table.innerHTML = html will throw error in ie.
-        catch(ex) {
-            S.log("set innerHTML error : ");
-            S.log(ex);
-            // remove any remaining nodes
-            while (elem.firstChild) {
-                elem.removeChild(elem.firstChild);
-            }
-            // html == '' 时，无需再 appendChild
-            if (html) {
-                elem.appendChild(DOM.create(html));
-            }
-        }
-    }
-
-    // only for gecko and ie
-    // 2010-10-22: 发现 chrome 也与 gecko 的处理一致了
-    if (ie || UA['gecko'] || UA['webkit']) {
-        // 定义 creators, 处理浏览器兼容
-        var creators = DOM._creators,
-            create = DOM.create,
-            TABLE_OPEN = '<table>',
-            TABLE_CLOSE = '<' + '/table>',
-            RE_TBODY = /(?:\/(?:thead|tfoot|caption|col|colgroup)>)+\s*<tbody/,
-            creatorsMap = {
-                option: 'select',
-                td: 'tr',
-                tr: 'tbody',
-                tbody: 'table',
-                col: 'colgroup',
-                legend: 'fieldset' // ie 支持，但 gecko 不支持
-            };
-
-        for (var p in creatorsMap) {
-            (function(tag) {
-                creators[p] = function(html, ownerDoc) {
-                    return create('<' + tag + '>' + html + '<' + '/' + tag + '>', null, ownerDoc);
-                }
-            })(creatorsMap[p]);
-        }
-
-
-        // IE7- adds TBODY when creating thead/tfoot/caption/col/colgroup elements
-        if (ie < 8) {
-            creators.tbody = function(html, ownerDoc) {
-                var frag = create(TABLE_OPEN + html + TABLE_CLOSE, null, ownerDoc),
-                    tbody = frag.children['tags']('tbody')[0];
-
-                if (frag.children.length > 1 && tbody && !RE_TBODY.test(html)) {
-                    tbody[PARENT_NODE].removeChild(tbody); // strip extraneous tbody
-                }
-                return frag;
-            };
-        }
-
-        S.mix(creators, {
-            optgroup: creators.option, // gecko 支持，但 ie 不支持
-            th: creators.td,
-            thead: creators.tbody,
-            tfoot: creators.tbody,
-            caption: creators.tbody,
-            colgroup: creators.tbody
-        });
-    }
-    return DOM;
-}, {
-    requires:["./base","ua"]
-});
-
 /**
+ * 2011-08-22
+ * clone 实现，参考 jq
+ *
+ * 2011-08
+ *  remove 需要对子孙节点以及自身清除事件以及自定义 data
+ *  create 修改，支持 <style></style> ie 下直接创建
+ *  TODO: jquery clone ,clean 实现
+ *
  * TODO:
  *  - 研究 jQuery 的 buildFragment 和 clean
  *  - 增加 cache, 完善 test cases
@@ -1213,8 +1429,8 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
                 try {
                     delete elem[EXPANDO];
                 } catch(e) {
-                    S.log("delete expando error : ");
-                    S.log(e);
+                    //S.log("delete expando error : ");
+                    //S.log(e);
                 }
                 if (elem.removeAttribute) {
                     elem.removeAttribute(EXPANDO);
@@ -1226,15 +1442,24 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
 
     S.mix(DOM, {
 
+        __EXPANDO:EXPANDO,
+
+        /**
+         * whether any node has data
+         */
         hasData:function(selector, name) {
-            var ret = false;
-            DOM.query(selector).each(function(elem) {
+            var ret = false,elems = DOM.query(selector);
+            for (var i = 0; i < elems.length; i++) {
+                var elem = elems[i];
                 if (checkIsNode(elem)) {
-                    ret = ret || domOps.hasData(elem, name);
+                    ret = domOps.hasData(elem, name);
                 } else {
-                    ret = ret || objectOps.hasData(elem, name);
+                    ret = objectOps.hasData(elem, name);
                 }
-            });
+                if (ret) {
+                    return ret;
+                }
+            }
             return ret;
         },
 
@@ -1255,7 +1480,7 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
                 var elem = DOM.get(selector);
                 if (checkIsNode(elem)) {
                     return domOps.data(elem, name, data);
-                } else {
+                } else if (elem) {
                     return objectOps.data(elem, name, data);
                 }
             }
@@ -1314,65 +1539,65 @@ KISSY.add('dom/insertion', function(S, DOM) {
     function insertion(newNodes, refNodes, fn) {
         newNodes = DOM.query(newNodes);
         refNodes = DOM.query(refNodes);
-        var newNode = nl2frag(newNodes);
-        if (!newNode) {
+        if (!newNodes.length || !refNodes.length) {
             return;
         }
-        var cloneNode;
+        var newNode = nl2frag(newNodes),
+            clonedNode;
         //fragment 一旦插入里面就空了，先复制下
         if (refNodes.length > 1) {
-            cloneNode = newNode.cloneNode(true);
+            clonedNode = DOM.clone(newNode, true);
         }
         for (var i = 0; i < refNodes.length; i++) {
             var refNode = refNodes[i];
             //refNodes 超过一个，clone
-            var node = i > 0 ? cloneNode.cloneNode(true) : newNode;
+            var node = i > 0 ? DOM.clone(clonedNode, true) : newNode;
             fn(node, refNode);
         }
     }
 
     S.mix(DOM, {
 
-            /**
-             * Inserts the new node as the previous sibling of the reference node.
-             */
-            insertBefore: function(newNodes, refNodes) {
-                insertion(newNodes, refNodes, function(newNode, refNode) {
-                    if (refNode[PARENT_NODE]) {
-                        refNode[PARENT_NODE].insertBefore(newNode, refNode);
-                    }
-                });
-            },
+        /**
+         * Inserts the new node as the previous sibling of the reference node.
+         */
+        insertBefore: function(newNodes, refNodes) {
+            insertion(newNodes, refNodes, function(newNode, refNode) {
+                if (refNode[PARENT_NODE]) {
+                    refNode[PARENT_NODE].insertBefore(newNode, refNode);
+                }
+            });
+        },
 
-            /**
-             * Inserts the new node as the next sibling of the reference node.
-             */
-            insertAfter: function(newNodes, refNodes) {
-                insertion(newNodes, refNodes, function(newNode, refNode) {
-                    if (refNode[PARENT_NODE]) {
-                        refNode[PARENT_NODE].insertBefore(newNode, refNode[NEXT_SIBLING]);
-                    }
-                });
-            },
+        /**
+         * Inserts the new node as the next sibling of the reference node.
+         */
+        insertAfter: function(newNodes, refNodes) {
+            insertion(newNodes, refNodes, function(newNode, refNode) {
+                if (refNode[PARENT_NODE]) {
+                    refNode[PARENT_NODE].insertBefore(newNode, refNode[NEXT_SIBLING]);
+                }
+            });
+        },
 
-            /**
-             * Inserts the new node as the last child.
-             */
-            appendTo: function(newNodes, parents) {
-                insertion(newNodes, parents, function(newNode, parent) {
-                    parent.appendChild(newNode);
-                });
-            },
+        /**
+         * Inserts the new node as the last child.
+         */
+        appendTo: function(newNodes, parents) {
+            insertion(newNodes, parents, function(newNode, parent) {
+                parent.appendChild(newNode);
+            });
+        },
 
-            /**
-             * Inserts the new node as the first child.
-             */
-            prependTo:function(newNodes, parents) {
-                insertion(newNodes, parents, function(newNode, parent) {
-                    parent.insertBefore(newNode, parent.firstChild);
-                });
-            }
-        });
+        /**
+         * Inserts the new node as the first child.
+         */
+        prependTo:function(newNodes, parents) {
+            insertion(newNodes, parents, function(newNode, parent) {
+                parent.insertBefore(newNode, parent.firstChild);
+            });
+        }
+    });
     var alias = {
         "prepend":"prependTo",
         "append":"appendTo",
@@ -1384,8 +1609,8 @@ KISSY.add('dom/insertion', function(S, DOM) {
     }
     return DOM;
 }, {
-        requires:["./create"]
-    });
+    requires:["./create"]
+});
 
 /**
  * 2011-05-25
@@ -1395,7 +1620,7 @@ KISSY.add('dom/insertion', function(S, DOM) {
  */
 /**
  * @module  dom-offset
- * @author  lifesinger@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 KISSY.add('dom/offset', function(S, DOM, UA, undefined) {
 
@@ -1420,9 +1645,29 @@ KISSY.add('dom/offset', function(S, DOM, UA, undefined) {
         CLIENT = 'client',
         LEFT = 'left',
         TOP = 'top',
+        isNumber = S.isNumber,
         SCROLL_LEFT = SCROLL + 'Left',
         SCROLL_TOP = SCROLL + 'Top',
         GET_BOUNDING_CLIENT_RECT = 'getBoundingClientRect';
+
+//    ownerDocument 的判断不保证 elem 没有游离在 document 之外（比如 fragment）
+//    function inDocument(elem) {
+//        if (!elem) {
+//            return 0;
+//        }
+//        var doc = elem.ownerDocument;
+//        if (!doc) {
+//            return 0;
+//        }
+//        var html = doc.documentElement;
+//        if (html === elem) {
+//            return true;
+//        }
+//        else if (DOM.__contains(html, elem)) {
+//            return true;
+//        }
+//        return false;
+//    }
 
     S.mix(DOM, {
 
@@ -1433,34 +1678,42 @@ KISSY.add('dom/offset', function(S, DOM, UA, undefined) {
          *     is not in the ancestor frame chain of the element, we measure relative to
          *     the top-most window.
          */
-        offset: function(elem, val, relativeWin) {
-            // ownerDocument 的判断可以保证 elem 没有游离在 document 之外（比如 fragment）
-            if (!(elem = DOM.get(elem)) || !elem[OWNER_DOCUMENT]) {
-                return;
-            }
-
+        offset: function(selector, val, relativeWin) {
             // getter
             if (val === undefined) {
-                return getOffset(elem, relativeWin);
+                var elem = DOM.get(selector),ret;
+                if (elem) {
+                    ret = getOffset(elem, relativeWin);
+                }
+                return ret;
             }
-
             // setter
-            setOffset(elem, val);
+            DOM.query(selector).each(function(elem) {
+                setOffset(elem, val);
+            });
         },
 
         /**
          * Makes elem visible in the container
+         * @param elem
+         * @param container
+         * @param top
+         * @param hscroll
+         * @param {Boolean} auto whether adjust element automatically
+         *                       (it only scrollIntoView when element is out of view)
          * @refer http://www.w3.org/TR/2009/WD-html5-20090423/editing.html#scrollIntoView
          *        http://www.sencha.com/deploy/dev/docs/source/Element.scroll-more.html#scrollIntoView
          *        http://yiminghe.javaeye.com/blog/390732
          */
-        scrollIntoView: function(elem, container, top, hscroll) {
-            if (!(elem = DOM.get(elem)) || !elem[OWNER_DOCUMENT]) {
+        scrollIntoView: function(elem, container, top, hscroll, auto) {
+            if (!(elem = DOM.get(elem))) {
                 return;
             }
 
-            hscroll = hscroll === undefined ? true : !!hscroll;
-            top = top === undefined ? true : !!top;
+            if (auto !== true) {
+                hscroll = hscroll === undefined ? true : !!hscroll;
+                top = top === undefined ? true : !!top;
+            }
 
             // default current window, use native for scrollIntoView(elem, top)
             if (!container ||
@@ -1491,8 +1744,8 @@ KISSY.add('dom/offset', function(S, DOM, UA, undefined) {
                 },
 
                 // container 视窗的高宽
-                ch = isWin ? DOM['viewportHeight'](container) : container.clientHeight,
-                cw = isWin ? DOM['viewportWidth'](container) : container.clientWidth,
+                ch = isWin ? DOM.viewportHeight(container) : container.clientHeight,
+                cw = isWin ? DOM.viewportWidth(container) : container.clientWidth,
 
                 // container 视窗相对 container 元素的坐标
                 cl = DOM[SCROLL_LEFT](container),
@@ -1501,17 +1754,23 @@ KISSY.add('dom/offset', function(S, DOM, UA, undefined) {
                 cb = ct + ch,
 
                 // elem 的高宽
-                eh = elem.offsetHeight,
-                ew = elem.offsetWidth,
+                eh = DOM.outerHeight(elem),
+                ew = DOM.outerWidth(elem),
 
                 // elem 相对 container 元素的坐标
-                // 注：diff.left 含 border, cl 也含 border, 因此要减去一个
-                l = diff.left + cl - (PARSEINT(DOM.css(container, 'borderLeftWidth')) || 0),
-                t = diff.top + ct - (PARSEINT(DOM.css(container, 'borderTopWidth')) || 0),
+                // 注：diff.left 含 border, cl 也含 border, 因此要减去容器的
+                l = diff.left + cl -
+                    (isWin ? 0 : (PARSEINT(DOM.css(container, 'borderLeftWidth')) || 0)),
+
+                t = diff.top + ct -
+                    (isWin ? 0 : (PARSEINT(DOM.css(container, 'borderTopWidth')) || 0)),
+
                 r = l + ew,
                 b = t + eh,
 
-                t2, l2;
+                t2,
+
+                l2;
 
             // 根据情况将 elem 定位到 container 视窗中
             // 1. 当 eh > ch 时，优先显示 elem 的顶部，对用户来说，这样更合理
@@ -1533,9 +1792,13 @@ KISSY.add('dom/offset', function(S, DOM, UA, undefined) {
                 }
             }
 
-            // go
-            DOM[SCROLL_TOP](container, t2);
-            DOM[SCROLL_LEFT](container, l2);
+            // if element is already in the container view ,then do nothing
+            if (t2 !== undefined) {
+                DOM[SCROLL_TOP](container, t2);
+            }
+            if (l2 !== undefined) {
+                DOM[SCROLL_LEFT](container, l2);
+            }
         },
         /**
          * for idea autocomplete
@@ -1553,37 +1816,42 @@ KISSY.add('dom/offset', function(S, DOM, UA, undefined) {
         var method = SCROLL + name;
 
         DOM[method] = function(elem, v) {
-            if (S.isNumber(elem)) {
-                arguments.callee(win, elem);
-                return;
+            if (isNumber(elem)) {
+                return arguments.callee(win, elem);
             }
             elem = DOM.get(elem);
-            var ret = 0,
+            var ret,
                 w = getWin(elem),
                 d;
-
             if (w) {
                 if (v !== undefined) {
                     // 注意多 windw 情况，不能简单取 win
-                    var left = name == "Left" ? v : DOM.scrollLeft(w);
-                    var top = name == "Top" ? v : DOM.scrollTop(w);
+                    var left = name == "Left" ? v : DOM.scrollLeft(w),
+                        top = name == "Top" ? v : DOM.scrollTop(w);
                     w['scrollTo'](left, top);
-                }
-                d = w[DOCUMENT];
-                ret =
+                } else {
                     //标准
                     //chrome == body.scrollTop
                     //firefox/ie9 == documentElement.scrollTop
-                    w[i ? 'pageYOffset' : 'pageXOffset']
+                    ret = w[ 'page' + (i ? 'Y' : 'X') + 'Offset'];
+                    if (!isNumber(ret)) {
+                        d = w[DOCUMENT];
                         //ie6,7,8 standard mode
-                        || d[DOC_ELEMENT][method]
-                        //quirks mode
-                        || d[BODY][method]
-
-            } else if (isElementNode((elem = DOM.get(elem)))) {
-                ret = v === undefined ? elem[method] : elem[method] = v;
+                        ret = d[DOC_ELEMENT][method];
+                        if (!isNumber(ret)) {
+                            //quirks mode
+                            ret = d[BODY][method];
+                        }
+                    }
+                }
+            } else if (isElementNode(elem)) {
+                if (v !== undefined) {
+                    elem[method] = v
+                } else {
+                    ret = elem[method];
+                }
             }
-            return v === undefined ? ret : undefined;
+            return ret;
         }
     });
 
@@ -1983,14 +2251,27 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
             return null;
         }
         var doc = context;
-        if (context.nodeType !== 9) {
+        if (context.nodeType !== DOM.DOCUMENT_NODE) {
             doc = context.ownerDocument;
         }
         var el = doc.getElementById(id);
-        // 如果指定了 context node , 还要判断 id 是否处于 context 内
-        if (!testByContext(el, context)) {
-            return null;
+        if (el && el.parentNode) {
+            // ie opera confuse name with id
+            // https://github.com/kissyteam/kissy/issues/67
+            // 不能直接 el.id ，否则 input shadow form attribute
+            if (DOM.attr(el, "id") !== id) {
+                // 直接在 context 下的所有节点找
+                el = DOM.filter("*", "#" + id, context)[0] || null;
+            }
+            // ie 特殊情况下以及指明在 context 下找了，不需要再判断
+            // 如果指定了 context node , 还要判断 id 是否处于 context 内
+            else if (!testByContext(el, context)) {
+                el = null;
+            }
+        } else {
+            el = null;
         }
+
         return el;
     }
 
@@ -2098,29 +2379,36 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
                 sizzle = require("sizzle"),
                 match,
                 tag,
+                id,
                 cls,
                 ret = [];
 
-            // 默认仅支持最简单的 tag.cls 形式
+            // 默认仅支持最简单的 tag.cls 或 #id 形式
             if (isString(filter) &&
-                (match = REG_QUERY.exec(filter)) &&
-                !match[1]) {
+                (match = REG_QUERY.exec(filter))) {
+                id = match[1];
                 tag = match[2];
                 cls = match[3];
-                filter = function(elem) {
-                    var tagRe = true,clsRe = true;
+                if (!id) {
+                    filter = function(elem) {
+                        var tagRe = true,clsRe = true;
 
-                    // 指定 tag 才进行判断
-                    if (tag) {
-                        tagRe = eqTagName(elem, tag);
+                        // 指定 tag 才进行判断
+                        if (tag) {
+                            tagRe = eqTagName(elem, tag);
+                        }
+
+                        // 指定 cls 才进行判断
+                        if (cls) {
+                            clsRe = DOM.hasClass(elem, cls);
+                        }
+
+                        return clsRe && tagRe;
                     }
-
-                    // 指定 cls 才进行判断
-                    if (cls) {
-                        clsRe = DOM.hasClass(elem, cls);
-                    }
-
-                    return clsRe && tagRe;
+                } else if (id && !tag && !cls) {
+                    filter = function(elem) {
+                        return elem.id === id;
+                    };
                 }
             }
 
@@ -2238,181 +2526,180 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
  */
 /**
  * @module  dom
- * @author  lifesinger@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 KISSY.add('dom/style-ie', function(S, DOM, UA, Style) {
 
-    var HUNDRED = 100;
+        var HUNDRED = 100;
 
-    // only for ie
-    if (!UA['ie']) {
-        return DOM;
-    }
+        // only for ie
+        if (!UA['ie']) {
+            return DOM;
+        }
 
-    var doc = document,
-        docElem = doc.documentElement,
-        OPACITY = 'opacity',
-        FILTER = 'filter',
-        FILTERS = 'filters',
-        CURRENT_STYLE = 'currentStyle',
-        RUNTIME_STYLE = 'runtimeStyle',
-        LEFT = 'left',
-        PX = 'px',
-        CUSTOM_STYLES = Style._CUSTOM_STYLES,
-        RE_NUMPX = /^-?\d+(?:px)?$/i,
-        RE_NUM = /^-?\d/,
-        RE_WH = /^(?:width|height)$/;
+        var doc = document,
+            docElem = doc.documentElement,
+            OPACITY = 'opacity',
+            STYLE = 'style',
+            FILTER = "filter",
+            CURRENT_STYLE = 'currentStyle',
+            RUNTIME_STYLE = 'runtimeStyle',
+            LEFT = 'left',
+            PX = 'px',
+            CUSTOM_STYLES = Style._CUSTOM_STYLES,
+            RE_NUMPX = /^-?\d+(?:px)?$/i,
+            RE_NUM = /^-?\d/,
+            ropacity = /opacity=([^)]*)/,
+            ralpha = /alpha\([^)]*\)/i;
 
-    // use alpha filter for IE opacity
-    try {
-        if (S.isNullOrUndefined(docElem.style[OPACITY]) && docElem[FILTERS]) {
+        // use alpha filter for IE opacity
+        try {
+            if (S.isNullOrUndefined(docElem.style[OPACITY])) {
 
-            CUSTOM_STYLES[OPACITY] = {
+                CUSTOM_STYLES[OPACITY] = {
 
-                get: function(elem) {
+                    get: function(elem, computed) {
+                        // 没有设置过 opacity 时会报错，这时返回 1 即可
+                        // 如果该节点没有添加到 dom ，取不到 filters 结构
+                        // val = elem[FILTERS]['DXImageTransform.Microsoft.Alpha'][OPACITY];
+                        return ropacity.test((
+                            computed && elem[CURRENT_STYLE] ?
+                                elem[CURRENT_STYLE][FILTER] :
+                                elem[STYLE][FILTER]) || "") ?
+                            ( parseFloat(RegExp.$1) / HUNDRED ) + "" :
+                            computed ? "1" : "";
+                    },
 
-                    var val = HUNDRED;
+                    set: function(elem, val) {
+                        val = parseFloat(val);
 
-                    try { // will error if no DXImageTransform
-                        val = elem[FILTERS]['DXImageTransform.Microsoft.Alpha'][OPACITY];
-                    }
-                    catch(e) {
-                        S.log("DXImageTransform.Microsoft.Alpha error : ");
-                        S.log(e);
-                        try {
-                            val = elem[FILTERS]('alpha')[OPACITY];
-                        } catch(ex) {
-                            S.log("filters alpha error : ");
-                            S.log(ex);
-                            // 没有设置过 opacity 时会报错，这时返回 1 即可
-                            //如果该节点没有添加到 dom ，取不到 filters 结构
+                        var style = elem[STYLE],
+                            currentStyle = elem[CURRENT_STYLE],
+                            opacity = isNaN(val) ? "" : "alpha(" + OPACITY + "=" + val * HUNDRED + ")",
+                            filter = S.trim(currentStyle && currentStyle[FILTER] || style[FILTER] || "");
 
-                            var currentFilter = (elem.currentStyle || 0).filter || '';
-                            var m;
-                            if (m = currentFilter.match(/alpha\(opacity[=:]([^)]+)\)/)) {
-                                val = parseInt(S.trim(m[1]));
+                        // ie  has layout
+                        style.zoom = 1;
+
+                        // if setting opacity to 1, and no other filters exist - attempt to remove filter attribute
+                        if (val >= 1 && S.trim(filter.replace(ralpha, "")) === "") {
+
+                            // Setting style.filter to null, "" & " " still leave "filter:" in the cssText
+                            // if "filter:" is present at all, clearType is disabled, we want to avoid this
+                            // style.removeAttribute is IE Only, but so apparently is this code path...
+                            style.removeAttribute(FILTER);
+
+                            // if there there is no filter style applied in a css rule, we are done
+                            if (currentStyle && !currentStyle[FILTER]) {
+                                return;
                             }
+                        }
 
+                        // otherwise, set new filter values
+                        // 如果 >=1 就不设，就不能覆盖外部样式表定义的样式，一定要设
+                        style.filter = ralpha.test(filter) ?
+                            filter.replace(ralpha, opacity) :
+                            filter + (filter ? ", " : "") + opacity;
+                    }
+                };
+            }
+        }
+        catch(ex) {
+            S.log('IE filters ActiveX is disabled. ex = ' + ex);
+        }
+
+        /**
+         * border fix
+         * ie 不设置数值，则 computed style 不返回数值，只返回 thick? medium ...
+         * (default is "medium")
+         */
+        var IE8 = UA['ie'] == 8,
+            BORDER_MAP = {
+            },
+            BORDERS = ["","Top","Left","Right","Bottom"];
+        BORDER_MAP['thin'] = IE8 ? '1px' : '2px';
+        BORDER_MAP['medium'] = IE8 ? '3px' : '4px';
+        BORDER_MAP['thick'] = IE8 ? '5px' : '6px';
+        S.each(BORDERS, function(b) {
+            var name = "border" + b + "Width",
+                styleName = "border" + b + "Style";
+            CUSTOM_STYLES[name] = {
+                get: function(elem, computed) {
+                    // 只有需要计算样式的时候才转换，否则取原值
+                    var currentStyle = computed ? elem[CURRENT_STYLE] : 0,
+                        current = currentStyle && String(currentStyle[name]) || undefined;
+                    // look up keywords if a border exists
+                    if (current && current.indexOf("px") < 0) {
+                        // 边框没有隐藏
+                        if (BORDER_MAP[current] && currentStyle[styleName] !== "none") {
+                            current = BORDER_MAP[current];
+                        } else {
+                            // otherwise no border
+                            current = 0;
                         }
                     }
-
-                    // 和其他浏览器保持一致，转换为字符串类型
-                    return val / HUNDRED + '';
-                },
-
-                set: function(elem, val) {
-                    var style = elem.style,
-                        currentFilter = (elem.currentStyle || 0).filter || '';
-
-                    // IE has trouble with opacity if it does not have layout
-                    // Force it by setting the zoom level
-                    style.zoom = 1;
-                    //S.log(currentFilter + " : "+val);
-                    // keep existed filters, and remove opacity filter
-                    if (currentFilter) {
-                        //出现 alpha(opacity:0), alpha(opacity=0) ?
-                        currentFilter = S.trim(currentFilter.replace(
-                            /alpha\(opacity[^=]*=[^)]+\),?/ig, ''));
-                    }
-
-                    if (currentFilter && val != 1) {
-                        currentFilter += ', ';
-                    }
-
-                    // Set the alpha filter to set the opacity when really needed
-                    style[FILTER] = currentFilter + (val === 1 ? '' : 'alpha(' + OPACITY + '=' + val * HUNDRED + ')' );
-                    //S.log( style[FILTER]);
+                    return current;
                 }
             };
-        }
-    }
-    catch(ex) {
-        S.log('IE filters ActiveX is disabled. ex = ' + ex);
-    }
+        });
 
-    /**
-     * border fix
-     * ie 不返回数值，只返回 thick? medium ...
-     */
-    var IE8 = UA['ie'] == 8,
-        BORDER_MAP = {
-        },
-        BORDERS = ["","Top","Left","Right","Bottom"],
-        BORDER_FIX = {
-            get: function(elem, property) {
-                var currentStyle = elem.currentStyle,
-                    current = currentStyle[property] + "";
-                // look up keywords if a border exists
-                if (current.indexOf("px") < 0) {
-                    if (BORDER_MAP[current]) {
-                        current = BORDER_MAP[current];
-                    } else {
-                        // otherwise no border (default is "medium")
-                        current = 0;
+        // getComputedStyle for IE
+        if (!(doc.defaultView || { }).getComputedStyle && docElem[CURRENT_STYLE]) {
+
+            DOM._getComputedStyle = function(elem, name) {
+                name = DOM._cssProps[name] || name;
+
+                var ret = elem[CURRENT_STYLE] && elem[CURRENT_STYLE][name];
+
+                // 当 width/height 设置为百分比时，通过 pixelLeft 方式转换的 width/height 值
+                // 一开始就处理了! CUSTOM_STYLE["height"],CUSTOM_STYLE["width"] ,cssHook 解决@2011-08-19
+                // 在 ie 下不对，需要直接用 offset 方式
+                // borderWidth 等值也有问题，但考虑到 borderWidth 设为百分比的概率很小，这里就不考虑了
+
+                // From the awesome hack by Dean Edwards
+                // http://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
+                // If we're not dealing with a regular pixel number
+                // but a number that has a weird ending, we need to convert it to pixels
+                if ((!RE_NUMPX.test(ret) && RE_NUM.test(ret))) {
+                    // Remember the original values
+                    var style = elem[STYLE],
+                        left = style[LEFT],
+                        rsLeft = elem[RUNTIME_STYLE] && elem[RUNTIME_STYLE][LEFT];
+
+                    // Put in the new values to get a computed value out
+                    if (rsLeft) {
+                        elem[RUNTIME_STYLE][LEFT] = elem[CURRENT_STYLE][LEFT];
+                    }
+                    style[LEFT] = name === 'fontSize' ? '1em' : (ret || 0);
+                    ret = style['pixelLeft'] + PX;
+
+                    // Revert the changed values
+                    style[LEFT] = left;
+                    if (rsLeft) {
+                        elem[RUNTIME_STYLE][LEFT] = rsLeft;
                     }
                 }
-                return current;
-            }
-        };
-    BORDER_MAP['thin'] = IE8 ? '1px' : '2px';
-    BORDER_MAP['medium'] = IE8 ? '3px' : '4px';
-    BORDER_MAP['thick'] = IE8 ? '5px' : '6px';
-    S.each(BORDERS, function(b) {
-        CUSTOM_STYLES["border" + b + "Width"] = BORDER_FIX;
-    });
-
-    // getComputedStyle for IE
-    if (!(doc.defaultView || { }).getComputedStyle && docElem[CURRENT_STYLE]) {
-
-        DOM._getComputedStyle = function(elem, name) {
-            var style = elem.style,
-                ret = elem[CURRENT_STYLE][name];
-
-            // 当 width/height 设置为百分比时，通过 pixelLeft 方式转换的 width/height 值
-            // 在 ie 下不对，需要直接用 offset 方式
-            // borderWidth 等值也有问题，但考虑到 borderWidth 设为百分比的概率很小，这里就不考虑了
-            if (RE_WH.test(name)) {
-                ret = DOM[name](elem) + PX;
-            }
-            // From the awesome hack by Dean Edwards
-            // http://erik.eae.net/archives/2007/07/27/18.54.15/#comment-102291
-            // If we're not dealing with a regular pixel number
-            // but a number that has a weird ending, we need to convert it to pixels
-            else if ((!RE_NUMPX.test(ret) && RE_NUM.test(ret))) {
-                // Remember the original values
-                var left = style[LEFT], rsLeft = elem[RUNTIME_STYLE][LEFT];
-
-                // Put in the new values to get a computed value out
-                elem[RUNTIME_STYLE][LEFT] = elem[CURRENT_STYLE][LEFT];
-                style[LEFT] = name === 'fontSize' ? '1em' : (ret || 0);
-                ret = style['pixelLeft'] + PX;
-
-                // Revert the changed values
-                style[LEFT] = left;
-                elem[RUNTIME_STYLE][LEFT] = rsLeft;
-            }
-
-            return ret;
+                return ret === "" ? "auto" : ret;
+            };
         }
+        return DOM;
+    },
+    {
+        requires:["./base","ua","./style"]
     }
-    return DOM;
-}, {
-    requires:["./base","ua","./style"]
-});
+);
 /**
  * NOTES:
  * 承玉： 2011.05.19 opacity in ie
  *  - 如果节点是动态创建，设置opacity，没有加到 dom 前，取不到 opacity 值
  *  - 兼容：border-width 值，ie 下有可能返回 medium/thin/thick 等值，其它浏览器返回 px 值。
  *
- *  - opacity 的实现，还可以用 progid:DXImageTransform.Microsoft.BasicImage(opacity=.2) 来实现，但考虑
- *    主流类库都是用 DXImageTransform.Microsoft.Alpha 来实现的，为了保证多类库混合使用时不会出现问题，kissy 里
- *    依旧采用 Alpha 来实现。
+ *  - opacity 的实现，参考自 jquery
  *
  */
 /**
  * @module  dom
- * @author  lifesinger@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 KISSY.add('dom/style', function(S, DOM, UA, undefined) {
 
@@ -2429,34 +2716,92 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
         DISPLAY = 'display',
         NONE = 'none',
         PARSEINT = parseInt,
-        RE_LT = /^(?:left|top)/,
-        RE_NEED_UNIT = /^(?:width|height|top|left|right|bottom|margin|padding)/i,
+        RE_NUMPX = /^-?\d+(?:px)?$/i,
+        cssNumber = {
+            "fillOpacity": 1,
+            "fontWeight": 1,
+            "lineHeight": 1,
+            "opacity": 1,
+            "orphans": 1,
+            "widows": 1,
+            "zIndex": 1,
+            "zoom": 1
+        },
         RE_DASH = /-([a-z])/ig,
         CAMELCASE_FN = function(all, letter) {
             return letter.toUpperCase();
         },
+        // 考虑 ie9 ...
+        rupper = /([A-Z]|^ms)/g,
         EMPTY = '',
         DEFAULT_UNIT = 'px',
-        CUSTOM_STYLES = { },
-        defaultDisplay = { };
+        CUSTOM_STYLES = {},
+        cssProps = {},
+        defaultDisplay = {};
+
+    // normalize reserved word float alternatives ("cssFloat" or "styleFloat")
+    if (docElem[STYLE][CSS_FLOAT] !== undefined) {
+        cssProps[FLOAT] = CSS_FLOAT;
+    }
+    else if (docElem[STYLE][STYLE_FLOAT] !== undefined) {
+        cssProps[FLOAT] = STYLE_FLOAT;
+    }
+
+    function camelCase(name) {
+        return name.replace(RE_DASH, CAMELCASE_FN);
+    }
 
     S.mix(DOM, {
 
         _CUSTOM_STYLES: CUSTOM_STYLES,
-
+        _cssProps:cssProps,
         _getComputedStyle: function(elem, name) {
-            var val = '', computedStyle = {},d = elem.ownerDocument;
+            var val = "",
+                computedStyle = {},
+                d = elem.ownerDocument;
 
-            if (elem[STYLE] &&
-                // https://github.com/kissyteam/kissy/issues/61
-                (computedStyle = d.defaultView.getComputedStyle(elem, null))) {
-                val = computedStyle[name];
+            name = name.replace(rupper, "-$1").toLowerCase();
+
+            // https://github.com/kissyteam/kissy/issues/61
+            if (computedStyle = d.defaultView.getComputedStyle(elem, null)) {
+                val = computedStyle.getPropertyValue(name) || computedStyle[name];
             }
+
+            // 还没有加入到 document，就取行内
+            if (val == "" && !DOM.__contains(d.documentElement, elem)) {
+                name = cssProps[name] || name;
+                val = elem[STYLE][name];
+            }
+
             return val;
         },
 
         /**
-         * Gets or sets styles on the matches elements.
+         *  Get and set the style property on a DOM Node
+         */
+        style:function(selector, name, val) {
+            // suports hash
+            if (S.isPlainObject(name)) {
+                for (var k in name) {
+                    DOM.style(selector, k, name[k]);
+                }
+                return;
+            }
+            if (val === undefined) {
+                var elem = DOM.get(selector),ret = '';
+                if (elem) {
+                    ret = style(elem, name, val);
+                }
+                return ret;
+            } else {
+                DOM.query(selector).each(function(elem) {
+                    style(elem, name, val);
+                });
+            }
+        },
+
+        /**
+         * (Gets computed style) or (sets styles) on the matches elements.
          */
         css: function(selector, name, val) {
             // suports hash
@@ -2467,91 +2812,24 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
                 return;
             }
 
-            if (name.indexOf('-') > 0) {
-                // webkit 认识 camel-case, 其它内核只认识 cameCase
-                name = name.replace(RE_DASH, CAMELCASE_FN);
-            }
-
-            var name_str = name;
-
-            name = CUSTOM_STYLES[name] || name;
-
+            name = camelCase(name);
+            var hook = CUSTOM_STYLES[name];
             // getter
             if (val === undefined) {
                 // supports css selector/Node/NodeList
                 var elem = DOM.get(selector), ret = '';
-
-                if (elem && elem[STYLE]) {
-                    ret = name.get ?
-                        name.get(elem, name_str) :
-                        elem[STYLE][name];
-
-                    // 有 get 的直接用自定义函数的返回值
-                    if (ret === '' && !name.get) {
-                        ret = fixComputedStyle(elem,
-                            name,
-                            DOM._getComputedStyle(elem, name));
+                if (elem) {
+                    // If a hook was provided get the computed value from there
+                    if (hook && "get" in hook && (ret = hook.get(elem, true)) !== undefined) {
+                    } else {
+                        ret = DOM._getComputedStyle(elem, name);
                     }
                 }
-
                 return ret === undefined ? '' : ret;
             }
             // setter
             else {
-                // normalize unsetting
-                if (val === null || val === EMPTY) {
-                    val = EMPTY;
-                }
-                // number values may need a unit
-                else if (!isNaN(new Number(val)) && RE_NEED_UNIT.test(name)) {
-                    val += DEFAULT_UNIT;
-                }
-
-                // ignore negative width and height values
-                if ((name === WIDTH || name === HEIGHT) && parseFloat(val) < 0) {
-                    return;
-                }
-
-                S.each(DOM.query(selector), function(elem) {
-                    if (elem && elem[STYLE]) {
-                        name.set ? name.set(elem, val) : (elem[STYLE][name] = val);
-                        if (val === EMPTY) {
-                            if (!elem[STYLE].cssText) {
-                                elem.removeAttribute(STYLE);
-                            }
-                        }
-                    }
-                });
-            }
-        },
-
-        /**
-         * Get the current computed width for the first element in the set of matched elements or
-         * set the CSS width of each element in the set of matched elements.
-         */
-        width: function(selector, value) {
-            // getter
-            if (value === undefined) {
-                return getWH(selector, WIDTH);
-            }
-            // setter
-            else {
-                DOM.css(selector, WIDTH, value);
-            }
-        },
-
-        /**
-         * Get the current computed height for the first element in the set of matched elements or
-         * set the CSS height of each element in the set of matched elements.
-         */
-        height: function(selector, value) {
-            // getter
-            if (value === undefined) {
-                return getWH(selector, HEIGHT);
-            }
-            // setter
-            else {
-                DOM.css(selector, HEIGHT, value);
+                DOM.style(selector, name, val);
             }
         },
 
@@ -2561,11 +2839,8 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
         show: function(selector) {
 
             DOM.query(selector).each(function(elem) {
-                if (!elem) {
-                    return;
-                }
 
-                elem.style[DISPLAY] = DOM.data(elem, DISPLAY) || EMPTY;
+                elem[STYLE][DISPLAY] = DOM.data(elem, DISPLAY) || EMPTY;
 
                 // 可能元素还处于隐藏状态，比如 css 里设置了 display: none
                 if (DOM.css(elem, DISPLAY) === NONE) {
@@ -2581,7 +2856,7 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
                     }
 
                     DOM.data(elem, DISPLAY, old);
-                    elem.style[DISPLAY] = old;
+                    elem[STYLE][DISPLAY] = old;
                 }
             });
         },
@@ -2591,11 +2866,7 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
          */
         hide: function(selector) {
             DOM.query(selector).each(function(elem) {
-                if (!elem) {
-                    return;
-                }
-
-                var style = elem.style, old = style[DISPLAY];
+                var style = elem[STYLE], old = style[DISPLAY];
                 if (old !== NONE) {
                     if (old) {
                         DOM.data(elem, DISPLAY, old);
@@ -2610,12 +2881,10 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
          */
         toggle: function(selector) {
             DOM.query(selector).each(function(elem) {
-                if (elem) {
-                    if (DOM.css(elem, DISPLAY) === NONE) {
-                        DOM.show(elem);
-                    } else {
-                        DOM.hide(elem);
-                    }
+                if (DOM.css(elem, DISPLAY) === NONE) {
+                    DOM.show(elem);
+                } else {
+                    DOM.hide(elem);
                 }
             });
         },
@@ -2659,46 +2928,219 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
 
         unselectable:function(selector) {
             DOM.query(selector).each(function(elem) {
-                if (elem) {
-                    if (UA['gecko']) {
-                        elem.style['MozUserSelect'] = 'none';
-                    }
-                    else if (UA['webkit']) {
-                        elem.style['KhtmlUserSelect'] = 'none';
-                    } else {
-                        if (UA['ie'] || UA['opera']) {
-                            var e,i = 0,
-                                els = elem.getElementsByTagName("*");
-                            elem.setAttribute("unselectable", 'on');
-                            while (( e = els[ i++ ] )) {
-                                switch (e.tagName.toLowerCase()) {
-                                    case 'iframe' :
-                                    case 'textarea' :
-                                    case 'input' :
-                                    case 'select' :
-                                        /* Ignore the above tags */
-                                        break;
-                                    default :
-                                        e.setAttribute("unselectable", 'on');
-                                }
+                if (UA['gecko']) {
+                    elem[STYLE]['MozUserSelect'] = 'none';
+                }
+                else if (UA['webkit']) {
+                    elem[STYLE]['KhtmlUserSelect'] = 'none';
+                } else {
+                    if (UA['ie'] || UA['opera']) {
+                        var e,i = 0,
+                            els = elem.getElementsByTagName("*");
+                        elem.setAttribute("unselectable", 'on');
+                        while (( e = els[ i++ ] )) {
+                            switch (e.tagName.toLowerCase()) {
+                                case 'iframe' :
+                                case 'textarea' :
+                                case 'input' :
+                                case 'select' :
+                                    /* Ignore the above tags */
+                                    break;
+                                default :
+                                    e.setAttribute("unselectable", 'on');
                             }
                         }
                     }
                 }
             });
-        }
+        },
+        innerWidth:0,
+        innerHeight:0,
+        outerWidth:0,
+        outerHeight:0,
+        width:0,
+        height:0
     });
 
-    // normalize reserved word float alternatives ("cssFloat" or "styleFloat")
-    if (docElem[STYLE][CSS_FLOAT] !== undefined) {
-        CUSTOM_STYLES[FLOAT] = CSS_FLOAT;
-    }
-    else if (docElem[STYLE][STYLE_FLOAT] !== undefined) {
-        CUSTOM_STYLES[FLOAT] = STYLE_FLOAT;
+    function capital(str) {
+        return str.charAt(0).toUpperCase() + str.substring(1);
     }
 
-    function getWH(selector, name) {
-        var elem = DOM.get(selector);
+
+    S.each([WIDTH,HEIGHT], function(name) {
+        DOM["inner" + capital(name)] = function(selector) {
+            var el = DOM.get(selector);
+            if (el) {
+                return getWH(el, name, "padding");
+            } else {
+                return null;
+            }
+        };
+
+
+        DOM["outer" + capital(name)] = function(selector, includeMargin) {
+            var el = DOM.get(selector);
+            if (el) {
+                return getWH(el, name, includeMargin ? "margin" : "border");
+            } else {
+                return null;
+            }
+        };
+
+        DOM[name] = function(selector, val) {
+            var ret = DOM.css(selector, name, val);
+            if (ret) {
+                ret = parseFloat(ret);
+            }
+            return ret;
+        };
+    });
+
+
+    var cssShow = { position: "absolute", visibility: "hidden", display: "block" };
+
+    /**
+     * css height,width 永远都是计算值
+     */
+    S.each(["height", "width"], function(name) {
+        CUSTOM_STYLES[ name ] = {
+            get: function(elem, computed) {
+                var val;
+                if (computed) {
+                    if (elem.offsetWidth !== 0) {
+                        val = getWH(elem, name);
+                    } else {
+                        swap(elem, cssShow, function() {
+                            val = getWH(elem, name);
+                        });
+                    }
+                    return val + "px";
+                }
+            },
+            set: function(elem, value) {
+                if (RE_NUMPX.test(value)) {
+                    value = parseFloat(value);
+                    if (value >= 0) {
+                        return value + "px";
+                    }
+                } else {
+                    return value;
+                }
+            }
+        };
+    });
+
+    S.each(["left", "top"], function(name) {
+        CUSTOM_STYLES[ name ] = {
+            get: function(elem, computed) {
+                if (computed) {
+                    var val = DOM._getComputedStyle(elem, name),offset;
+
+                    // 1. 当没有设置 style.left 时，getComputedStyle 在不同浏览器下，返回值不同
+                    //    比如：firefox 返回 0, webkit/ie 返回 auto
+                    // 2. style.left 设置为百分比时，返回值为百分比
+                    // 对于第一种情况，如果是 relative 元素，值为 0. 如果是 absolute 元素，值为 offsetLeft - marginLeft
+                    // 对于第二种情况，大部分类库都未做处理，属于“明之而不 fix”的保留 bug
+                    if (val === AUTO) {
+                        val = 0;
+                        if (S.inArray(DOM.css(elem, 'position'), ['absolute','fixed'])) {
+                            offset = elem[name === 'left' ? 'offsetLeft' : 'offsetTop'];
+
+                            // old-ie 下，elem.offsetLeft 包含 offsetParent 的 border 宽度，需要减掉
+                            if (isIE && document['documentMode'] != 9 || UA['opera']) {
+                                // 类似 offset ie 下的边框处理
+                                // 如果 offsetParent 为 html ，需要减去默认 2 px == documentElement.clientTop
+                                // 否则减去 borderTop 其实也是 clientTop
+                                // http://msdn.microsoft.com/en-us/library/aa752288%28v=vs.85%29.aspx
+                                // ie<9 注意有时候 elem.offsetParent 为 null ...
+                                // 比如 DOM.append(DOM.create("<div class='position:absolute'></div>"),document.body)
+                                offset -= elem.offsetParent && elem.offsetParent['client' + (name == 'left' ? 'Left' : 'Top')]
+                                    || 0;
+                            }
+                            val = offset - (PARSEINT(DOM.css(elem, 'margin-' + name)) || 0);
+                        }
+                        val += "px";
+                    }
+                    return val;
+                }
+            }
+        };
+    });
+
+
+    function swap(elem, options, callback) {
+        var old = {};
+
+        // Remember the old values, and insert the new ones
+        for (var name in options) {
+            old[ name ] = elem[STYLE][ name ];
+            elem[STYLE][ name ] = options[ name ];
+        }
+
+        callback.call(elem);
+
+        // Revert the old values
+        for (name in options) {
+            elem[STYLE][ name ] = old[ name ];
+        }
+    }
+
+
+    function style(elem, name, val) {
+        var style;
+        if (elem.nodeType === 3 || elem.nodeType === 8 || !(style = elem[STYLE])) {
+            return undefined;
+        }
+        name = camelCase(name);
+        var ret,hook = CUSTOM_STYLES[name];
+        name = cssProps[name] || name;
+        // setter
+        if (val !== undefined) {
+            // normalize unsetting
+            if (val === null || val === EMPTY) {
+                val = EMPTY;
+            }
+            // number values may need a unit
+            else if (!isNaN(Number(val)) && !cssNumber[name]) {
+                val += DEFAULT_UNIT;
+            }
+            if (hook && hook.set) {
+                val = hook.set(elem, val);
+            }
+            if (val !== undefined) {
+                // ie 无效值报错
+                try {
+                    elem[STYLE][name] = val;
+                } catch(e) {
+                    S.log("css set error :" + e);
+                }
+            }
+            return undefined;
+        }
+        //getter
+        else {
+            // If a hook was provided get the non-computed value from there
+            if (hook && "get" in hook && (ret = hook.get(elem, false)) !== undefined) {
+
+            } else {
+                // Otherwise just get the value from the style object
+                ret = style[ name ];
+            }
+            return ret === undefined ? "" : ret;
+        }
+
+    }
+
+
+    /**
+     * 得到元素的大小信息
+     * @param elem
+     * @param name
+     * @param {String} extra    "padding" : (css width) + padding
+     *                          "border" : (css width) + padding + border
+     *                          "margin" : (css width) + padding + border + margin
+     */
+    function getWH(elem, name, extra) {
         if (S.isWindow(elem)) {
             return name == WIDTH ? DOM.viewportWidth(elem) : DOM.viewportHeight(elem);
         } else if (elem.nodeType == 9) {
@@ -2707,42 +3149,45 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
         var which = name === WIDTH ? ['Left', 'Right'] : ['Top', 'Bottom'],
             val = name === WIDTH ? elem.offsetWidth : elem.offsetHeight;
 
-        S.each(which, function(direction) {
-            val -= parseFloat(DOM._getComputedStyle(elem, 'padding' + direction)) || 0;
-            val -= parseFloat(DOM._getComputedStyle(elem, 'border' + direction + 'Width')) || 0;
-        });
-
-        return val;
-    }
-
-    // 修正 getComputedStyle 返回值的部分浏览器兼容性问题
-    function fixComputedStyle(elem, name, val) {
-        var offset, ret = val;
-
-        // 1. 当没有设置 style.left 时，getComputedStyle 在不同浏览器下，返回值不同
-        //    比如：firefox 返回 0, webkit/ie 返回 auto
-        // 2. style.left 设置为百分比时，返回值为百分比
-        // 对于第一种情况，如果是 relative 元素，值为 0. 如果是 absolute 元素，值为 offsetLeft - marginLeft
-        // 对于第二种情况，大部分类库都未做处理，属于“明之而不 fix”的保留 bug
-        if (val === AUTO && RE_LT.test(name)) {
-            ret = 0;
-            if (S.inArray(DOM.css(elem, 'position'), ['absolute','fixed'])) {
-                offset = elem[name === 'left' ? 'offsetLeft' : 'offsetTop'];
-
-                // old-ie 下，elem.offsetLeft 包含 offsetParent 的 border 宽度，需要减掉
-                if (isIE && document['documentMode'] != 9 || UA['opera']) {
-                    // 类似 offset ie 下的边框处理
-                    // 如果 offsetParent 为 html ，需要减去默认 2 px == documentElement.clientTop
-                    // 否则减去 borderTop 其实也是 clientTop
-                    offset -= elem.offsetParent['client' + (name == 'left' ? 'Left' : 'Top')]
-                        || 0;
-                }
-
-                ret = offset - (PARSEINT(DOM.css(elem, 'margin-' + name)) || 0);
+        if (val > 0) {
+            if (extra !== "border") {
+                S.each(which, function(w) {
+                    if (!extra) {
+                        val -= parseFloat(DOM.css(elem, "padding" + w)) || 0;
+                    }
+                    if (extra === "margin") {
+                        val += parseFloat(DOM.css(elem, extra + w)) || 0;
+                    } else {
+                        val -= parseFloat(DOM.css(elem, "border" + w + "Width")) || 0;
+                    }
+                });
             }
+
+            return val
         }
 
-        return ret;
+        // Fall back to computed then uncomputed css if necessary
+        val = DOM._getComputedStyle(elem, name);
+        if (val < 0 || S.isNullOrUndefined(val)) {
+            val = elem.style[ name ] || 0;
+        }
+        // Normalize "", auto, and prepare for extra
+        val = parseFloat(val) || 0;
+
+        // Add padding, border, margin
+        if (extra) {
+            S.each(which, function(w) {
+                val += parseFloat(DOM.css(elem, "padding" + w)) || 0;
+                if (extra !== "padding") {
+                    val += parseFloat(DOM.css(elem, "border" + w + "Width")) || 0;
+                }
+                if (extra === "margin") {
+                    val += parseFloat(DOM.css(elem, extra + w)) || 0;
+                }
+            });
+        }
+
+        return val;
     }
 
     return DOM;
@@ -2751,12 +3196,15 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
 });
 
 /**
+ *
+ * 2011-08-19
+ *  - 调整结构，减少耦合
+ *  - fix css("height") == auto
+ *
  * NOTES:
  *  - Opera 下，color 默认返回 #XXYYZZ, 非 rgb(). 目前 jQuery 等类库均忽略此差异，KISSY 也忽略。
  *  - Safari 低版本，transparent 会返回为 rgba(0, 0, 0, 0), 考虑低版本才有此 bug, 亦忽略。
  *
- *  - 非 webkit 下，jQuery.css paddingLeft 返回 style 值， padding-left 返回 computedStyle 值，
- *    返回的值不同。KISSY 做了统一，更符合预期。
  *
  *  - getComputedStyle 在 webkit 下，会舍弃小数部分，ie 下会四舍五入，gecko 下直接输出 float 值。
  *
@@ -2768,7 +3216,7 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
  */
 /**
  * @module  dom-traversal
- * @author  lifesinger@gmail.com
+ * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 KISSY.add('dom/traversal', function(S, DOM, undefined) {
 
@@ -2794,19 +3242,13 @@ KISSY.add('dom/traversal', function(S, DOM, undefined) {
 
         first:function(selector, filter) {
             var elem = DOM.get(selector);
-            if (!elem || !elem.firstChild) {
-                return null;
-            }
-            return nth(elem.firstChild, filter, 'nextSibling',
+            return nth(elem && elem.firstChild, filter, 'nextSibling',
                 undefined, undefined, true);
         },
 
         last:function(selector, filter) {
             var elem = DOM.get(selector);
-            if (!elem || !elem.lastChild()) {
-                return null;
-            }
-            return nth(elem.lastChild, filter, 'previousSibling',
+            return nth(elem && elem.lastChild, filter, 'previousSibling',
                 undefined, undefined, true);
         },
 
@@ -2875,7 +3317,9 @@ KISSY.add('dom/traversal', function(S, DOM, undefined) {
             function(a, b) {
                 a = DOM.get(a);
                 b = DOM.get(b);
-                return DOM.__contains(a, b);
+                if (a && b) {
+                    return DOM.__contains(a, b);
+                }
             },
 
         equals:function(n1, n2) {
@@ -2993,6 +3437,9 @@ KISSY.add('dom/traversal', function(S, DOM, undefined) {
 });
 
 /**
+ * 2011-08
+ * - 添加 closest , first ,last 完全摆脱原生属性
+ *
  * NOTES:
  * - jquery does not return null ,it only returns empty array , but kissy does.
  *

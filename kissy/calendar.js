@@ -1,7 +1,7 @@
-/*
+﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 13 21:42
+build time: Sep 14 12:37
 */
 /**
  * KISSY Calendar
@@ -161,6 +161,13 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                         && dot[1] < r[1].y;
                 };
 
+                // bugfix by jayli - popup状态下，点击选择月份的option时日历层关闭
+                if (self.con.contains(target) &&
+                    (target[0].nodeName.toLowerCase() === 'option' ||
+                        target[0].nodeName.toLowerCase() === 'select')) {
+                    return;
+                }
+
                 /*
                  if (!S.DOM.contains(Node.one('#' + self.C_Id), e.target)) {
                  */
@@ -230,7 +237,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
             self.con.css('visibility', '');
             var _x = self.trigger.offset().left,
                 //KISSY得到DOM的width是innerWidth，这里期望得到outterWidth
-                height = self.trigger[0].offsetHeight || self.trigger.height(),
+                height = self.trigger.outerHeight() || self.trigger.height(),
                 _y = self.trigger.offset().top + height;
             self.con.css('left', _x.toString() + 'px');
             self.con.css('top', _y.toString() + 'px');

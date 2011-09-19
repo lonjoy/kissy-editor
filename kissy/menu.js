@@ -1,7 +1,7 @@
-/*
+﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 13 21:43
+build time: Sep 8 19:25
 */
 /**
  * deletable menuitem
@@ -126,6 +126,14 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Component, Menu, FilterMenuRend
                 filterInput.on("keyup", self.handleFilterEvent, self);
             },
 
+            _handleMouseEnter:function() {
+                var self = this;
+                FilterMenu.superclass._handleMouseEnter.apply(self, arguments);
+                // 权益解决，filter input focus 后会滚动到牌聚焦处，select 则不会
+                // 如果 filtermenu 的菜单项被滚轮滚到后面，点击触发不了，会向前滚动到 filter input
+                self.getKeyEventTarget()[0].select();
+            },
+
             handleFilterEvent:function() {
                 var self = this,
                     view = self.get("view"),
@@ -245,6 +253,18 @@ KISSY.add("menu/filtermenu", function(S, UIBase, Component, Menu, FilterMenuRend
                 self.set("el", el);
                 var menuContent = el.one("." + self.getCls("menu-content"));
                 self.decorateChildren(menuContent);
+            },
+
+            /**
+             * 重置状态，用于重用
+             */
+            reset:function() {
+                var self = this,
+                    view = self.get("view");
+                self.set("filterStr", "");
+                self.set("enteredItems", []);
+                var filterInput = view && view.get("filterInput");
+                filterInput && filterInput.val("");
             },
 
             destructor:function() {
@@ -548,6 +568,9 @@ KISSY.add("menu/menu", function(S, Event, UIBase, Component, MenuRender) {
  * @author yiminghe@gmail.com
  */
 KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
+
+    var $ = S.all;
+
     var MenuItem = UIBase.create(Component.ModelControl, [UIBase.Contentbox], {
 
         _handleMouseEnter:function(e) {
@@ -592,19 +615,18 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
 
         _uiSetHighlighted:function(v) {
             MenuItem.superclass._uiSetHighlighted.apply(this, arguments);
-            // 是否要滚动到当前菜单项
+            // 是否要滚动到当前菜单项(横向，纵向)
             if (v) {
                 var el = this.get("el"),
-                    p = this.get("parent").get("el"),
-                    y = el.offset().top,
-                    h = el[0].offsetHeight,
-                    py = p.offset().top,
-                    ph = p[0].offsetHeight;
-                if (y - py >= ph) {
-                    p[0].scrollTop += y - py + h - ph;
-                } else if (y - py < 0) {
-                    p[0].scrollTop += y - py;
+                    // 找到向上路径上第一个可以滚动的容器，直到父组件节点（包括）
+                    // 找不到就放弃，为效率考虑不考虑 parent 的嵌套可滚动 div
+                    p = el.parent(function(e) {
+                        return $(e).css("overflow") != "visible";
+                    }, this.get("parent").get("el").parent());
+                if (!p) {
+                    return;
                 }
+                el.scrollIntoView(p, undefined, undefined, true);
             }
         },
 
@@ -652,6 +674,13 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
 
             checked:{},
             selected:{}
+        },
+
+        HTML_PARSER:{
+            selectable:function(el) {
+                var cls = this.getCls("menuitem-selectable");
+                return el.hasClass(cls);
+            }
         }
     });
 
@@ -695,14 +724,6 @@ KISSY.add("menu/menuitemrender", function(S, Node, UIBase, Component) {
             if (!el.attr("id")) {
                 el.attr("id", S.guid("ks-menuitem"));
             }
-        },
-
-        _setHighlighted:function(v, componentCls) {
-            var self = this,
-                tag = "-highlight",
-                el = self.get("el"),
-                cls = self._completeClasses(componentCls, tag);
-            el[v ? 'addClass' : 'removeClass'](cls);
         },
 
         _setSelected:function(v, componentCls) {
@@ -1020,8 +1041,9 @@ KISSY.add(
                  * @return {boolean} Whether the event was handled.
                  */
                 _handleKeydown:function(e) {
+                    var self = this;
 
-                    var menu = this.get("menu");
+                    var menu = self.get("menu");
 
                     var hasKeyboardControl_ = menu && menu.get("visible");
 
@@ -1030,7 +1052,7 @@ KISSY.add(
                     if (!hasKeyboardControl_) {
                         // right
                         if (keyCode == KeyCodes.RIGHT) {
-                            this.showMenu();
+                            self.showMenu();
                             var menuChildren = menu.get("children");
                             if (menuChildren[0]) {
                                 menu.set("highlightedItem", menuChildren[0]);
@@ -1044,9 +1066,9 @@ KISSY.add(
                     // we turn off key control.
                     // left
                     else if (keyCode == KeyCodes.LEFT) {
-                        this.hideMenu();
+                        self.hideMenu();
                         // 隐藏后，当前激活项重回
-                        this.get("parent").set("activeItem", this);
+                        self.get("parent").set("activeItem", self);
                     } else {
                         return undefined;
                     }
@@ -1059,14 +1081,15 @@ KISSY.add(
                  * accuracy when moving to submenus.
                  **/
                 _uiSetHighlighted:function(highlight, ev) {
-                    SubMenu.superclass._uiSetHighlighted.call(this, highlight, ev);
+                    var self = this;
+                    SubMenu.superclass._uiSetHighlighted.call(self, highlight, ev);
                     if (!highlight) {
-                        if (this.dismissTimer_) {
-                            this.dismissTimer_.cancel();
+                        if (self.dismissTimer_) {
+                            self.dismissTimer_.cancel();
                         }
-                        this.dismissTimer_ = S.later(this.hideMenu,
-                            this.get("menuDelay"),
-                            false, this);
+                        self.dismissTimer_ = S.later(self.hideMenu,
+                            self.get("menuDelay"),
+                            false, self);
                     }
                 },
 
@@ -1077,7 +1100,8 @@ KISSY.add(
 
                 // 默认 addChild，这里里面的元素需要放到 menu 属性中
                 decorateChildrenInternal:function(ui, el, cls) {
-                    el.hide();
+                    // 不能用 diaplay:none
+                    el.css("visibility", "hidden");
                     var docBody = S.one(el[0].ownerDocument.body);
                     docBody.prepend(el);
                     var menu = new ui({

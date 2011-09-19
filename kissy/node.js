@@ -1,11 +1,13 @@
-/*
+﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 13 21:43
+build time: Sep 5 21:30
 */
 /**
  * @module  anim-node-plugin
- * @author  lifesinger@gmail.com, qiaohua@taobao.com
+ * @author  lifesinger@gmail.com,
+ *          qiaohua@taobao.com,
+ *          yiminghe@gmail.com
  */
 KISSY.add('node/anim-plugin', function(S, DOM, Anim, N, undefined) {
 
@@ -16,7 +18,13 @@ KISSY.add('node/anim-plugin', function(S, DOM, Anim, N, undefined) {
         OVERFLOW = 'overflow',
         HIDDEN = 'hidden',
         OPCACITY = 'opacity',
-        HEIGHT = 'height', WIDTH = 'width',
+        HEIGHT = 'height',
+        SHOW = "show",
+        HIDE = "hide",
+        FADE = "fade",
+        SLIDE = "slide",
+        TOGGLE = "toggle",
+        WIDTH = 'width',
         FX = {
             show: [OVERFLOW, OPCACITY, HEIGHT, WIDTH],
             fade: [OPCACITY],
@@ -74,74 +82,78 @@ KISSY.add('node/anim-plugin', function(S, DOM, Anim, N, undefined) {
         };
 
         S.each({
-                show: ['show', 1],
-                hide: ['show', 0],
-                toggle: ['toggle'],
-                fadeIn: ['fade', 1],
-                fadeOut: ['fade', 0],
-                slideDown: ['slide', 1],
-                slideUp: ['slide', 0]
+                show: [SHOW, 1],
+                hide: [SHOW, 0],
+                fadeIn: [FADE, 1],
+                fadeOut: [FADE, 0],
+                slideDown: [SLIDE, 1],
+                slideUp: [SLIDE, 0]
             },
             function(v, k) {
-
                 P[k] = function(speed, callback, easing, nativeSupport) {
                     var self = this;
-
                     // 没有参数时，调用 DOM 中的对应方法
                     if (DOM[k] && !speed) {
                         DOM[k](self);
                     } else {
-                        // 原生支持问题很多，默认不采用原生
-                        if (nativeSupport === undefined) {
-                            nativeSupport = false;
-                        }
-                        S.each(this, function(elem) {
+                        S.each(self, function(elem) {
                             var anim = fx(elem, v[0], speed, callback,
-                                v[1], easing, nativeSupport);
+                                v[1], easing || 'easeOut', nativeSupport);
                             attachAnim(elem, anim);
                         });
                     }
                     return self;
                 };
             });
+
+        // toggle 提出来单独写，清晰点
+        P[TOGGLE] = function(speed) {
+            var self = this;
+            P[self.css(DISPLAY) === NONE ? SHOW : HIDE].apply(self, arguments);
+        };
     })(NLP);
 
     function fx(elem, which, speed, callback, visible, easing, nativeSupport) {
-        if (which === 'toggle') {
-            visible = DOM.css(elem, DISPLAY) === NONE ? 1 : 0;
-            which = 'show';
-        }
 
         if (visible) {
-            DOM.css(elem, DISPLAY, DOM.data(elem, DISPLAY) || '');
+            DOM.show(elem);
         }
 
         // 根据不同类型设置初始 css 属性, 并设置动画参数
         var originalStyle = {}, style = {};
         S.each(FX[which], function(prop) {
+            /**
+             * 2011-08-19
+             * originalStyle 记录行内样式，防止外联样式干扰！
+             */
+            var elemStyle = elem.style;
             if (prop === OVERFLOW) {
-                originalStyle[OVERFLOW] = DOM.css(elem, OVERFLOW);
+                originalStyle[OVERFLOW] = elemStyle[OVERFLOW];
                 DOM.css(elem, OVERFLOW, HIDDEN);
             }
             else if (prop === OPCACITY) {
-                originalStyle[OPCACITY] = DOM.css(elem, OPCACITY);
+                // 取行内 opacity
+                originalStyle[OPCACITY] = DOM.style(elem, OPCACITY);
                 style.opacity = visible ? 1 : 0;
                 if (visible) {
                     DOM.css(elem, OPCACITY, 0);
                 }
             }
             else if (prop === HEIGHT) {
-                originalStyle[HEIGHT] = DOM.css(elem, HEIGHT);
+                originalStyle[HEIGHT] = elemStyle[HEIGHT];
                 //http://arunprasad.wordpress.com/2008/08/26/naturalwidth-and-naturalheight-for-image-element-in-internet-explorer/
-                style.height = (visible ? DOM.css(elem, HEIGHT) || elem.naturalHeight : 0);
-
+                style.height = (visible ?
+                    DOM.height(elem) || elem.naturalHeight :
+                    0) + "px";
                 if (visible) {
                     DOM.css(elem, HEIGHT, 0);
                 }
             }
             else if (prop === WIDTH) {
-                originalStyle[WIDTH] = DOM.css(elem, WIDTH);
-                style.width = (visible ? DOM.css(elem, WIDTH) || elem.naturalWidth : 0);
+                originalStyle[WIDTH] = elemStyle[WIDTH];
+                style.width = (visible ?
+                    DOM.width(elem) || elem.naturalWidth :
+                    0) + "px";
                 if (visible) {
                     DOM.css(elem, WIDTH, 0);
                 }
@@ -149,35 +161,27 @@ KISSY.add('node/anim-plugin', function(S, DOM, Anim, N, undefined) {
         });
 
         // 开始动画
-        return new Anim(elem, style, speed, easing || 'easeOut', function() {
-            // 如果是隐藏, 需要还原一些 css 属性
+        return new Anim(elem, style, speed, easing, function() {
+            // 如果是隐藏，需要设置 diaplay
             if (!visible) {
-                // 保留原有值
-                var currStyle = elem.style, oldVal = currStyle[DISPLAY];
-                if (oldVal !== NONE) {
-                    if (oldVal) {
-                        DOM.data(elem, DISPLAY, oldVal);
-                    }
-                    currStyle[DISPLAY] = NONE;
-                }
-
-                // 还原样式
-                if (originalStyle[HEIGHT]) {
-                    DOM.css(elem, { height: originalStyle[HEIGHT] });
-                }
-                if (originalStyle[WIDTH]) {
-                    DOM.css(elem, { width: originalStyle[WIDTH] });
-                }
-                if (originalStyle[OPCACITY]) {
-                    DOM.css(elem, { opacity: originalStyle[OPCACITY] });
-                }
-                if (originalStyle[OVERFLOW]) {
-                    DOM.css(elem, { overflow: originalStyle[OVERFLOW] });
-                }
-
+                DOM.hide(elem);
             }
 
-            if (callback && S.isFunction(callback)) {
+            // 还原样式
+            if (originalStyle[HEIGHT] !== undefined) {
+                DOM.css(elem, "height", originalStyle[HEIGHT]);
+            }
+            if (originalStyle[WIDTH] !== undefined) {
+                DOM.css(elem, "width", originalStyle[WIDTH]);
+            }
+            if (originalStyle[OPCACITY] !== undefined) {
+                DOM.css(elem, "opacity", originalStyle[OPCACITY]);
+            }
+            if (originalStyle[OVERFLOW] !== undefined) {
+                DOM.css(elem, "overflow", originalStyle[OVERFLOW]);
+            }
+
+            if (callback) {
                 callback();
             }
 
@@ -211,6 +215,10 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
             "scrollLeft",
             "height",
             "width",
+            "innerHeight",
+            "innerWidth",
+            "outerHeight",
+            "outerWidth",
             "addStyleSheet",
             // "append" will be overridden
             "appendTo",
@@ -232,7 +240,7 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
             // anim override
 //            "show",
 //            "hide",
-            "toggle",
+//            "toggle",
             "scrollIntoView",
             "remove",
             "removeData",
@@ -247,6 +255,7 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
             "closest",
             "next",
             "prev",
+            "clone",
             "siblings",
             "children"
         ],
@@ -256,6 +265,7 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
             "attr":1,
             "text":0,
             "css":1,
+            "style":1,
             "val":0,
             "prop":1,
             "offset":0,
@@ -402,11 +412,12 @@ KISSY.add("node/base", function(S, DOM, undefined) {
 
 
         item: function(index) {
+            var self = this;
             if (S.isNumber(index)) {
-                if (index >= this.length) {
+                if (index >= self.length) {
                     return null;
                 } else {
-                    return new NodeList(this[index]);
+                    return new NodeList(self[index]);
                 }
             } else {
                 return new NodeList(index);
@@ -450,7 +461,7 @@ KISSY.add("node/base", function(S, DOM, undefined) {
             var self = this,len = self.length, i = 0, node;
 
             for (node = new NodeList(self[0]);
-                 i < len && fn.call(context || node, node, i, this) !== false;
+                 i < len && fn.call(context || node, node, i, self) !== false;
                  node = new NodeList(self[++i])) {
             }
 
@@ -463,16 +474,32 @@ KISSY.add("node/base", function(S, DOM, undefined) {
             return this[0];
         },
 
+        /**
+         * stack sub query
+         */
+        end:function() {
+            var self = this;
+            return self.__parent || self;
+        },
+
         all:function(selector) {
-            if (this.length > 0) {
-                return NodeList.all(selector, this);
+            var ret,self = this;
+            if (self.length > 0) {
+                ret = NodeList.all(selector, self);
+            } else {
+                ret = new NodeList();
             }
-            return new NodeList();
+            ret.__parent = self;
+            return ret;
         },
 
         one:function(selector) {
-            var all = this.all(selector);
-            return all.length ? all.slice(0, 1) : null;
+            var self = this,all = self.all(selector),
+                ret = all.length ? all.slice(0, 1) : null;
+            if (ret) {
+                ret.__parent = self;
+            }
+            return ret;
         }
     });
 

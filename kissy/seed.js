@@ -1,7 +1,7 @@
-/*
+﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Aug 16 15:41
+build time: Sep 13 20:10
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -13,7 +13,7 @@ build time: Aug 16 15:41
         meta = {
             /**
              * Copies all the properties of s to r.
-             * @param deep {boolean} whether recurse mix if encouter object
+             * @param deep {boolean} whether recursive mix if encounter object
              * @return {Object} the augmented object
              */
             mix: function(r, s, ov, wl, deep) {
@@ -88,7 +88,7 @@ build time: Aug 16 15:41
          */
         version: '1.20dev',
 
-        buildTime:'20110816154135',
+        buildTime:'20110913201040',
 
         /**
          * Returns a new object containing all of the properties of
@@ -318,6 +318,8 @@ build time: Aug 16 15:41
 (function(S, undefined) {
 
     var host = S.__HOST,
+        TRUE = true,
+        FALSE = false,
         OP = Object.prototype,
         toString = OP.toString,
         hasOwnProperty = OP.hasOwnProperty,
@@ -325,6 +327,8 @@ build time: Aug 16 15:41
         indexOf = AP.indexOf,
         lastIndexOf = AP.lastIndexOf,
         filter = AP.filter,
+        every = AP.every,
+        some = AP.some,
         //reduce = AP.reduce,
         trim = String.prototype.trim,
         map = AP.map,
@@ -348,10 +352,11 @@ build time: Aug 16 15:41
         reverseEntities = {},
         escapeReg,
         unEscapeReg;
-
-    for (var k in htmlEntities) {
-        reverseEntities[htmlEntities[k]] = k;
-    }
+    (function() {
+        for (var k in htmlEntities) {
+            reverseEntities[htmlEntities[k]] = k;
+        }
+    })();
 
     function getEscapeReg() {
         if (escapeReg) {
@@ -413,10 +418,10 @@ build time: Aug 16 15:41
         isEmptyObject: function(o) {
             for (var p in o) {
                 if (p !== undefined) {
-                    return false;
+                    return FALSE;
                 }
             }
-            return true;
+            return TRUE;
         },
 
         /**
@@ -451,7 +456,7 @@ build time: Aug 16 15:41
             mismatchValues = mismatchValues || [];
 
             if (a === b) {
-                return true;
+                return TRUE;
             }
             if (a === undefined || a === null || b === undefined || b === null) {
                 // need type coercion
@@ -475,24 +480,29 @@ build time: Aug 16 15:41
 
         /**
          * Creates a deep copy of a plain object or array. Others are returned untouched.
+         * 稍微改改就和规范一样了 :)
+         * @refer http://www.w3.org/TR/html5/common-dom-interfaces.html#safe-passing-of-structured-data
          */
-        clone: function(o, f) {
-            var marked = {},
-                ret = cloneInternal(o, f, marked);
-            S.each(marked, function(v) {
+        clone: function(input, f) {
+            // Let memory be an association list of pairs of objects,
+            // initially empty. This is used to handle duplicate references.
+            // In each pair of objects, one is called the source object
+            // and the other the destination object.
+            var memory = {},
+                ret = cloneInternal(input, f, memory);
+            S.each(memory, function(v) {
                 // 清理在源对象上做的标记
-                v = v.o;
+                v = v.input;
                 if (v[CLONE_MARKER]) {
                     try {
                         delete v[CLONE_MARKER];
                     } catch (e) {
                         S.log("delete CLONE_MARKER error : ");
-                        S.log(e);
                         v[CLONE_MARKER] = undefined;
                     }
                 }
             });
-            marked = undefined;
+            memory = undefined;
             return ret;
         },
 
@@ -544,13 +554,13 @@ build time: Aug 16 15:41
 
                 if (isObj) {
                     for (key in object) {
-                        if (fn.call(context, object[key], key, object) === false) {
+                        if (fn.call(context, object[key], key, object) === FALSE) {
                             break;
                         }
                     }
                 } else {
                     for (val = object[0];
-                         i < length && fn.call(context, val, i, object) !== false; val = object[++i]) {
+                         i < length && fn.call(context, val, i, object) !== FALSE; val = object[++i]) {
                     }
                 }
             }
@@ -709,7 +719,7 @@ build time: Aug 16 15:41
                         throw new TypeError();
                     }
                 }
-                while (true);
+                while (TRUE);
             }
 
             while (k < len) {
@@ -721,6 +731,35 @@ build time: Aug 16 15:41
 
             return accumulator;
         },
+
+        every:every ?
+            function(arr, fn, context) {
+                return every.call(arr, fn, context || this);
+            } :
+            function(arr, fn, context) {
+                var len = arr && arr.length || 0;
+                for (var i = 0; i < len; i++) {
+                    if (i in arr && !fn.call(context, arr[i], i, arr)) {
+                        return FALSE;
+                    }
+                }
+                return TRUE;
+            },
+
+        some:some ?
+            function(arr, fn, context) {
+                return some.call(arr, fn, context || this);
+            } :
+            function(arr, fn, context) {
+                var len = arr && arr.length || 0;
+                for (var i = 0; i < len; i++) {
+                    if (i in arr && fn.call(context, arr[i], i, arr)) {
+                        return TRUE;
+                    }
+                }
+                return FALSE;
+            },
+
 
         /**
          * it is not same with native bind
@@ -818,7 +857,7 @@ build time: Aug 16 15:41
             sep = sep || SEP;
             eq = eq || EQ;
             if (S.isUndefined(arr)) {
-                arr = true;
+                arr = TRUE;
             }
             var buf = [], key, val;
             for (key in o) {
@@ -899,7 +938,7 @@ build time: Aug 16 15:41
          * @param when {Number} the number of milliseconds to wait until the fn is executed.
          * @param periodic {Boolean} if true, executes continuously at supplied interval
          *        until canceled.
-         * @param o {Object} the context object.
+         * @param context {Object} the context object.
          * @param data [Array] that is provided to the function. This accepts either a single
          *        item or an array. If an array is provided, the function is executed with
          *        one parameter for each array item. If you need to pass a single array
@@ -907,13 +946,15 @@ build time: Aug 16 15:41
          * @return {Object} a timer object. Call the cancel() method on this object to stop
          *         the timer.
          */
-        later: function(fn, when, periodic, o, data) {
+        later: function(fn, when, periodic, context, data) {
             when = when || 0;
-            o = o || { };
-            var m = fn, d = S.makeArray(data), f, r;
+            var m = fn,
+                d = S.makeArray(data),
+                f,
+                r;
 
             if (S.isString(fn)) {
-                m = o[fn];
+                m = context[fn];
             }
 
             if (!m) {
@@ -921,7 +962,7 @@ build time: Aug 16 15:41
             }
 
             f = function() {
-                m.apply(o, d);
+                m.apply(context, d);
             };
 
             r = (periodic) ? setInterval(f, when) : setTimeout(f, when);
@@ -946,6 +987,66 @@ build time: Aug 16 15:41
         endsWith:function(str, suffix) {
             var ind = str.length - suffix.length;
             return ind >= 0 && str.indexOf(suffix, ind) == ind;
+        },
+
+        /*! Based on YUI3*/
+        /**
+         * Throttles a call to a method based on the time between calls.
+         * @param  {function} fn The function call to throttle.
+         * @param {object} context ontext fn to run
+         * @param {Number} ms The number of milliseconds to throttle the method call.
+         *              Passing a -1 will disable the throttle. Defaults to 150.
+         * @return {function} Returns a wrapped function that calls fn throttled.
+         */
+        throttle:function(fn, ms, context) {
+            ms = ms || 150;
+
+            if (ms === -1) {
+                return (function() {
+                    fn.apply(context || this, arguments);
+                });
+            }
+
+            var last = S.now();
+
+            return (function() {
+                var now = S.now();
+                if (now - last > ms) {
+                    last = now;
+                    fn.apply(context || this, arguments);
+                }
+            });
+        },
+
+        /**
+         * buffers a call between  a fixed time
+         * @param {function} fn
+         * @param {object} context
+         * @param {Number} ms
+         */
+        buffer:function(fn, ms, context) {
+            ms = ms || 150;
+
+            if (ms === -1) {
+                return (function() {
+                    fn.apply(context || this, arguments);
+                });
+            }
+            var bufferTimer = null;
+
+            function f() {
+                f.stop();
+                bufferTimer = S.later(fn, ms, FALSE, context || this);
+            }
+
+            f.stop = function() {
+                if (bufferTimer) {
+                    bufferTimer.cancel();
+                    bufferTimer = 0;
+                }
+            };
+
+            return f;
         }
 
     });
@@ -978,63 +1079,70 @@ build time: Aug 16 15:41
     }
 
 
-    function cloneInternal(o, f, marked) {
-        var ret = o, isArray, k, stamp;
-        // 引用类型要先记录
-        if (o &&
-            ((isArray = S.isArray(o)) ||
-                S.isPlainObject(o) ||
-                S.isDate(o) ||
-                S.isRegExp(o)
-                )) {
-            if (o[CLONE_MARKER]) {
-                // 对应的克隆后对象
-                return marked[o[CLONE_MARKER]].r;
+    function cloneInternal(input, f, memory) {
+        var destination = input,
+            isArray,
+            isPlainObject,
+            k,
+            stamp;
+        if (!input) {
+            return destination;
+        }
+
+        // If input is the source object of a pair of objects in memory,
+        // then return the destination object in that pair of objects .
+        // and abort these steps.
+        if (input[CLONE_MARKER]) {
+            // 对应的克隆后对象
+            return memory[input[CLONE_MARKER]].destination;
+        } else if (typeof input === "object") {
+            // 引用类型要先记录
+            var constructor = input.constructor;
+            if (S.inArray(constructor, [Boolean,String,Number,Date,RegExp])) {
+                destination = new constructor(input.valueOf());
             }
+            // ImageData , File, Blob , FileList .. etc
+            else if (isArray = S.isArray(input)) {
+                destination = f ? S.filter(input, f) : input.concat();
+            } else if (isPlainObject = S.isPlainObject(input)) {
+                destination = {};
+            }
+            // Add a mapping from input (the source object)
+            // to output (the destination object) to memory.
             // 做标记
-            o[CLONE_MARKER] = (stamp = S.guid());
-
-            // 先把对象建立起来
-            if (isArray) {
-                ret = f ? S.filter(o, f) : o.concat();
-            } else if (S.isDate(o)) {
-                ret = new Date(+o);
-            } else if (S.isRegExp(o)) {
-                ret = new RegExp(o);
-            } else {
-                ret = {};
-            }
-
+            input[CLONE_MARKER] = (stamp = S.guid());
             // 存储源对象以及克隆后的对象
-            marked[stamp] = {r:ret,o:o};
+            memory[stamp] = {destination:destination,input:input};
         }
+        // If input is an Array object or an Object object,
+        // then, for each enumerable property in input, 
+        // add a new property to output having the same name, 
+        // and having a value created from invoking the internal structured cloning algorithm recursively 
+        // with the value of the property as the "input" argument and memory as the "memory" argument.
+        // The order of the properties in the input and output objects must be the same.
 
-
-        // array or plain object need to be copied recursively
-        if (o && (isArray || S.isPlainObject(o))) {
-            // clone it
-            if (isArray) {
-                for (var i = 0; i < ret.length; i++) {
-                    ret[i] = cloneInternal(ret[i], f, marked);
-                }
-            } else {
-                for (k in o) {
-                    if (k !== CLONE_MARKER &&
-                        o.hasOwnProperty(k) &&
-                        (!f || (f.call(o, o[k], k, o) !== false))) {
-                        ret[k] = cloneInternal(o[k], f, marked);
-                    }
+        // clone it
+        if (isArray) {
+            for (var i = 0; i < destination.length; i++) {
+                destination[i] = cloneInternal(destination[i], f, memory);
+            }
+        } else if (isPlainObject) {
+            for (k in input) {
+                if (k !== CLONE_MARKER &&
+                    input.hasOwnProperty(k) &&
+                    (!f || (f.call(input, input[k], k, input) !== FALSE))) {
+                    destination[k] = cloneInternal(input[k], f, memory);
                 }
             }
         }
 
-        return ret;
+        return destination;
     }
 
     function compareObjects(a, b, mismatchKeys, mismatchValues) {
         // 两个比较过了，无需再比较，防止循环比较
         if (a[COMPARE_MARKER] === b && b[COMPARE_MARKER] === a) {
-            return true;
+            return TRUE;
         }
         a[COMPARE_MARKER] = b;
         b[COMPARE_MARKER] = a;
@@ -1069,8 +1177,6 @@ build time: Aug 16 15:41
         return (mismatchKeys.length === 0 && mismatchValues.length === 0);
     }
 
-    S.isNullOrUndefined = nullOrUndefined;
-
 })(KISSY, undefined);
 /**
  * setup data structure for kissy loader
@@ -1102,12 +1208,16 @@ build time: Aug 16 15:41
  * @author yiminghe@gmail.com
  */
 (function(S, loader, utils) {
-    if (S.use) {
+    if ("require" in this) {
         return;
     }
+    var ua=navigator.userAgent,doc=document;
     S.mix(utils, {
-        isWebKit:!!navigator['userAgent'].match(/AppleWebKit/),
-        IE : !!navigator['userAgent'].match(/MSIE/),
+        docHead:function(){
+          return doc.getElementsByTagName('head')[0] || doc.documentElement;
+        },
+        isWebKit:!!ua.match(/AppleWebKit/),
+        IE : !!ua.match(/MSIE/),
         isCss:function(url) {
             return /\.css(?:\?|$)/i.test(url);
         },
@@ -1215,7 +1325,7 @@ build time: Aug 16 15:41
  * @author  yiminghe@gmail.com
  */
 (function(S, utils) {
-    if (S.use) {
+    if ("require" in this) {
         return;
     }
     var isWebKit = utils.isWebKit,
@@ -1337,11 +1447,7 @@ build time: Aug 16 15:41
                 startCssTimer();
             }
     });
-
-}
-
-    )
-    (KISSY, KISSY.__loaderUtils);/**
+})(KISSY, KISSY.__loaderUtils);/**
  * getScript support for css and js callback after load
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
@@ -1362,7 +1468,7 @@ build time: Aug 16 15:41
          */
         getStyle:function(url, success, charset) {
             var doc = document,
-                head = doc.head || doc.getElementsByTagName("head")[0],
+                head = utils.docHead(),
                 node = doc.createElement('link'),
                 config = success;
 
@@ -1461,19 +1567,16 @@ build time: Aug 16 15:41
  * add module definition
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
-(function(S, loader, utils,data) {
-    if("require" in this) {
+(function(S, loader, utils, data) {
+    if ("require" in this) {
         return;
     }
-    var win = S.__HOST,
-        IE = utils.IE,
-        doc = win['document'],
-        head = doc.getElementsByTagName('head')[0] || doc.documentElement,
+    var IE = utils.IE,
         ATTACHED = data.ATTACHED,
         mix = S.mix;
 
 
-    S.mix(loader, {
+    mix(loader, {
         /**
          * Registers a module.
          * @param name {String} module name
@@ -1590,7 +1693,7 @@ build time: Aug 16 15:41
         }
     });
 
-})(KISSY, KISSY.__loader, KISSY.__loaderUtils,KISSY.__loaderData);/**
+})(KISSY, KISSY.__loader, KISSY.__loaderUtils, KISSY.__loaderData);/**
  * build full path from relative path and base path
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
@@ -1638,11 +1741,12 @@ build time: Aug 16 15:41
     }
     S.mix(loader, {
         __mixMods: function(global) {
-            var mods = this.Env.mods,
+            var self=this,
+                mods = self.Env.mods,
                 gMods = global.Env.mods,
                 name;
             for (name in gMods) {
-                this.__mixMod(mods, gMods, name, global);
+                self.__mixMod(mods, gMods, name, global);
             }
         },
 
@@ -1730,10 +1834,7 @@ build time: Aug 16 15:41
     if ("require" in this) {
         return;
     }
-    var win = S.__HOST,
-        IE = utils.IE,
-        doc = win['document'],
-        head = doc.getElementsByTagName('head')[0] || doc.documentElement,
+    var IE = utils.IE,
         LOADING = data.LOADING,
         LOADED = data.LOADED,
         ERROR = data.ERROR,
@@ -1857,10 +1958,7 @@ build time: Aug 16 15:41
     if ("require" in this) {
         return;
     }
-    var win = S.__HOST,
-        doc = win['document'],
-        head = doc.getElementsByTagName('head')[0] || doc.documentElement,
-        ATTACHED = data.ATTACHED,
+    var ATTACHED = data.ATTACHED,
         mix = S.mix;
 
     mix(loader, {
@@ -1943,88 +2041,82 @@ build time: Aug 16 15:41
     if ("require" in this) {
         return;
     }
-    var win = S.__HOST,
-        doc = win['document'],
-        head = doc.getElementsByTagName('head')[0] || doc.documentElement;
 
     S.mix(loader, {
 
-            /**
-             * 包声明
-             * biz -> .
-             * 表示遇到 biz/x
-             * 在当前网页路径找 biz/x.js
-             */
-            _packages:function(cfgs) {
-                var self = this,
-                    ps;
-                ps = self.__packages = self.__packages || {};
-                S.each(cfgs, function(cfg) {
-                    ps[cfg.name] = cfg;
-                    //注意正则化
-                    cfg.path = cfg.path && utils.normalBasePath(cfg.path);
-                    cfg.tag = cfg.tag && encodeURIComponent(cfg.tag);
-                });
-            },
+        /**
+         * 包声明
+         * biz -> .
+         * 表示遇到 biz/x
+         * 在当前网页路径找 biz/x.js
+         */
+        _packages:function(cfgs) {
+            var self = this,
+                ps;
+            ps = self.__packages = self.__packages || {};
+            S.each(cfgs, function(cfg) {
+                ps[cfg.name] = cfg;
+                //注意正则化
+                cfg.path = cfg.path && utils.normalBasePath(cfg.path);
+                cfg.tag = cfg.tag && encodeURIComponent(cfg.tag);
+            });
+        },
 
-            __getPackagePath:function(mod) {
-                //缓存包路径，未申明的包的模块都到核心模块中找
-                if (mod.packagepath) {
-                    return mod.packagepath;
-                }
-                var self = this,
-                    //一个模块合并到了另一个模块文件中去
-                    modName = self._combine(mod.name),
-                    packages = self.__packages || {},
-                    pName = "",
-                    p_def,
-                    p_path;
+        __getPackagePath:function(mod) {
+            //缓存包路径，未申明的包的模块都到核心模块中找
+            if (mod.packagepath) {
+                return mod.packagepath;
+            }
+            var self = this,
+                //一个模块合并到了另一个模块文件中去
+                modName = self._combine(mod.name),
+                packages = self.__packages || {},
+                pName = "",
+                p_def;
 
-                for (var p in packages) {
-                    if (packages.hasOwnProperty(p)
-                        && S.startsWith(modName, p)
-                        && p.length > pName
-                        ) {
-                        pName = p;
-                    }
-                }
-                p_def = packages[pName];
-                p_path = (p_def && p_def.path) || self.Config.base;
-                mod.charset = p_def && p_def.charset;
-                if (p_def) {
-                    mod.tag = p_def.tag;
-                } else {
-                    // kissy 自身组件的事件戳后缀
-                    mod.tag = encodeURIComponent(S.Config.tag || S.buildTime);
-                }
-                mod.packagepath = p_path;
-                return p_path;
-            },
-            /**
-             * compress 'from module' to 'to module'
-             * {
-             *   core:['dom','ua','event','node','json','ajax','anim','base','cookie']
-             * }
-             */
-            _combine:function(from, to) {
-                var self = this,
-                    cs;
-                if (S.isObject(from)) {
-                    S.each(from, function(v, k) {
-                        S.each(v, function(v2) {
-                            self._combine(v2, k);
-                        });
-                    });
-                    return;
-                }
-                cs = self.__combines = self.__combines || {};
-                if (to) {
-                    cs[from] = to;
-                } else {
-                    return cs[from] || from;
+            for (var p in packages) {
+                if (packages.hasOwnProperty(p)
+                    && S.startsWith(modName, p)
+                    && p.length > pName
+                    ) {
+                    pName = p;
                 }
             }
-        });
+            p_def = packages[pName];
+            mod.charset = p_def && p_def.charset || mod.charset;
+            if (p_def) {
+                mod.tag = p_def.tag;
+            } else {
+                // kissy 自身组件的事件戳后缀
+                mod.tag = encodeURIComponent(S.Config.tag || S.buildTime);
+            }
+            return mod.packagepath = (p_def && p_def.path) || self.Config.base;
+        },
+        /**
+         * compress 'from module' to 'to module'
+         * {
+         *   core:['dom','ua','event','node','json','ajax','anim','base','cookie']
+         * }
+         */
+        _combine:function(from, to) {
+            var self = this,
+                cs;
+            if (S.isObject(from)) {
+                S.each(from, function(v, k) {
+                    S.each(v, function(v2) {
+                        self._combine(v2, k);
+                    });
+                });
+                return;
+            }
+            cs = self.__combines = self.__combines || {};
+            if (to) {
+                cs[from] = to;
+            } else {
+                return cs[from] || from;
+            }
+        }
+    });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**
  * register module ,associate module name with module factory(definition)
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
@@ -2033,13 +2125,10 @@ build time: Aug 16 15:41
     if ("require" in this) {
         return;
     }
-    var win = S.__HOST,
-        doc = win['document'],
-        head = doc.getElementsByTagName('head')[0] || doc.documentElement,
-        LOADED = data.LOADED,
+    var LOADED = data.LOADED,
         mix = S.mix;
 
-    S.mix(loader, {
+    mix(loader, {
         //注册模块，将模块和定义 factory 关联起来
         __registerModule:function(name, def, config) {
             config = config || {};
@@ -2070,10 +2159,7 @@ build time: Aug 16 15:41
     if ("require" in this) {
         return;
     }
-    var win = S.__HOST,
-        doc = win['document'],
-        head = doc.getElementsByTagName('head')[0] || doc.documentElement,
-        LOADED = data.LOADED,
+    var LOADED = data.LOADED,
         ATTACHED = data.ATTACHED;
 
     S.mix(loader, {
@@ -2569,8 +2655,7 @@ build time: Aug 16 15:41
                         doScroll('left');
                         fire();
                     } catch(ex) {
-                        S.log("detect document ready : ");
-                        S.log(ex);
+                        //S.log("detect document ready : " + ex);
                         setTimeout(readyScroll, POLL_INTERVAL);
                     }
                 }
@@ -2610,7 +2695,7 @@ build time: Aug 16 15:41
         S.Config.debug = true;
     }
 
-})(KISSY);
+})(KISSY, undefined);
 /**
  * 声明 kissy 核心中所包含的模块，动态加载时将直接从 core.js 中加载核心模块
  * @description: 为了和 1.1.7 及以前版本保持兼容，务实与创新，兼容与革新 ！
