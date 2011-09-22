@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 13 20:10
+build time: Sep 22 19:47
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -88,7 +88,7 @@ build time: Sep 13 20:10
          */
         version: '1.20dev',
 
-        buildTime:'20110913201040',
+        buildTime:'20110922194728',
 
         /**
          * Returns a new object containing all of the properties of
@@ -4684,94 +4684,116 @@ KISSY.add('dom/offset', function(S, DOM, UA, undefined) {
                 return;
             }
 
+            if (container) {
+                container = DOM.get(container);
+            }
+
+            if (!container) {
+                container = elem.ownerDocument;
+            }
+
             if (auto !== true) {
                 hscroll = hscroll === undefined ? true : !!hscroll;
                 top = top === undefined ? true : !!top;
             }
 
-            // default current window, use native for scrollIntoView(elem, top)
-            if (!container ||
-                (container = DOM.get(container)) === win) {
-                // 注意：
-                // 1. Opera 不支持 top 参数
-                // 2. 当 container 已经在视窗中时，也会重新定位
-                elem.scrollIntoView(top);
-                return;
-            }
-
             // document 归一化到 window
-            if (nodeTypeIs(container, 9)) {
+            if (nodeTypeIs(container, DOM.DOCUMENT_NODE)) {
                 container = getWin(container);
             }
 
             var isWin = !!getWin(container),
                 elemOffset = DOM.offset(elem),
-                containerOffset = isWin ? {
-                    left: DOM.scrollLeft(container),
-                    top: DOM.scrollTop(container) }
-                    : DOM.offset(container),
-
-                // elem 相对 container 视窗的坐标
-                diff = {
-                    left: elemOffset[LEFT] - containerOffset[LEFT],
-                    top: elemOffset[TOP] - containerOffset[TOP]
-                },
-
-                // container 视窗的高宽
-                ch = isWin ? DOM.viewportHeight(container) : container.clientHeight,
-                cw = isWin ? DOM.viewportWidth(container) : container.clientWidth,
-
-                // container 视窗相对 container 元素的坐标
-                cl = DOM[SCROLL_LEFT](container),
-                ct = DOM[SCROLL_TOP](container),
-                cr = cl + cw,
-                cb = ct + ch,
-
-                // elem 的高宽
                 eh = DOM.outerHeight(elem),
                 ew = DOM.outerWidth(elem),
+                containerOffset,
+                ch,
+                cw,
+                containerScroll,
+                diffTop,
+                diffBottom,
+                win,
+                winScroll,
+                ww,
+                wh;
 
-                // elem 相对 container 元素的坐标
-                // 注：diff.left 含 border, cl 也含 border, 因此要减去容器的
-                l = diff.left + cl -
-                    (isWin ? 0 : (PARSEINT(DOM.css(container, 'borderLeftWidth')) || 0)),
-
-                t = diff.top + ct -
-                    (isWin ? 0 : (PARSEINT(DOM.css(container, 'borderTopWidth')) || 0)),
-
-                r = l + ew,
-                b = t + eh,
-
-                t2,
-
-                l2;
-
-            // 根据情况将 elem 定位到 container 视窗中
-            // 1. 当 eh > ch 时，优先显示 elem 的顶部，对用户来说，这样更合理
-            // 2. 当 t < ct 时，elem 在 container 视窗上方，优先顶部对齐
-            // 3. 当 b > cb 时，elem 在 container 视窗下方，优先底部对齐
-            // 4. 其它情况下，elem 已经在 container 视窗中，无需任何操作
-            if (eh > ch || t < ct || top) {
-                t2 = t;
-            } else if (b > cb) {
-                t2 = b - ch;
+            if (isWin) {
+                win = container;
+                wh = DOM.height(win);
+                ww = DOM.width(win);
+                winScroll = {
+                    left:DOM.scrollLeft(win),
+                    top:DOM.scrollTop(win)
+                };
+                // elem 相对 container 可视视窗的距离
+                diffTop = {
+                    left: elemOffset[LEFT] - winScroll[LEFT],
+                    top: elemOffset[TOP] - winScroll[TOP]
+                };
+                diffBottom = {
+                    left:  elemOffset[LEFT] + ew - (winScroll[LEFT] + ww),
+                    top:elemOffset[TOP] + eh - (winScroll[TOP] + wh)
+                };
+                containerScroll = winScroll;
+            }
+            else {
+                containerOffset = DOM.offset(container);
+                ch = container.clientHeight;
+                cw = container.clientWidth;
+                containerScroll = {
+                    left:DOM.scrollLeft(container),
+                    top:DOM.scrollTop(container)
+                };
+                // elem 相对 container 可视视窗的距离
+                // 注意边框 , offset 是边框到根节点
+                diffTop = {
+                    left: elemOffset[LEFT] - containerOffset[LEFT] -
+                        (PARSEINT(DOM.css(container, 'borderLeftWidth')) || 0),
+                    top: elemOffset[TOP] - containerOffset[TOP] -
+                        (PARSEINT(DOM.css(container, 'borderTopWidth')) || 0)
+                };
+                diffBottom = {
+                    left:  elemOffset[LEFT] + ew -
+                        (containerOffset[LEFT] + cw +
+                            (PARSEINT(DOM.css(container, 'borderRightWidth')) || 0)) ,
+                    top:elemOffset[TOP] + eh -
+                        (containerOffset[TOP] + ch +
+                            (PARSEINT(DOM.css(container, 'borderBottomWidth')) || 0))
+                };
             }
 
-            // 水平方向与上面同理
-            if (hscroll) {
-                if (ew > cw || l < cl || top) {
-                    l2 = l;
-                } else if (r > cr) {
-                    l2 = r - cw;
+            if (diffTop.top < 0 || diffBottom.top > 0) {
+                // 强制向上
+                if (top === true) {
+                    DOM.scrollTop(container, containerScroll.top + diffTop.top);
+                } else if (top === false) {
+                    DOM.scrollTop(container, containerScroll.top + diffBottom.top);
+                } else {
+                    // 自动调整
+                    if (diffTop.top < 0) {
+                        DOM.scrollTop(container, containerScroll.top + diffTop.top);
+                    } else {
+                        DOM.scrollTop(container, containerScroll.top + diffBottom.top);
+                    }
                 }
             }
 
-            // if element is already in the container view ,then do nothing
-            if (t2 !== undefined) {
-                DOM[SCROLL_TOP](container, t2);
-            }
-            if (l2 !== undefined) {
-                DOM[SCROLL_LEFT](container, l2);
+            if (hscroll) {
+                if (diffTop.left < 0 || diffBottom.left > 0) {
+                    // 强制向上
+                    if (top === true) {
+                        DOM.scrollLeft(container, containerScroll.left + diffTop.left);
+                    } else if (top === false) {
+                        DOM.scrollLeft(container, containerScroll.left + diffBottom.left);
+                    } else {
+                        // 自动调整
+                        if (diffTop.left < 0) {
+                            DOM.scrollLeft(container, containerScroll.left + diffTop.left);
+                        } else {
+                            DOM.scrollLeft(container, containerScroll.left + diffBottom.left);
+                        }
+                    }
+                }
             }
         },
         /**
@@ -4929,7 +4951,6 @@ KISSY.add('dom/offset', function(S, DOM, UA, undefined) {
             var offset = currentWin == relativeWin ?
                 getPageOffset(currentEl) :
                 getClientPosition(currentEl);
-
             position.left += offset.left;
             position.top += offset.top;
         } while (currentWin && currentWin != relativeWin &&
@@ -10460,6 +10481,7 @@ KISSY.add("ajax/base", function(S, JSON, Event, XhrObject) {
                 /*
                  url:"",
                  context:null,
+                 // 单位秒!!
                  timeout: 0,
                  data: null,
                  // 可取json | jsonp | script | xml | html | text | null | undefined
@@ -10594,7 +10616,7 @@ KISSY.add("ajax/base", function(S, JSON, Event, XhrObject) {
             if (c.async && c.timeout > 0) {
                 xhr.timeoutTimer = setTimeout(function() {
                     xhr.abort("timeout");
-                }, c.timeout);
+                }, c.timeout * 1000);
             }
 
             try {
@@ -11954,7 +11976,7 @@ KISSY.use('core');
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:54
 */
 /*!
  * Sizzle CSS Selector Engine
@@ -13379,7 +13401,7 @@ KISSY.add("sizzle", function(S, sizzle) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:29
+build time: Sep 22 13:54
 */
 /**
  * 数据延迟加载组件
@@ -13882,18 +13904,15 @@ KISSY.add("datalazyload", function(S, D) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:54
 */
 /**
  * @fileoverview KISSY Template Engine.
- * @author 文河(yyfrankyy) <yyfrankyy@gmail.com>
- * @see https://github.com/yyfrankyy/kissy/tree/template/src/template
+ * @author yyfrankyy@gmail.com
  */
-KISSY.add('template/template', function(S) {
+KISSY.add('template/base', function(S) {
 
-    var defaultConfig = {},
-
-        // Template Cache
+    var // Template Cache
         templateCache = {},
 
         // start/end tag mark
@@ -13902,17 +13921,9 @@ KISSY.add('template/template', function(S) {
             '/': 'end'
         },
 
-        // Regexp Cache
-        regexpCache = {},
-        getRegexp = function(regexp) {
-            if (!(regexp in regexpCache)) {
-                regexpCache[regexp] = new RegExp(regexp, 'ig');
-            }
-            return regexpCache[regexp];
-        },
-
         // static string
         KS_TEMPL_STAT_PARAM = 'KS_TEMPL_STAT_PARAM',
+        KS_TEMPL_STAT_PARAM_REG = new RegExp(KS_TEMPL_STAT_PARAM, "g"),
         KS_TEMPL = 'KS_TEMPL',
         KS_DATA = 'KS_DATA_',
         KS_EMPTY = '',
@@ -13926,63 +13937,68 @@ KISSY.add('template/template', function(S) {
 
         PARSER_PREFIX = 'var ' + KS_TEMPL + '=[],' +
             KS_TEMPL_STAT_PARAM + '=false;with(',
+
         PARSER_MIDDLE = '||{}){try{' + KS_TEMPL + '.push("',
+
         PARSER_SUFFIX = '");}catch(e){' + KS_TEMPL + '=["' +
             PARSER_RENDER_ERROR + '" + e.message]}};return ' +
             KS_TEMPL + '.join("");',
 
+        restoreQuote = function(str) {
+            return str.replace(/\\"/g, '"');
+        },
+
+        escapeQuote = function(str) {
+            return str.replace(/"/g, '\\"');
+        },
+
+        trim = S.trim,
+
         // build a static parser
-        buildParser = function(templ) {
-            var _parser, _empty_index;
-            return S.trim(templ).replace(getRegexp('[\r\t\n]'), ' ')
-                .replace(getRegexp('(["\'])'), '\\$1')
-                .replace(getRegexp('\{\{([#/]?)(?!\}\})([^}]*)\}\}'),
-                function(all, expr, oper) {
+        buildParser = function(tpl) {
+            var _parser,
+                _empty_index;
+            return escapeQuote(trim(tpl)
+                .replace(/[\r\t\n]/g, ' ')
+                // escape escape ...
+                .replace(/\\/g, '\\\\'))
+                .replace(/\{\{([#/]?)(?!\}\})([^}]*)\}\}/g,
+                function(all, expr, body) {
                     _parser = KS_EMPTY;
                     // is an expression
                     if (expr) {
-                        oper = S.trim(oper);
-                        _empty_index = oper.indexOf(' ');
-                        oper = _empty_index === -1 ? [oper, ''] :
-                            [oper.substring(0, oper.indexOf(' ')),
-                                oper.substring(oper.indexOf(' '))];
-                        for (var i in Statements) {
-                            if (oper[0] !== i) continue;
-                            oper.shift();
-                            if (expr in tagStartEnd) {
-                                // get expression definition function/string
-                                var fn = Statements[i][tagStartEnd[expr]];
-                                _parser = S.isFunction(fn) ?
-                                    String(fn.apply(this, S.trim(oper.join(KS_EMPTY)
-                                        .replace(getRegexp('\\\\([\'"])'),
-                                        '$1')).split(/\s+/))) :
-                                    String(fn.replace(getRegexp(KS_TEMPL_STAT_PARAM),
-                                        oper.join(KS_EMPTY)
-                                            .replace(getRegexp('\\\\([\'"])'), '$1')
-                                        ));
-                            }
+                        body = trim(body);
+                        _empty_index = body.indexOf(' ');
+                        body = _empty_index === -1 ?
+                            [ body, '' ] :
+                            [
+                                body.substring(0, _empty_index),
+                                body.substring(_empty_index)
+                            ];
+
+                        var operator = body[0],
+                            fn,
+                            args = trim(body[1]),
+                            opStatement = Statements[operator];
+
+                        if (opStatement && tagStartEnd[expr]) {
+                            // get expression definition function/string
+                            fn = opStatement[tagStartEnd[expr]];
+                            _parser = S.isFunction(fn) ?
+                                restoreQuote(fn.apply(this, args.split(/\s+/))) :
+                                restoreQuote(fn.replace(KS_TEMPL_STAT_PARAM_REG, args));
                         }
                     }
-
                     // return array directly
                     else {
                         _parser = KS_TEMPL +
                             '.push(' +
-                            oper.replace(getRegexp('\\\\([\'"])'), '$1') + ');';
+                            restoreQuote(body) +
+                            ');';
                     }
                     return PREFIX + _parser + SUFFIX;
 
                 });
-        },
-
-        // convert any object to array
-        toArray = function(args) {
-            return [].slice.call(args);
-        },
-
-        // join any array to string by empty
-        join = function(args) {
-            return toArray(args).join(KS_EMPTY);
         },
 
         // expression
@@ -14002,15 +14018,16 @@ KISSY.add('template/template', function(S) {
 
             // KISSY.each function wrap
             'each': {
-                start: function() {
-                    var args = toArray(arguments),
-                        _ks_value = '_ks_value', _ks_index = '_ks_index';
-                    if (args[1] === KS_AS && args[2]) {
-                        _ks_value = args[2] || _ks_value,
-                            _ks_index = args[3] || _ks_index;
+                start: function(obj, as, v, k) {
+                    var _ks_value = '_ks_value',
+                        _ks_index = '_ks_index';
+                    if (as === KS_AS && v) {
+                        _ks_value = v || _ks_value,
+                            _ks_index = k || _ks_index;
                     }
-                    return 'KISSY.each(' + args[0] +
-                        ', function(' + _ks_value + ', ' + _ks_index + '){';
+                    return 'KISSY.each(' + obj +
+                        ', function(' + _ks_value +
+                        ', ' + _ks_index + '){';
                 },
                 end: '});'
             },
@@ -14019,52 +14036,54 @@ KISSY.add('template/template', function(S) {
             '!': {
                 start: '/*' + KS_TEMPL_STAT_PARAM + '*/'
             }
-        },
-
-        /**
-         * Template
-         * @param {String} templ template to be rendered.
-         * @param {Object} config configuration.
-         * @return {Object} return this for chain.
-         */
-            Template = function(templ, config) {
-            S.mix(defaultConfig, config);
-            if (!(templ in templateCache)) {
-                var _ks_data = KS_DATA + S.now(), func,
-                    _parser = [
-                        PARSER_PREFIX,
-                        _ks_data,
-                        PARSER_MIDDLE,
-                        buildParser(templ),
-                        PARSER_SUFFIX
-                    ];
-
-                try {
-                    func = new Function(_ks_data, _parser.join(KS_EMPTY));
-                } catch (e) {
-                    _parser[3] = PREFIX + SUFFIX + PARSER_SYNTAX_ERROR + ',' +
-                        e.message + PREFIX + SUFFIX;
-                    func = new Function(_ks_data, _parser.join(KS_EMPTY));
-                }
-
-                templateCache[templ] = {
-                    name: _ks_data,
-                    parser: _parser.join(KS_EMPTY),
-                    render: func
-                };
-            }
-            return templateCache[templ];
         };
+
+    /**
+     * Template
+     * @param {String} tpl template to be rendered.
+     * @return {Object} return this for chain.
+     */
+    function Template(tpl) {
+        if (!(templateCache[tpl])) {
+            var _ks_data = S.guid(KS_DATA),
+                func,
+                o,
+                _parser = [
+                    PARSER_PREFIX,
+                    _ks_data,
+                    PARSER_MIDDLE,
+                    o = buildParser(tpl),
+                    PARSER_SUFFIX
+                ];
+
+            try {
+                func = new Function(_ks_data, _parser.join(KS_EMPTY));
+            } catch (e) {
+                _parser[3] = PREFIX + SUFFIX +
+                    PARSER_SYNTAX_ERROR + ',' +
+                    e.message + PREFIX + SUFFIX;
+                func = new Function(_ks_data, _parser.join(KS_EMPTY));
+            }
+
+            templateCache[tpl] = {
+                name: _ks_data,
+                o:o,
+                parser: _parser.join(KS_EMPTY),
+                render: func
+            };
+        }
+        return templateCache[tpl];
+    }
 
     S.mix(Template, {
         /**
          * Logging Compiled Template Codes
-         * @param {String} templ template string.
+         * @param {String} tpl template string.
          */
-        log: function(templ) {
-            if (templ in templateCache) {
+        log: function(tpl) {
+            if (tpl in templateCache) {
                 if ('js_beautify' in window) {
-//                        S.log(js_beautify(templateCache[templ].parser, {
+//                        S.log(js_beautify(templateCache[tpl].parser, {
 //                            indent_size: 4,
 //                            indent_char: ' ',
 //                            preserve_newlines: true,
@@ -14073,11 +14092,11 @@ KISSY.add('template/template', function(S) {
 //                            space_after_anon_function: true
 //                        }), 'info');
                 } else {
-                    S.log(templateCache[templ].parser, 'info');
+                    S.log(templateCache[tpl].parser, 'info');
                 }
             } else {
-                Template(templ, undefined);
-                this.log(templ);
+                Template(tpl);
+                this.log(tpl);
             }
         },
 
@@ -14094,33 +14113,39 @@ KISSY.add('template/template', function(S) {
 
     });
 
-    //S.Template = Template;
     return Template;
 
-}, {requires: ['core']});
+});
+/**
+ * 2011-09-20 note by yiminghe :
+ *      - code style change
+ *      - remove reg cache , ugly to see
+ *      - fix escape by escape
+ *      - expect(T('{{#if a=="a"}}{{b}}\\"{{/if}}').render({a:"a",b:"b"})).toBe('b\\"');
+ */
 /**
  * @fileoverview KISSY.Template Node.
  * @author 文河<wenhe@taobao.com>
  */
-KISSY.add('template/template-node', function(S) {
-
+KISSY.add('template/node', function(S, Template, Node) {
+    var $ = Node.all;
     S.mix(S, {
         tmpl: function(selector, data) {
-            return S.one(S.DOM.create(S.Template(S.one(selector).html()).render(data)));
+            return $(Template($(selector).html()).render(data));
         }
     });
 
-}, {requires:["./template"]});
+}, {requires:["./base",'node']});
 KISSY.add("template", function(S, T) {
     S.Template = T;
     return T;
 }, {
-    requires:["template/template","template/template-node"]
+    requires:["template/base","template/node"]
 });
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:54
 */
 /**
  * @module   Flash 全局静态类
@@ -14639,7 +14664,7 @@ KISSY.add("flash", function(S, F) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:29
+build time: Sep 22 13:54
 */
 /**
  * dd support for kissy , dd objects central management module
@@ -15854,7 +15879,7 @@ KISSY.add("dd", function(S, DDM, Draggable, Droppable, Proxy, Delegate, Droppabl
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:54
 */
 /**
  * resizable support for kissy
@@ -16028,7 +16053,7 @@ KISSY.add("resizable", function(S, R) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:55
 */
 /**
  * UIBase.Align
@@ -18089,7 +18114,7 @@ KISSY.add("uibase/stdmodrender", function(S, Node) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:29
+build time: Sep 22 13:54
 */
 /**
  * container can delegate event for its children
@@ -18989,7 +19014,7 @@ KISSY.add("component", function(KISSY, ModelControl, Render, Container, UIStore,
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:41
+build time: Sep 22 13:54
 */
 /**
  * Switchable
@@ -21593,7 +21618,7 @@ KISSY.add("switchable", function(S, Switchable, Aria, Accordion, AAria, autoplay
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:54
 */
 /**
  * KISSY Overlay
@@ -22087,7 +22112,7 @@ KISSY.add('overlay/popup', function(S, Component, Overlay, undefined) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:54
 */
 KISSY.add("suggest", function(S, Sug) {
     S.Suggest = Sug;
@@ -23277,7 +23302,7 @@ KISSY.add('suggest/base', function(S, DOM, Event, UA, undefined) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:54
 */
 /**
  * @fileoverview 图像放大区域
@@ -23902,7 +23927,7 @@ KISSY.add("imagezoom", function(S, ImageZoom) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:29
+build time: Sep 22 13:53
 */
 /**
  * KISSY Calendar
@@ -24061,6 +24086,13 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                         && dot[1] > r[0].y
                         && dot[1] < r[1].y;
                 };
+
+                // bugfix by jayli - popup状态下，点击选择月份的option时日历层关闭
+                if (self.con.contains(target) &&
+                    (target[0].nodeName.toLowerCase() === 'option' ||
+                        target[0].nodeName.toLowerCase() === 'select')) {
+                    return;
+                }
 
                 /*
                  if (!S.DOM.contains(Node.one('#' + self.C_Id), e.target)) {
@@ -25181,7 +25213,7 @@ KISSY.add("calendar", function(S, C, Page, Time, Date) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 8 19:25
+build time: Sep 22 13:54
 */
 /**
  * deletable menuitem
@@ -26413,7 +26445,7 @@ KISSY.add("menu/submenurender", function(S, UIBase, MenuItemRender) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 8 19:25
+build time: Sep 22 13:53
 */
 /**
  * Model and Control for button
@@ -26580,7 +26612,7 @@ KISSY.add("button", function(S, Button, Render) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:54
 */
 /**
  * combination of menu and button ,similar to native select
@@ -27115,7 +27147,7 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, Component, MenuButton, 
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 5 21:30
+build time: Sep 22 13:55
 */
 /**
  * @author: 常胤 (lzlu.com)

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <title>KISSY Editor Test</title>
-<link href="../kissy/editor/theme/base-min.css" rel="stylesheet"/>
+<link href="../kissy/css/base-min.css" rel="stylesheet"/>
 <!--[if lt IE 8]>
 <link href="../kissy/editor/theme/cool/editor-pkg-sprite-min.css" rel="stylesheet"/>
 <![endif]-->
@@ -15,6 +15,8 @@
 <body>
 
 <h1>KISSY Editor Demo</h1>
+
+<h2><a href='http://docs.kissyui.com/docs/html/relatedproj/editorguide/index.html'>For Details To See Docs</a></h2>
 
 <div style="width: 90%; margin: 0 auto">
     <label for="editor">Editor Instance 1:</label>
@@ -174,6 +176,7 @@
 
 
 <script src="../kissy/kissy-min.js"></script>
+<!--
 <script src="../kissy/uibase-min.js"></script>
 <script src="../kissy/dd-min.js"></script>
 <script src="../kissy/component-min.js"></script>
@@ -181,16 +184,16 @@
 
 <script src="../kissy/editor/editor-all-pkg-min.js?t=20101223a"></script>
 <script src="../kissy/editor/biz/ext/editor-plugin-pkg-min.js?t=20101223a"></script>
+-->
 <script>
 
 
-KISSY.ready(function(S) {
+
     // just for test
    
 
-    S.use('editor', function() {
-
-        var KE = S.Editor;
+KISSY.use('editor', function(S,KE) {
+    S.ready(function(S) {
        
         //编辑器内弹窗 z-index 底限，防止互相覆盖
         KE.Config.baseZIndex = 10000;
@@ -394,19 +397,19 @@ KISSY.ready(function(S) {
         function test() {
             window.editor2 = KE("#editor", S.clone(cfg)).use("elementpaths," +
                     "sourcearea,preview," +
-                    "checkbox-sourcearea," +
+                    //"checkbox-sourcearea," +
                     "templates,separator," +
                     "undo,separator," +
                     "removeformat,font,format,color,separator," +
                     "list,indent," +
                     "justify,separator,link," +
                     "image,flash," +
-                    "video," +
+                    //"video," +
                     "music," +
-                    "xiami-music," +
+                    //"xiami-music," +
                     "smiley,separator,table,resize," +
                     "draft," +
-                    "multi-upload," +
+                    //"multi-upload," +
                     "pagebreak,separator,maximize,dragupload");
 
         }
