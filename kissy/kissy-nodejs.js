@@ -187,7 +187,7 @@
 })(KISSY);/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 19:47
+build time: Oct 12 14:28
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -274,7 +274,7 @@ build time: Sep 22 19:47
          */
         version: '1.20dev',
 
-        buildTime:'20110922194728',
+        buildTime:'20111012142802',
 
         /**
          * Returns a new object containing all of the properties of
@@ -1175,8 +1175,8 @@ build time: Sep 22 19:47
             return ind >= 0 && str.indexOf(suffix, ind) == ind;
         },
 
-        /*! Based on YUI3*/
         /**
+         * Based on YUI3
          * Throttles a call to a method based on the time between calls.
          * @param  {function} fn The function call to throttle.
          * @param {object} context ontext fn to run
@@ -1859,6 +1859,28 @@ build time: Sep 22 19:47
                 config = def;
                 def = name;
                 if (IE) {
+                    /*
+                     Kris Zyp
+                     2010年10月21日, 上午11时34分
+                     We actually had some discussions off-list, as it turns out the required
+                     technique is a little different than described in this thread. Briefly,
+                     to identify anonymous modules from scripts:
+                     * In non-IE browsers, the onload event is sufficient, it always fires
+                     immediately after the script is executed.
+                     * In IE, if the script is in the cache, it actually executes *during*
+                     the DOM insertion of the script tag, so you can keep track of which
+                     script is being requested in case define() is called during the DOM
+                     insertion.
+                     * In IE, if the script is not in the cache, when define() is called you
+                     can iterate through the script tags and the currently executing one will
+                     have a script.readyState == "interactive"
+                     See RequireJS source code if you need more hints.
+                     Anyway, the bottom line from a spec perspective is that it is
+                     implemented, it works, and it is possible. Hope that helps.
+                     Kris
+                     */
+                    // http://groups.google.com/group/commonjs/browse_thread/thread/5a3358ece35e688e/43145ceccfb1dc02#43145ceccfb1dc02
+                    // use onload to get module name is not right in ie
                     name = self.__findModuleNameByInteractive();
                     S.log("old_ie get modname by interactive : " + name);
                     self.__registerModule(name, def, config);
@@ -1874,7 +1896,6 @@ build time: Sep 22 19:47
                 return self;
             }
             S.log("invalid format for KISSY.add !", "error");
-            //S.error("invalid format for KISSY.add !");
             return self;
         }
     });
@@ -1963,7 +1984,7 @@ build time: Sep 22 19:47
  * @author yiminghe@gmail.com
  */
 (function(S, loader, utils) {
-    if("require" in this) {
+    if ("require" in this) {
         return;
     }
     S.mix(loader, {
@@ -1983,20 +2004,29 @@ build time: Sep 22 19:47
                 }
             }
             if (!re) {
+                // sometimes when read module file from cache , interactive status is not triggered
+                // module code is executed right after inserting into dom
+                // i has to preserve module name before insert module script into dom , then get it back here
                 S.log("can not find interactive script,time diff : " + (+new Date() - self.__startLoadTime), "error");
                 S.log("old_ie get modname from cache : " + self.__startLoadModuleName);
                 return self.__startLoadModuleName;
                 //S.error("找不到 interactive 状态的 script");
             }
 
-            var src = re.src;
-            S.log("interactive src :" + src);
-            //注意：模块名不包含后缀名以及参数，所以去除
-            //系统模块去除系统路径
-            if (src.lastIndexOf(self.Config.base, 0) === 0) {
+            // src 必定是绝对路径
+            // or re.hasAttribute ? re.src :  re.getAttribute('src', 4);
+            // http://msdn.microsoft.com/en-us/library/ms536429(VS.85).aspx
+            var src = utils.normalBasePath(re.src);
+            src = src.substring(0, src.length - 1);
+            // S.log("interactive src :" + src);
+            // 注意：模块名不包含后缀名以及参数，所以去除
+            // 系统模块去除系统路径
+            // 需要 base norm , 防止 base 被指定为相对路径
+            self.Config.base = utils.normalBasePath(self.Config.base);
+            if (src.lastIndexOf(self.Config.base, 0)
+                === 0) {
                 return utils.removePostfix(src.substring(self.Config.base.length));
             }
-
             var packages = self.__packages;
             //外部模块去除包路径，得到模块名
             for (var p in packages) {
@@ -2006,10 +2036,7 @@ build time: Sep 22 19:47
                     return utils.removePostfix(src.substring(p_path.length));
                 }
             }
-
-            S.log("interactive script not have package config ：" + src, "error");
-            //S.error("interactive 状态的 script 没有对应包 ：" + src);
-            return undefined;
+            S.log("interactive script does not have package config ：" + src, "error");
         }
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**
@@ -2921,6 +2948,8 @@ D:\code\kissy_git\kissy\src\event\hashchange.js
 D:\code\kissy_git\kissy\src\event\valuechange.js
 D:\code\kissy_git\kissy\src\event\delegate.js
 D:\code\kissy_git\kissy\src\event\mouseenter.js
+D:\code\kissy_git\kissy\src\event\submit.js
+D:\code\kissy_git\kissy\src\event\change.js
 D:\code\kissy_git\kissy\src\event.js
 D:\code\kissy_git\kissy\src\node\base.js
 D:\code\kissy_git\kissy\src\node\attach.js
@@ -2938,6 +2967,8 @@ D:\code\kissy_git\kissy\src\json.js
 D:\code\kissy_git\kissy\src\ajax\form-serializer.js
 D:\code\kissy_git\kissy\src\ajax\xhrobject.js
 D:\code\kissy_git\kissy\src\ajax\base.js
+D:\code\kissy_git\kissy\src\ajax\xhrbase.js
+D:\code\kissy_git\kissy\src\ajax\subdomain.js
 D:\code\kissy_git\kissy\src\ajax\xdr.js
 D:\code\kissy_git\kissy\src\ajax\xhr.js
 D:\code\kissy_git\kissy\src\ajax\script.js
@@ -3217,6 +3248,10 @@ KISSY.add('dom/base', function(S, undefined) {
             // 注4：getElementsByTagName 和 querySelectorAll 返回的集合不同
             // 注5: 考虑 iframe.contentWindow
             return o && !o.nodeType && o.item && !o.setTimeout;
+        },
+
+        _nodeName:function(e, name) {
+            return e && e.nodeName.toLowerCase() === name.toLowerCase();
         }
     };
 
@@ -3241,6 +3276,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
             TEXT = docElement.textContent === undefined ?
                 'innerText' : 'textContent',
             EMPTY = '',
+            nodeName = DOM._nodeName,
             isElementNode = DOM._isElementNode,
             rboolean = /^(?:autofocus|autoplay|async|checked|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped|selected)$/i,
             rfocusable = /^(?:button|input|object|select|textarea)$/i,
@@ -3614,7 +3650,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                     }
 
                     // browsers index elements by id/name on forms, give priority to attributes.
-                    if (el.nodeName.toLowerCase() == "form") {
+                    if (nodeName(el, "form")) {
                         attrNormalizer = attrNodeHook;
                     }
                     if (attrNormalizer && attrNormalizer.get) {
@@ -3636,7 +3672,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                         }
                         var normalizer = attrNormalizer;
                         // browsers index elements by id/name on forms, give priority to attributes.
-                        if (el.nodeName.toLowerCase() == "form") {
+                        if (nodeName(el, "form")) {
                             normalizer = attrNodeHook;
                         }
                         if (normalizer && normalizer.set) {
@@ -3832,106 +3868,116 @@ KISSY.add('dom/class', function(S, DOM, undefined) {
 
     S.mix(DOM, {
 
-            /**
-             * Determine whether any of the matched elements are assigned the given class.
-             */
-            hasClass: function(selector, value) {
-                return batch(selector, value, function(elem, classNames, cl) {
-                    var elemClass = elem.className;
-                    if (elemClass) {
-                        var className = norm(elemClass),
-                            j = 0,
-                            ret = true;
-                        for (; j < cl; j++) {
-                            if (className.indexOf(SPACE + classNames[j] + SPACE) < 0) {
-                                ret = false;
-                                break;
-                            }
-                        }
-                        if (ret) {
-                            return true;
+        __hasClass:function(el, cls) {
+            var className = el.className;
+            if (className) {
+                className = norm(className);
+                return className.indexOf(SPACE + cls + SPACE) > -1;
+            } else {
+                return false;
+            }
+        },
+
+        /**
+         * Determine whether any of the matched elements are assigned the given class.
+         */
+        hasClass: function(selector, value) {
+            return batch(selector, value, function(elem, classNames, cl) {
+                var elemClass = elem.className;
+                if (elemClass) {
+                    var className = norm(elemClass),
+                        j = 0,
+                        ret = true;
+                    for (; j < cl; j++) {
+                        if (className.indexOf(SPACE + classNames[j] + SPACE) < 0) {
+                            ret = false;
+                            break;
                         }
                     }
-                }, true);
-            },
+                    if (ret) {
+                        return true;
+                    }
+                }
+            }, true);
+        },
 
-            /**
-             * Adds the specified class(es) to each of the set of matched elements.
-             */
-            addClass: function(selector, value) {
-                batch(selector, value, function(elem, classNames, cl) {
-                    var elemClass = elem.className;
-                    if (!elemClass) {
-                        elem.className = value;
+        /**
+         * Adds the specified class(es) to each of the set of matched elements.
+         */
+        addClass: function(selector, value) {
+            batch(selector, value, function(elem, classNames, cl) {
+                var elemClass = elem.className;
+                if (!elemClass) {
+                    elem.className = value;
+                } else {
+                    var className = norm(elemClass),
+                        setClass = elemClass,
+                        j = 0;
+                    for (; j < cl; j++) {
+                        if (className.indexOf(SPACE + classNames[j] + SPACE) < 0) {
+                            setClass += SPACE + classNames[j];
+                        }
+                    }
+                    elem.className = S.trim(setClass);
+                }
+            }, undefined);
+        },
+
+        /**
+         * Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
+         */
+        removeClass: function(selector, value) {
+            batch(selector, value, function(elem, classNames, cl) {
+                var elemClass = elem.className;
+                if (elemClass) {
+                    if (!cl) {
+                        elem.className = '';
                     } else {
                         var className = norm(elemClass),
-                            setClass = elemClass,
-                            j = 0;
+                            j = 0,
+                            needle;
                         for (; j < cl; j++) {
-                            if (className.indexOf(SPACE + classNames[j] + SPACE) < 0) {
-                                setClass += SPACE + classNames[j];
+                            needle = SPACE + classNames[j] + SPACE;
+                            // 一个 cls 有可能多次出现：'link link2 link link3 link'
+                            while (className.indexOf(needle) >= 0) {
+                                className = className.replace(needle, SPACE);
                             }
                         }
-                        elem.className = S.trim(setClass);
+                        elem.className = S.trim(className);
                     }
-                }, undefined);
-            },
+                }
+            }, undefined);
+        },
 
-            /**
-             * Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
-             */
-            removeClass: function(selector, value) {
-                batch(selector, value, function(elem, classNames, cl) {
-                    var elemClass = elem.className;
-                    if (elemClass) {
-                        if (!cl) {
-                            elem.className = '';
-                        } else {
-                            var className = norm(elemClass),
-                                j = 0,
-                                needle;
-                            for (; j < cl; j++) {
-                                needle = SPACE + classNames[j] + SPACE;
-                                // 一个 cls 有可能多次出现：'link link2 link link3 link'
-                                while (className.indexOf(needle) >= 0) {
-                                    className = className.replace(needle, SPACE);
-                                }
-                            }
-                            elem.className = S.trim(className);
-                        }
-                    }
-                }, undefined);
-            },
+        /**
+         * Replace a class with another class for matched elements.
+         * If no oldClassName is present, the newClassName is simply added.
+         */
+        replaceClass: function(selector, oldClassName, newClassName) {
+            DOM.removeClass(selector, oldClassName);
+            DOM.addClass(selector, newClassName);
+        },
 
-            /**
-             * Replace a class with another class for matched elements.
-             * If no oldClassName is present, the newClassName is simply added.
-             */
-            replaceClass: function(selector, oldClassName, newClassName) {
-                DOM.removeClass(selector, oldClassName);
-                DOM.addClass(selector, newClassName);
-            },
+        /**
+         * Add or remove one or more classes from each element in the set of
+         * matched elements, depending on either the class's presence or the
+         * value of the switch argument.
+         * @param state {Boolean} optional boolean to indicate whether class
+         *        should be added or removed regardless of current state.
+         */
+        toggleClass: function(selector, value, state) {
+            var isBool = S.isBoolean(state), has;
 
-            /**
-             * Add or remove one or more classes from each element in the set of
-             * matched elements, depending on either the class's presence or the
-             * value of the switch argument.
-             * @param state {Boolean} optional boolean to indicate whether class
-             *        should be added or removed regardless of current state.
-             */
-            toggleClass: function(selector, value, state) {
-                var isBool = S.isBoolean(state), has;
-
-                batch(selector, value, function(elem, classNames, cl) {
-                    var j = 0, className;
-                    for (; j < cl; j++) {
-                        className = classNames[j];
-                        has = isBool ? !state : DOM.hasClass(elem, className);
-                        DOM[has ? 'removeClass' : 'addClass'](elem, className);
-                    }
-                }, undefined);
-            }
-        });
+            batch(selector, value, function(elem, classNames, cl) {
+                var j = 0, className;
+                for (; j < cl; j++) {
+                    className = classNames[j];
+                    has = isBool ? !state : DOM.hasClass(elem, className);
+                    DOM[has ? 'removeClass' : 'addClass'](elem, className);
+                }
+            }, undefined);
+        }
+    });
 
     function batch(selector, value, fn, resultIsBool) {
         if (!(value = S.trim(value))) {
@@ -3945,13 +3991,13 @@ KISSY.add('dom/class', function(S, DOM, undefined) {
             ret;
 
         var classNames = [];
-        for (var i=0; i < tmp.length; i++) {
+        for (var i = 0; i < tmp.length; i++) {
             var t = S.trim(tmp[i]);
             if (t) {
                 classNames.push(t);
             }
         }
-        for (i=0; i < len; i++) {
+        for (i = 0; i < len; i++) {
             elem = elems[i];
             if (DOM._isElementNode(elem)) {
                 ret = fn(elem, classNames, classNames.length);
@@ -3969,8 +4015,8 @@ KISSY.add('dom/class', function(S, DOM, undefined) {
 
     return DOM;
 }, {
-        requires:["dom/base"]
-    });
+    requires:["dom/base"]
+});
 
 /**
  * NOTES:
@@ -4151,6 +4197,12 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
                     }
                 }
                 return clone;
+            },
+
+            empty:function(selector) {
+                DOM.query(selector).each(function(el) {
+                    DOM.remove(el.childNodes);
+                });
             },
 
             _nl2frag:nl2frag
@@ -5197,6 +5249,7 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
         HEIGHT = 'height',
         AUTO = 'auto',
         DISPLAY = 'display',
+        OLD_DISPLAY = DISPLAY + S.now(),
         NONE = 'none',
         PARSEINT = parseInt,
         RE_NUMPX = /^-?\d+(?:px)?$/i,
@@ -5232,6 +5285,83 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
 
     function camelCase(name) {
         return name.replace(RE_DASH, CAMELCASE_FN);
+    }
+
+    var defaultDisplayDetectIframe,
+        defaultDisplayDetectIframeDoc;
+
+    function isCustomDomain() {
+        if (!UA['ie']) {
+            return false;
+        }
+        var domain = doc.domain,
+            hostname = location.hostname;
+        return domain != hostname &&
+            domain != ( '[' + hostname + ']' );	// IPv6 IP support
+    }
+
+    // modified from jquery : bullet-proof method of getting default display
+    // fix domain problem in ie>6 , ie6 still access denied
+    function getDefaultDisplay(tagName) {
+        var body,
+            elem;
+        if (!defaultDisplay[ tagName ]) {
+            body = doc.body || doc.documentElement;
+            elem = doc.createElement(tagName);
+            DOM.prepend(elem, body);
+            var oldDisplay = DOM.css(elem, "display");
+            body.removeChild(elem);
+            // If the simple way fails,
+            // get element's real default display by attaching it to a temp iframe
+            if (oldDisplay === "none" || oldDisplay === "") {
+                // No iframe to use yet, so create it
+                if (!defaultDisplayDetectIframe) {
+                    defaultDisplayDetectIframe = doc.createElement("iframe");
+
+                    defaultDisplayDetectIframe.frameBorder =
+                        defaultDisplayDetectIframe.width =
+                            defaultDisplayDetectIframe.height = 0;
+
+                    DOM.prepend(defaultDisplayDetectIframe, body);
+
+                    if (isCustomDomain()) {
+                        defaultDisplayDetectIframe.src = 'javascript:void(function(){' + encodeURIComponent("" +
+                            "document.open();" +
+                            "document.domain='" +
+                            doc.domain
+                            + "';" +
+                            "document.close();") + "}())";
+                    }
+                } else {
+                    DOM.prepend(defaultDisplayDetectIframe, body);
+                }
+
+                // Create a cacheable copy of the iframe document on first call.
+                // IE and Opera will allow us to reuse the iframeDoc without re-writing the fake HTML
+                // document to it; WebKit & Firefox won't allow reusing the iframe document.
+                if (!defaultDisplayDetectIframeDoc || !defaultDisplayDetectIframe.createElement) {
+                    // ie6 need a breath , such as alert(8) or setTimeout;
+                    // 同时需要同步，所以无解
+                    defaultDisplayDetectIframeDoc = defaultDisplayDetectIframe.contentWindow.document;
+                    defaultDisplayDetectIframeDoc.write(( doc.compatMode === "CSS1Compat" ? "<!doctype html>" : "" )
+                        + "<html><body>");
+                    defaultDisplayDetectIframeDoc.close();
+                }
+
+                elem = defaultDisplayDetectIframeDoc.createElement(tagName);
+
+                defaultDisplayDetectIframeDoc.body.appendChild(elem);
+
+                oldDisplay = DOM.css(elem, "display");
+
+                body.removeChild(defaultDisplayDetectIframe);
+            }
+
+            // Store the correct default display
+            defaultDisplay[ tagName ] = oldDisplay;
+        }
+
+        return defaultDisplay[ tagName ];
     }
 
     S.mix(DOM, {
@@ -5323,22 +5453,13 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
 
             DOM.query(selector).each(function(elem) {
 
-                elem[STYLE][DISPLAY] = DOM.data(elem, DISPLAY) || EMPTY;
+                elem[STYLE][DISPLAY] = DOM.data(elem, OLD_DISPLAY) || EMPTY;
 
                 // 可能元素还处于隐藏状态，比如 css 里设置了 display: none
                 if (DOM.css(elem, DISPLAY) === NONE) {
-                    var tagName = elem.tagName,
-                        old = defaultDisplay[tagName], tmp;
-
-                    if (!old) {
-                        tmp = doc.createElement(tagName);
-                        doc.body.appendChild(tmp);
-                        old = DOM.css(tmp, DISPLAY);
-                        DOM.remove(tmp);
-                        defaultDisplay[tagName] = old;
-                    }
-
-                    DOM.data(elem, DISPLAY, old);
+                    var tagName = elem.tagName.toLowerCase(),
+                        old = getDefaultDisplay(tagName);
+                    DOM.data(elem, OLD_DISPLAY, old);
                     elem[STYLE][DISPLAY] = old;
                 }
             });
@@ -5352,7 +5473,7 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
                 var style = elem[STYLE], old = style[DISPLAY];
                 if (old !== NONE) {
                     if (old) {
-                        DOM.data(elem, DISPLAY, old);
+                        DOM.data(elem, OLD_DISPLAY, old);
                     }
                     style[DISPLAY] = NONE;
                 }
@@ -5711,6 +5832,7 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
         isArray = S.isArray,
         makeArray = S.makeArray,
         isNodeList = DOM._isNodeList,
+        nodeName = DOM._nodeName,
         push = Array.prototype.push,
         SPACE = ' ',
         isString = S.isString,
@@ -5824,7 +5946,7 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
                             // 处理 #id.cls
                             else {
                                 t = getElementById(id, context);
-                                if (t && DOM.hasClass(t, cls)) {
+                                if (t && hasClass(t, cls)) {
                                     ret = [t];
                                 }
                             }
@@ -6024,7 +6146,7 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
             ret = makeArray();
             for (; i < len; ++i) {
                 el = els[i];
-                if (eqTagName(el, tag)) {
+                if (nodeName(el, tag)) {
                     ret.push(el);
                 }
             }
@@ -6044,15 +6166,15 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
             el;
         for (; i < len; ++i) {
             el = els[i];
-            if (DOM.hasClass(el, cls)) {
+            if (hasClass(el, cls)) {
                 ret.push(el);
             }
         }
         return ret;
     });
 
-    function eqTagName(el, tagName) {
-        return el.nodeName.toLowerCase() == tagName.toLowerCase();
+    function hasClass(el, cls) {
+        return DOM.__hasClass(el, cls);
     }
 
     // throw exception
@@ -6095,12 +6217,12 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
 
                         // 指定 tag 才进行判断
                         if (tag) {
-                            tagRe = eqTagName(elem, tag);
+                            tagRe = nodeName(elem, tag);
                         }
 
                         // 指定 cls 才进行判断
                         if (cls) {
-                            clsRe = DOM.hasClass(elem, cls);
+                            clsRe = hasClass(elem, cls);
                         }
 
                         return clsRe && tagRe;
@@ -7042,6 +7164,7 @@ KISSY.add('event/object', function(S, undefined) {
 KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 
     var doc = document,
+        nodeName = DOM._nodeName,
         makeArray = S.makeArray,
         simpleAdd = doc.addEventListener ?
             function(el, type, fn, capture) {
@@ -7096,7 +7219,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         },
 
         _hasData:function(elem) {
-            return !!DOM.hasData(elem, EVENT_GUID);
+            return DOM.hasData(elem, EVENT_GUID);
         },
 
         _data:function(elem) {
@@ -7341,6 +7464,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                 var isNativeEventTarget = !target.isCustomEventTarget;
                 // 自定义事件很简单，不需要冒泡，不需要默认事件处理
                 eventData = eventData || {};
+                // protect event type
                 eventData.type = eventType;
                 if (!isNativeEventTarget) {
                     var eventDesc = Event._data(target);
@@ -7409,13 +7533,13 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
             return ret;
         }
         var event = new EventObject(target);
+        event.target = target;
         S.mix(event, eventData);
         // 只运行自己的绑定函数，不冒泡也不触发默认行为
         if (onlyHandlers) {
             event.stopPropagation();
             event.preventDefault();
         }
-        event.target = target;
         var cur = target,
             ontype = "on" + eventType;
         //bubble up dom tree
@@ -7437,7 +7561,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         } while (cur && !event.isPropagationStopped);
 
         if (!event.isDefaultPrevented) {
-            if (!(eventType === "click" && target.nodeName.toLowerCase() == "a")) {
+            if (!(eventType === "click" && nodeName(target, "a"))) {
                 var old;
                 try {
                     if (ontype && target[ eventType ]) {
@@ -7797,6 +7921,7 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
  */
 KISSY.add('event/valuechange', function(S, Event, DOM) {
     var VALUE_CHANGE = "valuechange",
+        nodeName = DOM._nodeName,
         KEY = "event/valuechange",
         HISTORY_KEY = KEY + "/history",
         POLL_KEY = KEY + "/poll",
@@ -7855,10 +7980,9 @@ KISSY.add('event/valuechange', function(S, Event, DOM) {
 
     Event.special[VALUE_CHANGE] = {
         setup: function() {
-            var target = this,
-                nodeName = target.nodeName.toLowerCase();
-            if ("input" == nodeName
-                || "textarea" == nodeName) {
+            var target = this;
+            if (nodeName(target, "input")
+                || nodeName(target, "textarea")) {
                 monitor(target);
             }
         },
@@ -8030,6 +8154,8 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
  *
  * mouseenter/leave delegate 特殊处理， mouseenter 没有冒泡的概念，只能替换为 mouseover/out
  *
+ * form submit 事件 ie<9 不会冒泡
+ *
  **/
 
 /**
@@ -8112,6 +8238,176 @@ KISSY.add('event/mouseenter', function(S, Event, DOM, UA) {
  *    jQuery 也异常，需要进一步研究
  */
 
+/**
+ * patch for ie<9 submit : does not bubble !
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("event/submit", function(S, UA, Event, DOM) {
+    var mode = document['documentMode'];
+    if (UA['ie'] && (UA['ie'] < 9 || (mode && mode < 9))) {
+        var nodeName = DOM._nodeName;
+        Event.special['submit'] = {
+            setup: function() {
+                var el = this;
+                // form use native
+                if (nodeName(el, "form")) {
+                    return false;
+                }
+                // lazy add submit for inside forms
+                // note event order : click/keypress -> submit
+                // keypoint : find the forms
+                Event.on(el, "click keypress", detector);
+            },
+            tearDown:function() {
+                var el = this;
+                // form use native
+                if (nodeName(el, "form")) {
+                    return false;
+                }
+                Event.remove(el, "click keypress", detector);
+                DOM.query("form", el).each(function(form) {
+                    if (form.__submit__fix) {
+                        form.__submit__fix = 0;
+                        Event.remove(form, "submit", submitBubble);
+                    }
+                });
+            }
+        };
+
+
+        function detector(e) {
+            var t = e.target,
+                form = nodeName(t, "input") || nodeName(t, "button") ? t.form : null;
+
+            if (form && !form.__submit__fix) {
+                form.__submit__fix = 1;
+                Event.on(form, "submit", submitBubble);
+            }
+        }
+
+        function submitBubble(e) {
+            var form = this;
+            if (form.parentNode) {
+                // simulated bubble for submit
+                // fire from parentNode. if form.on("submit") , this logic is never run!
+                Event.fire(form.parentNode, "submit", e);
+            }
+        }
+
+
+    }
+
+}, {
+    requires:["ua","./base","dom"]
+});
+/**
+ * modified from jq ,fix submit in ie<9
+ **/
+
+/**
+ * change bubble and checkbox/radio fix patch for ie<9
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("event/change", function(S, UA, Event, DOM) {
+    var mode = document['documentMode'];
+
+    if (UA['ie'] && (UA['ie'] < 9 || (mode && mode < 9))) {
+
+        var rformElems = /^(?:textarea|input|select)$/i;
+
+        function isFormElement(n) {
+            return rformElems.test(n.nodeName);
+        }
+
+        function isCheckBoxOrRadio(el) {
+            var type = el.type;
+            return type == "checkbox" || type == "radio";
+        }
+
+        Event.special['change'] = {
+            setup: function() {
+                var el = this;
+                if (isFormElement(el)) {
+                    // checkbox/radio only fires change when blur in ie<9
+                    // so use another technique from jquery
+                    if (isCheckBoxOrRadio(el)) {
+                        // change in ie<9
+                        // change = propertychange -> click
+                        Event.on(el, "propertychange", propertyChange);
+                        Event.on(el, "click", onClick);
+                    } else {
+                        // other form elements use native , do not bubble
+                        return false;
+                    }
+                } else {
+                    // if bind on parentNode ,lazy bind change event to its form elements
+                    // note event order : beforeactivate -> change
+                    // note 2: checkbox/radio is exceptional
+                    Event.on(el, "beforeactivate", beforeActivate);
+                }
+            },
+            tearDown:function() {
+                var el = this;
+                if (isFormElement(el)) {
+                    if (isCheckBoxOrRadio(el)) {
+                        Event.remove(el, "propertychange", propertyChange);
+                        Event.remove(el, "click", onClick);
+                    } else {
+                        return false;
+                    }
+                } else {
+                    Event.remove(el, "beforeactivate", beforeActivate);
+                    DOM.query("textarea,input,select", el).each(function(fel) {
+                        if (fel.__changeHandler) {
+                            fel.__changeHandler = 0;
+                            Event.remove(fel, "change", changeHandler);
+                        }
+                    });
+                }
+            }
+        };
+
+        function propertyChange(e) {
+            if (e.originalEvent.propertyName == "checked") {
+                this.__changed = 1;
+            }
+        }
+
+        function onClick(e) {
+            if (this.__changed) {
+                this.__changed = 0;
+                // fire from itself
+                Event.fire(this, "change", e);
+            }
+        }
+
+        function beforeActivate(e) {
+            var t = e.target;
+            if (isFormElement(t) && !t.__changeHandler) {
+                t.__changeHandler = 1;
+                // lazy bind change
+                Event.on(t, "change", changeHandler);
+            }
+        }
+
+        function changeHandler(e) {
+            var fel = this;
+            // checkbox/radio already bubble using another technique
+            if (isCheckBoxOrRadio(fel)) {
+                return;
+            }
+            var p;
+            if (p = fel.parentNode) {
+                // fire from parent , itself is handled natively
+                Event.fire(p, "change", e);
+            }
+        }
+
+    }
+}, {
+    requires:["ua","./base","dom"]
+});
+
 KISSY.add("event", function(S, KeyCodes, Event, Target, Object) {
     Event.KeyCodes = KeyCodes;
     Event.Target = Target;
@@ -8127,7 +8423,9 @@ KISSY.add("event", function(S, KeyCodes, Event, Target, Object) {
         "event/hashchange",
         "event/valuechange",
         "event/delegate",
-        "event/mouseenter"
+        "event/mouseenter",
+        "event/submit",
+        "event/change"
     ]
 });
 
@@ -8400,6 +8698,7 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
 //            "toggle",
             "scrollIntoView",
             "remove",
+            "empty",
             "removeData",
             "hasData",
             "unselectable"
@@ -10413,11 +10712,10 @@ KISSY.add("ajax/form-serializer", function(S, DOM) {
  */
 KISSY.add("ajax/xhrobject", function(S, Event) {
 
-    var OK_CODE = 200;
-    var MULTIPLE_CHOICES = 300;
-    var NOT_MODIFIED = 304;
-
-    var // get individual response header from responseheader str
+    var OK_CODE = 200,
+        MULTIPLE_CHOICES = 300,
+        NOT_MODIFIED = 304,
+        // get individual response header from responseheader str
         rheaders = /^(.*?):[ \t]*([^\r\n]*)\r?$/mg;
 
     function handleResponseData(xhr) {
@@ -10676,7 +10974,11 @@ KISSY.add("ajax/base", function(S, JSON, Event, XhrObject) {
                  password: null,
                  cache: null,
                  mimeType:null,
-                 xdr:{},
+                 xdr:{
+                 subDomain:{
+                 proxy:'http://xx.t.com/proxy.html'
+                 }
+                 },
                  headers: {},
                  xhrFields:{},
                  // jsonp script charset
@@ -10806,6 +11108,7 @@ KISSY.add("ajax/base", function(S, JSON, Event, XhrObject) {
             }
 
             try {
+                // flag as sending
                 xhr.state = 1;
                 transport.send();
             } catch (e) {
@@ -10857,10 +11160,295 @@ KISSY.add("ajax/base", function(S, JSON, Event, XhrObject) {
  **/
 
 /**
+ * base for xhr and subdomain
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("ajax/xhrbase", function(S, io) {
+    var OK_CODE = 200,
+        win = window,
+        // http://msdn.microsoft.com/en-us/library/cc288060(v=vs.85).aspx
+        _XDomainRequest = win['XDomainRequest'],
+        NO_CONTENT_CODE = 204,
+        NOT_FOUND_CODE = 404,
+        NO_CONTENT_CODE2 = 1223,
+        XhrBase = {
+            proto:{}
+        };
+
+    function createStandardXHR(_, refWin) {
+        try {
+            return new (refWin || win)['XMLHttpRequest']();
+        } catch(e) {
+            S.log("createStandardXHR error");
+        }
+        return undefined;
+    }
+
+    function createActiveXHR(_, refWin) {
+        try {
+            return new (refWin || win)['ActiveXObject']("Microsoft.XMLHTTP");
+        } catch(e) {
+            S.log("createActiveXHR error");
+        }
+        return undefined;
+    }
+
+    XhrBase.xhr = win.ActiveXObject ? function(crossDomain, refWin) {
+        if (crossDomain && _XDomainRequest) {
+            return new _XDomainRequest();
+        }
+        // ie7 XMLHttpRequest 不能访问本地文件
+        return !io.isLocal && createStandardXHR(crossDomain, refWin) || createActiveXHR(crossDomain, refWin);
+    } : createStandardXHR;
+
+    function isInstanceOfXDomainRequest(xhr) {
+        return _XDomainRequest && (xhr instanceof _XDomainRequest);
+    }
+
+    S.mix(XhrBase.proto, {
+        sendInternal:function() {
+
+            var self = this,
+                xhrObj = self.xhrObj,
+                c = xhrObj.config;
+
+            var xhr = self.xhr,
+                xhrFields,
+                i;
+
+            if (c['username']) {
+                xhr.open(c.type, c.url, c.async, c['username'], c.password)
+            } else {
+                xhr.open(c.type, c.url, c.async);
+            }
+
+            if (xhrFields = c['xhrFields']) {
+                for (i in xhrFields) {
+                    xhr[ i ] = xhrFields[ i ];
+                }
+            }
+
+            // Override mime type if supported
+            if (xhrObj.mimeType && xhr.overrideMimeType) {
+                xhr.overrideMimeType(xhrObj.mimeType);
+            }
+            // yui3 and jquery both have
+            if (!c.crossDomain && !xhrObj.requestHeaders["X-Requested-With"]) {
+                xhrObj.requestHeaders[ "X-Requested-With" ] = "XMLHttpRequest";
+            }
+            try {
+                // 跨域时，不能设，否则请求变成
+                // OPTIONS /xhr/r.php HTTP/1.1
+                if (!c.crossDomain) {
+                    for (i in xhrObj.requestHeaders) {
+                        xhr.setRequestHeader(i, xhrObj.requestHeaders[ i ]);
+                    }
+                }
+            } catch(e) {
+                S.log("setRequestHeader in xhr error : ");
+                S.log(e);
+            }
+
+            xhr.send(c.hasContent && c.data || null);
+
+            if (!c.async || xhr.readyState == 4) {
+                self._callback();
+            } else {
+                // _XDomainRequest 单独的回调机制
+                if (isInstanceOfXDomainRequest(xhr)) {
+                    xhr.onload = function() {
+                        xhr.readyState = 4;
+                        xhr.status = 200;
+                        self._callback();
+                    };
+                    xhr.onerror = function() {
+                        xhr.readyState = 4;
+                        xhr.status = 500;
+                        self._callback();
+                    };
+                } else {
+                    xhr.onreadystatechange = function() {
+                        self._callback();
+                    };
+                }
+            }
+        },
+        // 由 xhrObj.abort 调用，自己不可以调用 xhrObj.abort
+        abort:function() {
+            this._callback(0, 1);
+        },
+
+        _callback:function(event, abort) {
+            // Firefox throws exceptions when accessing properties
+            // of an xhr when a network error occured
+            // http://helpful.knobs-dials.com/index.php/Component_returned_failure_code:_0x80040111_(NS_ERROR_NOT_AVAILABLE)
+            try {
+                var self = this,
+                    xhr = self.xhr,
+                    xhrObj = self.xhrObj,
+                    c = xhrObj.config;
+                //abort or complete
+                if (abort || xhr.readyState == 4) {
+
+                    // ie6 ActiveObject 设置不恰当属性导致出错
+                    if (isInstanceOfXDomainRequest(xhr)) {
+                        xhr.onerror = S.noop;
+                        xhr.onload = S.noop;
+                    } else {
+                        // ie6 ActiveObject 只能设置，不能读取这个属性，否则出错！
+                        xhr.onreadystatechange = S.noop;
+                    }
+
+                    if (abort) {
+                        // 完成以后 abort 不要调用
+                        if (xhr.readyState !== 4) {
+                            xhr.abort();
+                        }
+                    } else {
+                        var status = xhr.status;
+
+                        // _XDomainRequest 不能获取响应头
+                        if (!isInstanceOfXDomainRequest(xhr)) {
+                            xhrObj.responseHeadersString = xhr.getAllResponseHeaders();
+                        }
+
+                        var xml = xhr.responseXML;
+
+                        // Construct response list
+                        if (xml && xml.documentElement /* #4958 */) {
+                            xhrObj.responseXML = xml;
+                        }
+                        xhrObj.responseText = xhr.responseText;
+
+                        // Firefox throws an exception when accessing
+                        // statusText for faulty cross-domain requests
+                        try {
+                            var statusText = xhr.statusText;
+                        } catch(e) {
+                            S.log("xhr statustext error : ");
+                            S.log(e);
+                            // We normalize with Webkit giving an empty statusText
+                            statusText = "";
+                        }
+
+                        // Filter status for non standard behaviors
+                        // If the request is local and we have data: assume a success
+                        // (success with no data won't get notified, that's the best we
+                        // can do given current implementations)
+                        if (!status && io.isLocal && !c.crossDomain) {
+                            status = xhrObj.responseText ? OK_CODE : NOT_FOUND_CODE;
+                            // IE - #1450: sometimes returns 1223 when it should be 204
+                        } else if (status === NO_CONTENT_CODE2) {
+                            status = NO_CONTENT_CODE;
+                        }
+
+                        xhrObj.callback(status, statusText);
+
+                    }
+                }
+            } catch (firefoxAccessException) {
+                xhr.onreadystatechange = S.noop;
+                if (!abort) {
+                    xhrObj.callback(-1, firefoxAccessException);
+                }
+            }
+        }
+    });
+
+    return XhrBase;
+}, {
+    requires:['./base']
+});
+
+/**
+ * solve io between sub domains using proxy page
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("ajax/subdomain", function(S, XhrBase, Event, DOM) {
+
+    var rurl = /^([\w\+\.\-]+:)(?:\/\/([^\/?#:]*)(?::(\d+))?)?/;
+
+    var PROXY_PAGE = "/sub_domain_proxy.html";
+
+    var doc = document;
+
+    var iframeMap = {
+        // hostname:{iframe: , ready:}
+    };
+
+    function SubDomain(xhrObj) {
+        var self = this,
+            c = xhrObj.config;
+        self.xhrObj = xhrObj;
+        var m = c.url.match(rurl);
+        self.__hostname = m[2];
+        self.__protocol = m[1];
+        c.crossDomain = false;
+    }
+
+
+    S.augment(SubDomain, XhrBase.proto, {
+        send:function() {
+            var self = this,
+                c = self.xhrObj.config,
+                hostname = self.__hostname,
+                iframe,
+                iframeDesc = iframeMap[hostname];
+
+            var proxy = PROXY_PAGE;
+
+            if (c['xdr'] && c['xdr']['subDomain'] && c['xdr']['subDomain'].proxy) {
+                proxy = c['xdr']['subDomain'].proxy;
+            }
+
+            if (iframeDesc && iframeDesc.ready) {
+                self.xhr = XhrBase.xhr(0, iframeDesc.iframe.contentWindow);
+                if (self.xhr) {
+                    self.sendInternal();
+                } else {
+                    S.error("document.domain not set correctly!");
+                }
+                return;
+            }
+            if (!iframeDesc) {
+                iframeDesc = iframeMap[hostname] = {};
+                iframe = iframeDesc.iframe = document.createElement("iframe");
+                DOM.css(iframe, {
+                    position:'absolute',
+                    left:'-9999px',
+                    top:'-9999px'
+                });
+                DOM.prepend(iframe, doc.body || doc.documentElement);
+                iframe.src = self.__protocol + "//" + hostname + proxy;
+            } else {
+                iframe = iframeDesc.iframe;
+            }
+
+            Event.on(iframe, "load", self._onLoad, self);
+
+        },
+
+        _onLoad:function() {
+            var self = this,
+                hostname = self.__hostname,
+                iframeDesc = iframeMap[hostname];
+            iframeDesc.ready = 1;
+            Event.detach(iframeDesc.iframe, "load", self._onLoad, self);
+            self.send();
+        }
+    });
+
+    return SubDomain;
+
+}, {
+    requires:['./xhrbase','event','dom']
+});
+
+/**
  * use flash to accomplish cross domain request , usage scenario ? why not jsonp ?
  * @author yiminghe@gmail.com
  */
-KISSY.add("ajax/xdr", function(S, io) {
+KISSY.add("ajax/xdr", function(S, io, DOM) {
 
     var // current running request instances
         maps = {},
@@ -10889,7 +11477,7 @@ KISSY.add("ajax/xdr", function(S, io) {
             '<param name="allowScriptAccess" value="always" />' +
             '</object>',
             c = doc.createElement('div');
-        doc.body.appendChild(c);
+        DOM.prepend(c, doc.body || doc.documentElement);
         c.innerHTML = o;
     }
 
@@ -10994,65 +11582,47 @@ KISSY.add("ajax/xdr", function(S, io) {
     return XdrTransport;
 
 }, {
-    requires:["./base"]
+    requires:["./base",'dom']
 });
 
 /**
- * ajax xhr transport class
+ * ajax xhr transport class , route subdomain , xdr
  * @author yiminghe@gmail.com
  */
-KISSY.add("ajax/xhr", function(S, io, XdrTransport) {
+KISSY.add("ajax/xhr", function(S, io, XhrBase, SubDomain, XdrTransport) {
 
+    var rurl = /^([\w\+\.\-]+:)(?:\/\/([^\/?#:]*)(?::(\d+))?)?/;
 
-    var OK_CODE = 200,
-        // http://msdn.microsoft.com/en-us/library/cc288060(v=vs.85).aspx
-        _XDomainRequest = window['XDomainRequest'],
-        NO_CONTENT_CODE = 204,
-        NOT_FOUND_CODE = 404,
-        NO_CONTENT_CODE2 = 1223;
+    var _XDomainRequest = window['XDomainRequest'];
 
-
-    function createStandardXHR() {
-        try {
-            return new window.XMLHttpRequest();
-        } catch(e) {
-            S.log("createStandardXHR error");
-            //S.log(e);
-        }
-        return undefined;
-    }
-
-    function createActiveXHR() {
-        try {
-            return new window.ActiveXObject("Microsoft.XMLHTTP");
-        } catch(e) {
-            S.log("createActiveXHR error");
-            // S.log(e);
-        }
-        return undefined;
-    }
-
-    function isInstanceOfXDomainRequest(xhr) {
-        return _XDomainRequest && (xhr instanceof _XDomainRequest);
-    }
-
-    io.xhr = window.ActiveXObject ? function(crossDomain) {
-        if (crossDomain && _XDomainRequest) {
-            return new _XDomainRequest();
-        }
-        // ie7 XMLHttpRequest 不能访问本地文件
-        return !io.isLocal && createStandardXHR() || createActiveXHR();
-    } : createStandardXHR;
-
-    var detectXhr = io.xhr();
+    var detectXhr = XhrBase.xhr();
 
     if (detectXhr) {
+
+        // slice last two pars
+        // xx.taobao.com => taobao.com
+        function getMainDomain(host) {
+            var t = host.split('.');
+            if (t.length < 2) {
+                return t.join(".");
+            } else {
+                return t.reverse().slice(0, 2).reverse().join('.');
+            }
+        }
 
         function XhrTransport(xhrObj) {
             var c = xhrObj.config,
                 xdrCfg = c['xdr'] || {};
 
             if (c.crossDomain) {
+
+                var parts = c.url.match(rurl);
+
+                // 跨子域
+                if (getMainDomain(location.hostname) == getMainDomain(parts[2])) {
+                    return new SubDomain(xhrObj);
+                }
+
                 /**
                  * ie>7 强制使用 flash xdr
                  */
@@ -11067,167 +11637,24 @@ KISSY.add("ajax/xhr", function(S, io, XdrTransport) {
             return undefined;
         }
 
-        S.augment(XhrTransport, {
-            send:function() {
+        S.augment(XhrTransport, XhrBase.proto, {
 
+            send:function() {
                 var self = this,
                     xhrObj = self.xhrObj,
                     c = xhrObj.config;
-
-                var xhr = io.xhr(c.crossDomain),
-                    xhrFields,
-                    i;
-
-                self.xhr = xhr;
-
-                if (c['username']) {
-                    xhr.open(c.type, c.url, c.async, c['username'], c.password)
-                } else {
-                    xhr.open(c.type, c.url, c.async);
-                }
-
-                if (xhrFields = c['xhrFields']) {
-                    for (i in xhrFields) {
-                        xhr[ i ] = xhrFields[ i ];
-                    }
-                }
-
-                // Override mime type if supported
-                if (xhrObj.mimeType && xhr.overrideMimeType) {
-                    xhr.overrideMimeType(xhrObj.mimeType);
-                }
-                // yui3 and jquery both have
-                if (!c.crossDomain && !xhrObj.requestHeaders["X-Requested-With"]) {
-                    xhrObj.requestHeaders[ "X-Requested-With" ] = "XMLHttpRequest";
-                }
-                try {
-                    // 跨域时，不能设，否则请求变成
-                    // OPTIONS /xhr/r.php HTTP/1.1
-                    if (!c.crossDomain) {
-                        for (i in xhrObj.requestHeaders) {
-                            xhr.setRequestHeader(i, xhrObj.requestHeaders[ i ]);
-                        }
-                    }
-                } catch(e) {
-                    S.log("setRequestHeader in xhr error : ");
-                    S.log(e);
-                }
-
-                xhr.send(c.hasContent && c.data || null);
-
-                if (!c.async || xhr.readyState == 4) {
-                    self._callback();
-                } else {
-                    // _XDomainRequest 单独的回调机制
-                    if (isInstanceOfXDomainRequest(xhr)) {
-                        xhr.onload = function() {
-                            xhr.readyState = 4;
-                            xhr.status = 200;
-                            self._callback();
-                        };
-                        xhr.onerror = function() {
-                            xhr.readyState = 4;
-                            xhr.status = 500;
-                            self._callback();
-                        };
-                    } else {
-                        xhr.onreadystatechange = function() {
-                            self._callback();
-                        };
-                    }
-                }
-            },
-            // 由 xhrObj.abort 调用，自己不可以调用 xhrObj.abort
-            abort:function() {
-                this._callback(0, 1);
-            },
-
-            _callback:function(event, abort) {
-
-                // Firefox throws exceptions when accessing properties
-                // of an xhr when a network error occured
-                // http://helpful.knobs-dials.com/index.php/Component_returned_failure_code:_0x80040111_(NS_ERROR_NOT_AVAILABLE)
-                try {
-                    var self = this,
-                        xhr = self.xhr,
-                        xhrObj = self.xhrObj,
-                        c = xhrObj.config;
-                    //abort or complete
-                    if (abort || xhr.readyState == 4) {
-
-                        // ie6 ActiveObject 设置不恰当属性导致出错
-                        if (isInstanceOfXDomainRequest(xhr)) {
-                            xhr.onerror = S.noop;
-                            xhr.onload = S.noop;
-                        } else {
-                            // ie6 ActiveObject 只能设置，不能读取这个属性，否则出错！
-                            xhr.onreadystatechange = S.noop;
-                        }
-
-                        if (abort) {
-                            // 完成以后 abort 不要调用
-                            if (xhr.readyState !== 4) {
-                                xhr.abort();
-                            }
-                        } else {
-                            var status = xhr.status;
-
-                            // _XDomainRequest 不能获取响应头
-                            if (!isInstanceOfXDomainRequest(xhr)) {
-                                xhrObj.responseHeadersString = xhr.getAllResponseHeaders();
-                            }
-
-                            var xml = xhr.responseXML;
-
-                            // Construct response list
-                            if (xml && xml.documentElement /* #4958 */) {
-                                xhrObj.responseXML = xml;
-                            }
-                            xhrObj.responseText = xhr.responseText;
-
-                            // Firefox throws an exception when accessing
-                            // statusText for faulty cross-domain requests
-                            try {
-                                var statusText = xhr.statusText;
-                            } catch(e) {
-                                S.log("xhr statustext error : ");
-                                S.log(e);
-                                // We normalize with Webkit giving an empty statusText
-                                statusText = "";
-                            }
-
-                            // Filter status for non standard behaviors
-                            // If the request is local and we have data: assume a success
-                            // (success with no data won't get notified, that's the best we
-                            // can do given current implementations)
-                            if (!status && io.isLocal && !c.crossDomain) {
-                                status = xhrObj.responseText ? OK_CODE : NOT_FOUND_CODE;
-                                // IE - #1450: sometimes returns 1223 when it should be 204
-                            } else if (status === NO_CONTENT_CODE2) {
-                                status = NO_CONTENT_CODE;
-                            }
-
-                            xhrObj.callback(status, statusText);
-
-                        }
-                    }
-                } catch (firefoxAccessException) {
-                    xhr.onreadystatechange = S.noop;
-                    if (!abort) {
-                        xhrObj.callback(-1, firefoxAccessException);
-                    }
-                }
+                self.xhr = XhrBase.xhr(c.crossDomain);
+                self.sendInternal();
             }
-
 
         });
 
         io.setupTransport("*", XhrTransport);
-
-        return io;
     }
+
+    return io;
 }, {
-    requires:["./base","./xdr"]
+    requires:["./base",'./xhrbase','./subdomain',"./xdr"]
 });
 
 /**

@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 19:47
+build time: Oct 12 10:48
 */
 /**
  * @module  dom-attr
@@ -15,6 +15,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
             TEXT = docElement.textContent === undefined ?
                 'innerText' : 'textContent',
             EMPTY = '',
+            nodeName = DOM._nodeName,
             isElementNode = DOM._isElementNode,
             rboolean = /^(?:autofocus|autoplay|async|checked|controls|defer|disabled|hidden|loop|multiple|open|readonly|required|scoped|selected)$/i,
             rfocusable = /^(?:button|input|object|select|textarea)$/i,
@@ -388,7 +389,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                     }
 
                     // browsers index elements by id/name on forms, give priority to attributes.
-                    if (el.nodeName.toLowerCase() == "form") {
+                    if (nodeName(el, "form")) {
                         attrNormalizer = attrNodeHook;
                     }
                     if (attrNormalizer && attrNormalizer.get) {
@@ -410,7 +411,7 @@ KISSY.add('dom/attr', function(S, DOM, UA, undefined) {
                         }
                         var normalizer = attrNormalizer;
                         // browsers index elements by id/name on forms, give priority to attributes.
-                        if (el.nodeName.toLowerCase() == "form") {
+                        if (nodeName(el, "form")) {
                             normalizer = attrNodeHook;
                         }
                         if (normalizer && normalizer.set) {
@@ -650,6 +651,10 @@ KISSY.add('dom/base', function(S, undefined) {
             // 注4：getElementsByTagName 和 querySelectorAll 返回的集合不同
             // 注5: 考虑 iframe.contentWindow
             return o && !o.nodeType && o.item && !o.setTimeout;
+        },
+
+        _nodeName:function(e, name) {
+            return e && e.nodeName.toLowerCase() === name.toLowerCase();
         }
     };
 
@@ -677,106 +682,116 @@ KISSY.add('dom/class', function(S, DOM, undefined) {
 
     S.mix(DOM, {
 
-            /**
-             * Determine whether any of the matched elements are assigned the given class.
-             */
-            hasClass: function(selector, value) {
-                return batch(selector, value, function(elem, classNames, cl) {
-                    var elemClass = elem.className;
-                    if (elemClass) {
-                        var className = norm(elemClass),
-                            j = 0,
-                            ret = true;
-                        for (; j < cl; j++) {
-                            if (className.indexOf(SPACE + classNames[j] + SPACE) < 0) {
-                                ret = false;
-                                break;
-                            }
-                        }
-                        if (ret) {
-                            return true;
+        __hasClass:function(el, cls) {
+            var className = el.className;
+            if (className) {
+                className = norm(className);
+                return className.indexOf(SPACE + cls + SPACE) > -1;
+            } else {
+                return false;
+            }
+        },
+
+        /**
+         * Determine whether any of the matched elements are assigned the given class.
+         */
+        hasClass: function(selector, value) {
+            return batch(selector, value, function(elem, classNames, cl) {
+                var elemClass = elem.className;
+                if (elemClass) {
+                    var className = norm(elemClass),
+                        j = 0,
+                        ret = true;
+                    for (; j < cl; j++) {
+                        if (className.indexOf(SPACE + classNames[j] + SPACE) < 0) {
+                            ret = false;
+                            break;
                         }
                     }
-                }, true);
-            },
+                    if (ret) {
+                        return true;
+                    }
+                }
+            }, true);
+        },
 
-            /**
-             * Adds the specified class(es) to each of the set of matched elements.
-             */
-            addClass: function(selector, value) {
-                batch(selector, value, function(elem, classNames, cl) {
-                    var elemClass = elem.className;
-                    if (!elemClass) {
-                        elem.className = value;
+        /**
+         * Adds the specified class(es) to each of the set of matched elements.
+         */
+        addClass: function(selector, value) {
+            batch(selector, value, function(elem, classNames, cl) {
+                var elemClass = elem.className;
+                if (!elemClass) {
+                    elem.className = value;
+                } else {
+                    var className = norm(elemClass),
+                        setClass = elemClass,
+                        j = 0;
+                    for (; j < cl; j++) {
+                        if (className.indexOf(SPACE + classNames[j] + SPACE) < 0) {
+                            setClass += SPACE + classNames[j];
+                        }
+                    }
+                    elem.className = S.trim(setClass);
+                }
+            }, undefined);
+        },
+
+        /**
+         * Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
+         */
+        removeClass: function(selector, value) {
+            batch(selector, value, function(elem, classNames, cl) {
+                var elemClass = elem.className;
+                if (elemClass) {
+                    if (!cl) {
+                        elem.className = '';
                     } else {
                         var className = norm(elemClass),
-                            setClass = elemClass,
-                            j = 0;
+                            j = 0,
+                            needle;
                         for (; j < cl; j++) {
-                            if (className.indexOf(SPACE + classNames[j] + SPACE) < 0) {
-                                setClass += SPACE + classNames[j];
+                            needle = SPACE + classNames[j] + SPACE;
+                            // 一个 cls 有可能多次出现：'link link2 link link3 link'
+                            while (className.indexOf(needle) >= 0) {
+                                className = className.replace(needle, SPACE);
                             }
                         }
-                        elem.className = S.trim(setClass);
+                        elem.className = S.trim(className);
                     }
-                }, undefined);
-            },
+                }
+            }, undefined);
+        },
 
-            /**
-             * Remove a single class, multiple classes, or all classes from each element in the set of matched elements.
-             */
-            removeClass: function(selector, value) {
-                batch(selector, value, function(elem, classNames, cl) {
-                    var elemClass = elem.className;
-                    if (elemClass) {
-                        if (!cl) {
-                            elem.className = '';
-                        } else {
-                            var className = norm(elemClass),
-                                j = 0,
-                                needle;
-                            for (; j < cl; j++) {
-                                needle = SPACE + classNames[j] + SPACE;
-                                // 一个 cls 有可能多次出现：'link link2 link link3 link'
-                                while (className.indexOf(needle) >= 0) {
-                                    className = className.replace(needle, SPACE);
-                                }
-                            }
-                            elem.className = S.trim(className);
-                        }
-                    }
-                }, undefined);
-            },
+        /**
+         * Replace a class with another class for matched elements.
+         * If no oldClassName is present, the newClassName is simply added.
+         */
+        replaceClass: function(selector, oldClassName, newClassName) {
+            DOM.removeClass(selector, oldClassName);
+            DOM.addClass(selector, newClassName);
+        },
 
-            /**
-             * Replace a class with another class for matched elements.
-             * If no oldClassName is present, the newClassName is simply added.
-             */
-            replaceClass: function(selector, oldClassName, newClassName) {
-                DOM.removeClass(selector, oldClassName);
-                DOM.addClass(selector, newClassName);
-            },
+        /**
+         * Add or remove one or more classes from each element in the set of
+         * matched elements, depending on either the class's presence or the
+         * value of the switch argument.
+         * @param state {Boolean} optional boolean to indicate whether class
+         *        should be added or removed regardless of current state.
+         */
+        toggleClass: function(selector, value, state) {
+            var isBool = S.isBoolean(state), has;
 
-            /**
-             * Add or remove one or more classes from each element in the set of
-             * matched elements, depending on either the class's presence or the
-             * value of the switch argument.
-             * @param state {Boolean} optional boolean to indicate whether class
-             *        should be added or removed regardless of current state.
-             */
-            toggleClass: function(selector, value, state) {
-                var isBool = S.isBoolean(state), has;
-
-                batch(selector, value, function(elem, classNames, cl) {
-                    var j = 0, className;
-                    for (; j < cl; j++) {
-                        className = classNames[j];
-                        has = isBool ? !state : DOM.hasClass(elem, className);
-                        DOM[has ? 'removeClass' : 'addClass'](elem, className);
-                    }
-                }, undefined);
-            }
-        });
+            batch(selector, value, function(elem, classNames, cl) {
+                var j = 0, className;
+                for (; j < cl; j++) {
+                    className = classNames[j];
+                    has = isBool ? !state : DOM.hasClass(elem, className);
+                    DOM[has ? 'removeClass' : 'addClass'](elem, className);
+                }
+            }, undefined);
+        }
+    });
 
     function batch(selector, value, fn, resultIsBool) {
         if (!(value = S.trim(value))) {
@@ -790,13 +805,13 @@ KISSY.add('dom/class', function(S, DOM, undefined) {
             ret;
 
         var classNames = [];
-        for (var i=0; i < tmp.length; i++) {
+        for (var i = 0; i < tmp.length; i++) {
             var t = S.trim(tmp[i]);
             if (t) {
                 classNames.push(t);
             }
         }
-        for (i=0; i < len; i++) {
+        for (i = 0; i < len; i++) {
             elem = elems[i];
             if (DOM._isElementNode(elem)) {
                 ret = fn(elem, classNames, classNames.length);
@@ -814,8 +829,8 @@ KISSY.add('dom/class', function(S, DOM, undefined) {
 
     return DOM;
 }, {
-        requires:["dom/base"]
-    });
+    requires:["dom/base"]
+});
 
 /**
  * NOTES:
@@ -995,6 +1010,12 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
                     }
                 }
                 return clone;
+            },
+
+            empty:function(selector) {
+                DOM.query(selector).each(function(el) {
+                    DOM.remove(el.childNodes);
+                });
             },
 
             _nl2frag:nl2frag
@@ -2032,6 +2053,7 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
         isArray = S.isArray,
         makeArray = S.makeArray,
         isNodeList = DOM._isNodeList,
+        nodeName = DOM._nodeName,
         push = Array.prototype.push,
         SPACE = ' ',
         isString = S.isString,
@@ -2145,7 +2167,7 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
                             // 处理 #id.cls
                             else {
                                 t = getElementById(id, context);
-                                if (t && DOM.hasClass(t, cls)) {
+                                if (t && hasClass(t, cls)) {
                                     ret = [t];
                                 }
                             }
@@ -2345,7 +2367,7 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
             ret = makeArray();
             for (; i < len; ++i) {
                 el = els[i];
-                if (eqTagName(el, tag)) {
+                if (nodeName(el, tag)) {
                     ret.push(el);
                 }
             }
@@ -2365,15 +2387,15 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
             el;
         for (; i < len; ++i) {
             el = els[i];
-            if (DOM.hasClass(el, cls)) {
+            if (hasClass(el, cls)) {
                 ret.push(el);
             }
         }
         return ret;
     });
 
-    function eqTagName(el, tagName) {
-        return el.nodeName.toLowerCase() == tagName.toLowerCase();
+    function hasClass(el, cls) {
+        return DOM.__hasClass(el, cls);
     }
 
     // throw exception
@@ -2416,12 +2438,12 @@ KISSY.add('dom/selector', function(S, DOM, undefined) {
 
                         // 指定 tag 才进行判断
                         if (tag) {
-                            tagRe = eqTagName(elem, tag);
+                            tagRe = nodeName(elem, tag);
                         }
 
                         // 指定 cls 才进行判断
                         if (cls) {
-                            clsRe = DOM.hasClass(elem, cls);
+                            clsRe = hasClass(elem, cls);
                         }
 
                         return clsRe && tagRe;
@@ -2735,6 +2757,7 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
         HEIGHT = 'height',
         AUTO = 'auto',
         DISPLAY = 'display',
+        OLD_DISPLAY = DISPLAY + S.now(),
         NONE = 'none',
         PARSEINT = parseInt,
         RE_NUMPX = /^-?\d+(?:px)?$/i,
@@ -2770,6 +2793,83 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
 
     function camelCase(name) {
         return name.replace(RE_DASH, CAMELCASE_FN);
+    }
+
+    var defaultDisplayDetectIframe,
+        defaultDisplayDetectIframeDoc;
+
+    function isCustomDomain() {
+        if (!UA['ie']) {
+            return false;
+        }
+        var domain = doc.domain,
+            hostname = location.hostname;
+        return domain != hostname &&
+            domain != ( '[' + hostname + ']' );	// IPv6 IP support
+    }
+
+    // modified from jquery : bullet-proof method of getting default display
+    // fix domain problem in ie>6 , ie6 still access denied
+    function getDefaultDisplay(tagName) {
+        var body,
+            elem;
+        if (!defaultDisplay[ tagName ]) {
+            body = doc.body || doc.documentElement;
+            elem = doc.createElement(tagName);
+            DOM.prepend(elem, body);
+            var oldDisplay = DOM.css(elem, "display");
+            body.removeChild(elem);
+            // If the simple way fails,
+            // get element's real default display by attaching it to a temp iframe
+            if (oldDisplay === "none" || oldDisplay === "") {
+                // No iframe to use yet, so create it
+                if (!defaultDisplayDetectIframe) {
+                    defaultDisplayDetectIframe = doc.createElement("iframe");
+
+                    defaultDisplayDetectIframe.frameBorder =
+                        defaultDisplayDetectIframe.width =
+                            defaultDisplayDetectIframe.height = 0;
+
+                    DOM.prepend(defaultDisplayDetectIframe, body);
+
+                    if (isCustomDomain()) {
+                        defaultDisplayDetectIframe.src = 'javascript:void(function(){' + encodeURIComponent("" +
+                            "document.open();" +
+                            "document.domain='" +
+                            doc.domain
+                            + "';" +
+                            "document.close();") + "}())";
+                    }
+                } else {
+                    DOM.prepend(defaultDisplayDetectIframe, body);
+                }
+
+                // Create a cacheable copy of the iframe document on first call.
+                // IE and Opera will allow us to reuse the iframeDoc without re-writing the fake HTML
+                // document to it; WebKit & Firefox won't allow reusing the iframe document.
+                if (!defaultDisplayDetectIframeDoc || !defaultDisplayDetectIframe.createElement) {
+                    // ie6 need a breath , such as alert(8) or setTimeout;
+                    // 同时需要同步，所以无解
+                    defaultDisplayDetectIframeDoc = defaultDisplayDetectIframe.contentWindow.document;
+                    defaultDisplayDetectIframeDoc.write(( doc.compatMode === "CSS1Compat" ? "<!doctype html>" : "" )
+                        + "<html><body>");
+                    defaultDisplayDetectIframeDoc.close();
+                }
+
+                elem = defaultDisplayDetectIframeDoc.createElement(tagName);
+
+                defaultDisplayDetectIframeDoc.body.appendChild(elem);
+
+                oldDisplay = DOM.css(elem, "display");
+
+                body.removeChild(defaultDisplayDetectIframe);
+            }
+
+            // Store the correct default display
+            defaultDisplay[ tagName ] = oldDisplay;
+        }
+
+        return defaultDisplay[ tagName ];
     }
 
     S.mix(DOM, {
@@ -2861,22 +2961,13 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
 
             DOM.query(selector).each(function(elem) {
 
-                elem[STYLE][DISPLAY] = DOM.data(elem, DISPLAY) || EMPTY;
+                elem[STYLE][DISPLAY] = DOM.data(elem, OLD_DISPLAY) || EMPTY;
 
                 // 可能元素还处于隐藏状态，比如 css 里设置了 display: none
                 if (DOM.css(elem, DISPLAY) === NONE) {
-                    var tagName = elem.tagName,
-                        old = defaultDisplay[tagName], tmp;
-
-                    if (!old) {
-                        tmp = doc.createElement(tagName);
-                        doc.body.appendChild(tmp);
-                        old = DOM.css(tmp, DISPLAY);
-                        DOM.remove(tmp);
-                        defaultDisplay[tagName] = old;
-                    }
-
-                    DOM.data(elem, DISPLAY, old);
+                    var tagName = elem.tagName.toLowerCase(),
+                        old = getDefaultDisplay(tagName);
+                    DOM.data(elem, OLD_DISPLAY, old);
                     elem[STYLE][DISPLAY] = old;
                 }
             });
@@ -2890,7 +2981,7 @@ KISSY.add('dom/style', function(S, DOM, UA, undefined) {
                 var style = elem[STYLE], old = style[DISPLAY];
                 if (old !== NONE) {
                     if (old) {
-                        DOM.data(elem, DISPLAY, old);
+                        DOM.data(elem, OLD_DISPLAY, old);
                     }
                     style[DISPLAY] = NONE;
                 }

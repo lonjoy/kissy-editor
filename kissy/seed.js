@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 19:47
+build time: Oct 12 14:28
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -88,7 +88,7 @@ build time: Sep 22 19:47
          */
         version: '1.20dev',
 
-        buildTime:'20110922194728',
+        buildTime:'20111012142802',
 
         /**
          * Returns a new object containing all of the properties of
@@ -989,8 +989,8 @@ build time: Sep 22 19:47
             return ind >= 0 && str.indexOf(suffix, ind) == ind;
         },
 
-        /*! Based on YUI3*/
         /**
+         * Based on YUI3
          * Throttles a call to a method based on the time between calls.
          * @param  {function} fn The function call to throttle.
          * @param {object} context ontext fn to run
@@ -1673,6 +1673,28 @@ build time: Sep 22 19:47
                 config = def;
                 def = name;
                 if (IE) {
+                    /*
+                     Kris Zyp
+                     2010年10月21日, 上午11时34分
+                     We actually had some discussions off-list, as it turns out the required
+                     technique is a little different than described in this thread. Briefly,
+                     to identify anonymous modules from scripts:
+                     * In non-IE browsers, the onload event is sufficient, it always fires
+                     immediately after the script is executed.
+                     * In IE, if the script is in the cache, it actually executes *during*
+                     the DOM insertion of the script tag, so you can keep track of which
+                     script is being requested in case define() is called during the DOM
+                     insertion.
+                     * In IE, if the script is not in the cache, when define() is called you
+                     can iterate through the script tags and the currently executing one will
+                     have a script.readyState == "interactive"
+                     See RequireJS source code if you need more hints.
+                     Anyway, the bottom line from a spec perspective is that it is
+                     implemented, it works, and it is possible. Hope that helps.
+                     Kris
+                     */
+                    // http://groups.google.com/group/commonjs/browse_thread/thread/5a3358ece35e688e/43145ceccfb1dc02#43145ceccfb1dc02
+                    // use onload to get module name is not right in ie
                     name = self.__findModuleNameByInteractive();
                     S.log("old_ie get modname by interactive : " + name);
                     self.__registerModule(name, def, config);
@@ -1688,7 +1710,6 @@ build time: Sep 22 19:47
                 return self;
             }
             S.log("invalid format for KISSY.add !", "error");
-            //S.error("invalid format for KISSY.add !");
             return self;
         }
     });
@@ -1777,7 +1798,7 @@ build time: Sep 22 19:47
  * @author yiminghe@gmail.com
  */
 (function(S, loader, utils) {
-    if("require" in this) {
+    if ("require" in this) {
         return;
     }
     S.mix(loader, {
@@ -1797,20 +1818,29 @@ build time: Sep 22 19:47
                 }
             }
             if (!re) {
+                // sometimes when read module file from cache , interactive status is not triggered
+                // module code is executed right after inserting into dom
+                // i has to preserve module name before insert module script into dom , then get it back here
                 S.log("can not find interactive script,time diff : " + (+new Date() - self.__startLoadTime), "error");
                 S.log("old_ie get modname from cache : " + self.__startLoadModuleName);
                 return self.__startLoadModuleName;
                 //S.error("找不到 interactive 状态的 script");
             }
 
-            var src = re.src;
-            S.log("interactive src :" + src);
-            //注意：模块名不包含后缀名以及参数，所以去除
-            //系统模块去除系统路径
-            if (src.lastIndexOf(self.Config.base, 0) === 0) {
+            // src 必定是绝对路径
+            // or re.hasAttribute ? re.src :  re.getAttribute('src', 4);
+            // http://msdn.microsoft.com/en-us/library/ms536429(VS.85).aspx
+            var src = utils.normalBasePath(re.src);
+            src = src.substring(0, src.length - 1);
+            // S.log("interactive src :" + src);
+            // 注意：模块名不包含后缀名以及参数，所以去除
+            // 系统模块去除系统路径
+            // 需要 base norm , 防止 base 被指定为相对路径
+            self.Config.base = utils.normalBasePath(self.Config.base);
+            if (src.lastIndexOf(self.Config.base, 0)
+                === 0) {
                 return utils.removePostfix(src.substring(self.Config.base.length));
             }
-
             var packages = self.__packages;
             //外部模块去除包路径，得到模块名
             for (var p in packages) {
@@ -1820,10 +1850,7 @@ build time: Sep 22 19:47
                     return utils.removePostfix(src.substring(p_path.length));
                 }
             }
-
-            S.log("interactive script not have package config ：" + src, "error");
-            //S.error("interactive 状态的 script 没有对应包 ：" + src);
-            return undefined;
+            S.log("interactive script does not have package config ：" + src, "error");
         }
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**

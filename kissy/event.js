@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 13:54
+build time: Oct 12 10:48
 */
 /**
  * @module  event
@@ -10,6 +10,7 @@ build time: Sep 22 13:54
 KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 
     var doc = document,
+        nodeName = DOM._nodeName,
         makeArray = S.makeArray,
         simpleAdd = doc.addEventListener ?
             function(el, type, fn, capture) {
@@ -64,7 +65,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         },
 
         _hasData:function(elem) {
-            return !!DOM.hasData(elem, EVENT_GUID);
+            return DOM.hasData(elem, EVENT_GUID);
         },
 
         _data:function(elem) {
@@ -309,6 +310,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                 var isNativeEventTarget = !target.isCustomEventTarget;
                 // 自定义事件很简单，不需要冒泡，不需要默认事件处理
                 eventData = eventData || {};
+                // protect event type
                 eventData.type = eventType;
                 if (!isNativeEventTarget) {
                     var eventDesc = Event._data(target);
@@ -377,13 +379,13 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
             return ret;
         }
         var event = new EventObject(target);
+        event.target = target;
         S.mix(event, eventData);
         // 只运行自己的绑定函数，不冒泡也不触发默认行为
         if (onlyHandlers) {
             event.stopPropagation();
             event.preventDefault();
         }
-        event.target = target;
         var cur = target,
             ontype = "on" + eventType;
         //bubble up dom tree
@@ -405,7 +407,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         } while (cur && !event.isPropagationStopped);
 
         if (!event.isDefaultPrevented) {
-            if (!(eventType === "click" && target.nodeName.toLowerCase() == "a")) {
+            if (!(eventType === "click" && nodeName(target, "a"))) {
                 var old;
                 try {
                     if (ontype && target[ eventType ]) {
@@ -454,6 +456,108 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
  *
  */
 /**
+ * change bubble and checkbox/radio fix patch for ie<9
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("event/change", function(S, UA, Event, DOM) {
+    var mode = document['documentMode'];
+
+    if (UA['ie'] && (UA['ie'] < 9 || (mode && mode < 9))) {
+
+        var rformElems = /^(?:textarea|input|select)$/i;
+
+        function isFormElement(n) {
+            return rformElems.test(n.nodeName);
+        }
+
+        function isCheckBoxOrRadio(el) {
+            var type = el.type;
+            return type == "checkbox" || type == "radio";
+        }
+
+        Event.special['change'] = {
+            setup: function() {
+                var el = this;
+                if (isFormElement(el)) {
+                    // checkbox/radio only fires change when blur in ie<9
+                    // so use another technique from jquery
+                    if (isCheckBoxOrRadio(el)) {
+                        // change in ie<9
+                        // change = propertychange -> click
+                        Event.on(el, "propertychange", propertyChange);
+                        Event.on(el, "click", onClick);
+                    } else {
+                        // other form elements use native , do not bubble
+                        return false;
+                    }
+                } else {
+                    // if bind on parentNode ,lazy bind change event to its form elements
+                    // note event order : beforeactivate -> change
+                    // note 2: checkbox/radio is exceptional
+                    Event.on(el, "beforeactivate", beforeActivate);
+                }
+            },
+            tearDown:function() {
+                var el = this;
+                if (isFormElement(el)) {
+                    if (isCheckBoxOrRadio(el)) {
+                        Event.remove(el, "propertychange", propertyChange);
+                        Event.remove(el, "click", onClick);
+                    } else {
+                        return false;
+                    }
+                } else {
+                    Event.remove(el, "beforeactivate", beforeActivate);
+                    DOM.query("textarea,input,select", el).each(function(fel) {
+                        if (fel.__changeHandler) {
+                            fel.__changeHandler = 0;
+                            Event.remove(fel, "change", changeHandler);
+                        }
+                    });
+                }
+            }
+        };
+
+        function propertyChange(e) {
+            if (e.originalEvent.propertyName == "checked") {
+                this.__changed = 1;
+            }
+        }
+
+        function onClick(e) {
+            if (this.__changed) {
+                this.__changed = 0;
+                // fire from itself
+                Event.fire(this, "change", e);
+            }
+        }
+
+        function beforeActivate(e) {
+            var t = e.target;
+            if (isFormElement(t) && !t.__changeHandler) {
+                t.__changeHandler = 1;
+                // lazy bind change
+                Event.on(t, "change", changeHandler);
+            }
+        }
+
+        function changeHandler(e) {
+            var fel = this;
+            // checkbox/radio already bubble using another technique
+            if (isCheckBoxOrRadio(fel)) {
+                return;
+            }
+            var p;
+            if (p = fel.parentNode) {
+                // fire from parent , itself is handled natively
+                Event.fire(p, "change", e);
+            }
+        }
+
+    }
+}, {
+    requires:["ua","./base","dom"]
+});/**
  * kissy delegate for event module
  * @author yiminghe@gmail.com
  */
@@ -610,6 +714,8 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
  *   2.2 当 Event.fire("focusin"),直接执行 focusin 对应的 handlers 数组，但不会真正聚焦
  *
  * mouseenter/leave delegate 特殊处理， mouseenter 没有冒泡的概念，只能替换为 mouseover/out
+ *
+ * form submit 事件 ie<9 不会冒泡
  *
  **//**
  * @module  event-focusin
@@ -1293,6 +1399,70 @@ KISSY.add('event/object', function(S, undefined) {
  *   - pageX, clientX, scrollLeft, clientLeft 的详细测试
  */
 /**
+ * patch for ie<9 submit : does not bubble !
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("event/submit", function(S, UA, Event, DOM) {
+    var mode = document['documentMode'];
+    if (UA['ie'] && (UA['ie'] < 9 || (mode && mode < 9))) {
+        var nodeName = DOM._nodeName;
+        Event.special['submit'] = {
+            setup: function() {
+                var el = this;
+                // form use native
+                if (nodeName(el, "form")) {
+                    return false;
+                }
+                // lazy add submit for inside forms
+                // note event order : click/keypress -> submit
+                // keypoint : find the forms
+                Event.on(el, "click keypress", detector);
+            },
+            tearDown:function() {
+                var el = this;
+                // form use native
+                if (nodeName(el, "form")) {
+                    return false;
+                }
+                Event.remove(el, "click keypress", detector);
+                DOM.query("form", el).each(function(form) {
+                    if (form.__submit__fix) {
+                        form.__submit__fix = 0;
+                        Event.remove(form, "submit", submitBubble);
+                    }
+                });
+            }
+        };
+
+
+        function detector(e) {
+            var t = e.target,
+                form = nodeName(t, "input") || nodeName(t, "button") ? t.form : null;
+
+            if (form && !form.__submit__fix) {
+                form.__submit__fix = 1;
+                Event.on(form, "submit", submitBubble);
+            }
+        }
+
+        function submitBubble(e) {
+            var form = this;
+            if (form.parentNode) {
+                // simulated bubble for submit
+                // fire from parentNode. if form.on("submit") , this logic is never run!
+                Event.fire(form.parentNode, "submit", e);
+            }
+        }
+
+
+    }
+
+}, {
+    requires:["ua","./base","dom"]
+});
+/**
+ * modified from jq ,fix submit in ie<9
+ **//**
  * @module  EventTarget
  * @author  lifesinger@gmail.com , yiminghe@gmail.com
  */
@@ -1381,6 +1551,7 @@ KISSY.add('event/target', function(S, Event) {
  */
 KISSY.add('event/valuechange', function(S, Event, DOM) {
     var VALUE_CHANGE = "valuechange",
+        nodeName = DOM._nodeName,
         KEY = "event/valuechange",
         HISTORY_KEY = KEY + "/history",
         POLL_KEY = KEY + "/poll",
@@ -1439,10 +1610,9 @@ KISSY.add('event/valuechange', function(S, Event, DOM) {
 
     Event.special[VALUE_CHANGE] = {
         setup: function() {
-            var target = this,
-                nodeName = target.nodeName.toLowerCase();
-            if ("input" == nodeName
-                || "textarea" == nodeName) {
+            var target = this;
+            if (nodeName(target, "input")
+                || nodeName(target, "textarea")) {
                 monitor(target);
             }
         },
@@ -1469,6 +1639,8 @@ KISSY.add('event/valuechange', function(S, Event, DOM) {
         "event/hashchange",
         "event/valuechange",
         "event/delegate",
-        "event/mouseenter"
+        "event/mouseenter",
+        "event/submit",
+        "event/change"
     ]
 });
