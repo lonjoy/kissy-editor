@@ -557,7 +557,8 @@ KISSY.Editor.add("styles", function(KE) {
      * @param range {KISSY.Editor.Range}
      */
     function applyInlineStyle(range) {
-        var self = this,document = range.document;
+        var self = this,
+            document = range.document;
 
         if (range.collapsed) {
             // Create the element to be inserted in the DOM.
@@ -619,9 +620,27 @@ KISSY.Editor.add("styles", function(KE) {
                     && ( !def["childRule"] || def["childRule"](currentNode) ) )) {
                     var currentParent = currentNode.parent();
 
+
+                    // hack for
+                    // 1<a href='http://www.taobao.com'>2</a>3
+                    // select all ,set link to http://www.ckeditor.com
+                    // expect => <a href='http://www.ckeditor.com'>123</a> (same with tinymce)
+                    // but now => <a href="http://www.ckeditor.com">1</a>
+                    // <a href="http://www.taobao.com">2</a>
+                    // <a href="http://www.ckeditor.com">3</a>
+                    // http://dev.ckeditor.com/ticket/8470
+                    if (currentParent &&
+                        elementName == "a" &&
+                        currentParent._4e_name() == elementName) {
+                        var tmpANode = getElement(self, document, undefined);
+                        currentParent._4e_moveChildren(tmpANode);
+                        currentParent[0].parentNode.replaceChild(tmpANode[0], currentParent[0]);
+                        tmpANode._4e_mergeSiblings();
+                    }
+
                     // Check if the style element can be a child of the current
                     // node parent or if the element is not defined in the DTD.
-                    if (currentParent && currentParent[0]
+                    else if (currentParent && currentParent[0]
                         && ( ( KE.XHTML_DTD[currentParent._4e_name()] ||
                         KE.XHTML_DTD["span"] )[ elementName ] ||
                         isUnknownElement )
@@ -1331,12 +1350,12 @@ KISSY.Editor.add("styles", function(KE) {
 
     var StyleP = KEStyle.prototype;
     KE.Utils.extern(StyleP, {
-            "apply":StyleP.apply,
-            "remove":StyleP.remove,
-            "applyToRange":StyleP.applyToRange,
-            "removeFromRange":StyleP.removeFromRange,
-            "applyToObject":StyleP.applyToObject,
-            "checkElementRemovable":StyleP.checkElementRemovable,
-            "checkActive":StyleP.checkActive
-        });
+        "apply":StyleP.apply,
+        "remove":StyleP.remove,
+        "applyToRange":StyleP.applyToRange,
+        "removeFromRange":StyleP.removeFromRange,
+        "applyToObject":StyleP.applyToObject,
+        "checkElementRemovable":StyleP.checkElementRemovable,
+        "checkActive":StyleP.checkActive
+    });
 });

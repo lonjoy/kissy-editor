@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 27 19:45
+build time: Nov 16 15:05
 */
 /**
  * parse html to a hierarchy dom tree
@@ -470,9 +470,10 @@ KISSY.add("htmlparser/lexer/Index",function() {
 KISSY.add("htmlparser/lexer/Lexer",function(S, Cursor, Page, TextNode, CData, Utils, Attribute, TagNode, CommentNode) {
 
     function Lexer(text) {
-        this.page = new Page(text);
-        this.cursor = new Cursor();
-        this.nodeFactory = this;
+        var self=this;
+        self.page = new Page(text);
+        self.cursor = new Cursor();
+        self.nodeFactory = this;
     }
 
     Lexer.prototype = {
@@ -1301,7 +1302,7 @@ KISSY.add("htmlparser/nodes/CData",function(S, Text) {
  * comment node (<!-- content -->)
  * @author yiminghe@gmail.com
  */
-KISSY.add("htmlparser/nodes/Comment",function(S, Tag) {
+KISSY.add("htmlparser/nodes/Comment", function(S, Tag) {
 
     function Comment() {
         Comment.superclass.constructor.apply(this, arguments);
@@ -1312,7 +1313,7 @@ KISSY.add("htmlparser/nodes/Comment",function(S, Tag) {
     S.extend(Comment, Tag, {
         writeHtml:function(writer, filter) {
             var value = this.toHtml();
-            if (filter.onComment(this) !== false) {
+            if (!filter || filter.onComment(this) !== false) {
                 writer.comment(value);
             }
         }
@@ -1360,7 +1361,7 @@ KISSY.add("htmlparser/nodes/Node",function(S) {
  * represent tag , it can nest other tag
  * @author yiminghe@gmail.com
  */
-KISSY.add("htmlparser/nodes/Tag",function(S, Node, TagScanner, QuoteCdataScanner, TextareaScanner, Attribute) {
+KISSY.add("htmlparser/nodes/Tag", function(S, Node, TagScanner, QuoteCdataScanner, TextareaScanner, Attribute, Dtd) {
 
     var scanners = {
         'style':QuoteCdataScanner,
@@ -1373,37 +1374,42 @@ KISSY.add("htmlparser/nodes/Tag",function(S, Node, TagScanner, QuoteCdataScanner
     }
 
     function Tag(page, startPosition, endPosition, attributes) {
-        Tag.superclass.constructor.apply(this, arguments);
-        this.childNodes = [];
-        this.firstChild = null;
-        this.lastChild = null;
-        this.attributes = attributes || [];
-        this.nodeType = 1;
-        attributes = this.attributes;
+        var self = this;
+        Tag.superclass.constructor.apply(self, arguments);
+        self.childNodes = [];
+        self.firstChild = null;
+        self.lastChild = null;
+        self.attributes = attributes || [];
+        self.nodeType = 1;
+        attributes = self.attributes;
         // first attribute is actually nodeName
         if (attributes[0]) {
-            this.nodeName = attributes[0].name.toLowerCase();
+            self.nodeName = attributes[0].name.toLowerCase();
             // note :
             // end tag (</div>) is a tag too in lexer , but not exist in parsed dom tree
-            this.tagName = this.nodeName.replace(/\//, "");
-            this.isEmptyXmlTag = /\/$/.test(this.nodeName);
+            self.tagName = self.nodeName.replace(/\//, "");
+            // <br> <img> <input> , just recognize them immediately
+            self.isEmptyXmlTag = !!(Dtd.$empty[self.nodeName]);
+            if (!self.isEmptyXmlTag) {
+                self.isEmptyXmlTag = /\/$/.test(self.nodeName);
+            }
             attributes.splice(0, 1);
         }
 
-        if (!this.isEmptyXmlTag) {
+        if (!self.isEmptyXmlTag) {
             var lastAttr = attributes[attributes.length - 1];
-            this.isEmptyXmlTag = !!(lastAttr && /\/$/.test(lastAttr.name));
-            if (this.isEmptyXmlTag) {
+            self.isEmptyXmlTag = !!(lastAttr && /\/$/.test(lastAttr.name));
+            if (self.isEmptyXmlTag) {
                 attributes.length = attributes.length - 1;
             }
         }
         // whether has been closed by its end tag
         // !TODO how to set closed position correctly
-        this.closed = this.isEmptyXmlTag;
-        this.closedStartPosition = -1;
-        this.closedEndPosition = -1;
+        self['closed'] = self.isEmptyXmlTag;
+        self['closedStartPosition'] = -1;
+        self['closedEndPosition'] = -1;
         // scan it's innerHTMl to childNodes
-        this.scanner = getScannerForTag(this.nodeName);
+        self.scanner = getScannerForTag(self.nodeName);
     }
 
     function refreshChildNodes(self) {
@@ -1535,7 +1541,7 @@ KISSY.add("htmlparser/nodes/Tag",function(S, Node, TagScanner, QuoteCdataScanner
                         continue;
                     }
                 }
-                writer.attribute(attr);
+                writer.attribute(attr, el);
             }
 
             // close its open tag
@@ -1569,12 +1575,13 @@ KISSY.add("htmlparser/nodes/Tag",function(S, Node, TagScanner, QuoteCdataScanner
         '../scanners/TagScanner',
         '../scanners/QuoteCdataScanner',
         '../scanners/TextareaScanner',
-        './Attribute']
+        './Attribute',
+        '../dtd']
 });/**
  * dom text node
  * @author yiminghe@gmail.com
  */
-KISSY.add("htmlparser/nodes/Text",function(S, Node) {
+KISSY.add("htmlparser/nodes/Text", function(S, Node) {
 
     function Text() {
         Text.superclass.constructor.apply(this, arguments);
@@ -1585,7 +1592,7 @@ KISSY.add("htmlparser/nodes/Text",function(S, Node) {
     S.extend(Text, Node, {
         writeHtml:function(writer, filter) {
             var value = this.toHtml();
-            if (filter.onText(this) !== false) {
+            if (!filter || filter.onText(this) !== false) {
                 writer.text(value);
             }
         }
@@ -1629,7 +1636,7 @@ KISSY.add("htmlparser/nodes/Text",function(S, Node) {
  * nest tag scanner recursively
  * @author yiminghe@gmail.com
  */
-KISSY.add("htmlparser/scanners/TagScanner",function(S, dtd) {
+KISSY.add("htmlparser/scanners/TagScanner", function(S, dtd) {
     var scanner = {
         scan:function(tag, lexer, stack) {
             var node,i;
@@ -1642,7 +1649,7 @@ KISSY.add("htmlparser/scanners/TagScanner",function(S, dtd) {
                         if (node.nodeType === 1) {
                             // normal end tag
                             if (node.isEndTag() && node.tagName == tag.tagName) {
-                                tag.closed = true;
+                                tag['closed'] = true;
                                 node = null;
                             }
                             // encounter  <a>1<p>2</p>3</a> , close <a> => <a>1</a><p>2</p>3</a> => <a>1</a><p>2</p>3
@@ -1703,11 +1710,11 @@ KISSY.add("htmlparser/scanners/TagScanner",function(S, dtd) {
                                 if (index != -1) {
                                     // <div><span> <a> </div>
                                     // tag==a
-                                    tag.closed = true;
+                                    tag['closed'] = true;
                                     stack[stack.length - 1].appendChild(tag);
                                     for (i = stack.length - 1; i > index; i--) {
                                         var currentStackItem = stack[i],preStackItem = stack[i - 1];
-                                        currentStackItem.closed = true;
+                                        currentStackItem['closed'] = true;
                                         preStackItem.appendChild(currentStackItem);
                                     }
                                     tag = stack[index];
@@ -1717,7 +1724,6 @@ KISSY.add("htmlparser/scanners/TagScanner",function(S, dtd) {
 
                             }
                         } else {
-                            // no tag , just simply add
                             tag.appendChild(node);
                         }
                     }
@@ -1730,7 +1736,7 @@ KISSY.add("htmlparser/scanners/TagScanner",function(S, dtd) {
                                 // fake recursion
                                 if (node.scanner === scanner) {
                                     stack.length = stack.length - 1;
-                                    tag.closed = true;
+                                    tag['closed'] = true;
                                     node.appendChild(tag);
                                     tag = node;
                                 } else {
@@ -1743,7 +1749,7 @@ KISSY.add("htmlparser/scanners/TagScanner",function(S, dtd) {
                     }
                 } while (node);
 
-                tag.closed = true;
+                tag['closed'] = true;
             }
 
             return tag;
@@ -1756,7 +1762,11 @@ KISSY.add("htmlparser/scanners/TagScanner",function(S, dtd) {
             if (!dtd[tag.tagName]) {
                 S.error("dtd[" + tag.tagName + "] === undefined!")
             }
-            return !! dtd[tag.tagName][node.tagName];
+            var nodeName = node.nodeName;
+            if (node.nodeType == 3) {
+                nodeName = '#';
+            }
+            return !! dtd[tag.tagName][nodeName];
         }
     };
     return scanner;
@@ -1841,27 +1851,30 @@ KISSY.add("htmlparser/scanners/TagScanner",function(S, dtd) {
  * format html prettily
  * @author yiminghe@gmail.com
  */
-KISSY.add("htmlparser/writer/beautify",function(S, BasicWriter, dtd) {
+KISSY.add("htmlparser/writer/beautify", function(S, BasicWriter, dtd) {
 
     function BeautifyWriter() {
-        BeautifyWriter.superclass.constructor.apply(this, arguments);
+        var self = this;
+        BeautifyWriter.superclass.constructor.apply(self, arguments);
         // tag in pre should not indent
         // space (\t\r\n ) in pre should not collapse
-        this.inPre = 0;
-        this.indentChar = "\t";
-        this.indentLevel = 0;
+        self.inPre = 0;
+        self.indentChar = "\t";
+        self.indentLevel = 0;
         // whether to indent on current line
         // if already indent and then not line break ,next tag should not indent
-        this.allowIndent = 0;
-        this.rules = {};
+        self.allowIndent = 0;
+        self.rules = {};
 
         for (var e in S.merge(
             dtd.$nonBodyContent,
             dtd.$block,
             dtd.$listItem,
-            dtd.$tableContent
+            dtd.$tableContent,
+            // may add unnecessary whitespaces
+            {"select":1}
         )) {
-            this.setRules(e, {
+            self.setRules(e, {
                 // whether its tag/text children should indent
                 allowIndent : 1,
                 breakBeforeOpen : 1,
@@ -1871,17 +1884,25 @@ KISSY.add("htmlparser/writer/beautify",function(S, BasicWriter, dtd) {
             });
         }
 
-        this.setRules('br', {
+        self.setRules('option', {
+            breakBeforeOpen : 1
+        });
+
+        self.setRules('optiongroup', {
+            breakBeforeOpen : 1
+        });
+
+        self.setRules('br', {
             breakAfterOpen : 1
         });
 
-        this.setRules('title', {
+        self.setRules('title', {
             allowIndent : 0,
             breakBeforeClose:0,
             breakAfterOpen : 0
         });
 
-        this.setRules('style', {
+        self.setRules('style', {
             allowIndent : 0,
             breakBeforeOpen : 1,
             breakAfterOpen : 1,
@@ -1889,7 +1910,7 @@ KISSY.add("htmlparser/writer/beautify",function(S, BasicWriter, dtd) {
             breakAfterClose : 1
         });
 
-        this.setRules('script', {
+        self.setRules('script', {
             allowIndent : 0,
             breakBeforeOpen : 1,
             breakAfterOpen : 1,
@@ -1898,7 +1919,7 @@ KISSY.add("htmlparser/writer/beautify",function(S, BasicWriter, dtd) {
         });
 
         // Disable indentation on <pre>.
-        this.setRules('pre', {
+        self.setRules('pre', {
             allowIndent : 0
         });
     }
@@ -2164,15 +2185,246 @@ KISSY.add("htmlparser/writer/filter", function(S) {
 
     return Filter;
 });/**
+ * write html into its minified form,thanks to kangax who minify algorithm comes from
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("htmlparser/writer/minify", function(S, BasicWriter) {
+
+    var trim = S.trim,
+        reEmptyAttribute = new RegExp(
+            '^(?:class|id|style|title|lang|dir|on(?:focus|blur|change|click|dblclick|mouse(' +
+                '?:down|up|over|move|out)|key(?:press|down|up)))$');
+
+    function canDeleteEmptyAttribute(tag, attr) {
+        var attrValue = attr.value,
+            attrName = attr.name;
+        if (!trim(attrValue)) {
+            return (
+                (tag === 'input' && attrName === 'value') ||
+                    reEmptyAttribute.test(attrName));
+        }
+        return 0;
+    }
+
+    function isBooleanAttribute(attrName) {
+        return (/^(?:checked|disabled|selected|readonly)$/i).test(attrName);
+    }
+
+    function collapseWhitespace(str) {
+        return str.replace(/\s+/g, ' ');
+    }
+
+    function canRemoveAttributeQuotes(value) {
+        // http://www.w3.org/TR/html4/intro/sgmltut.html#attributes
+        // avoid \w, which could match unicode in some implementations
+        return (/^[a-zA-Z0-9-._:]+$/).test(value);
+    }
+
+    function isAttributeRedundant(el, attr) {
+        var tag = el.nodeName,
+            attrName = attr.name,
+            attrValue = attr.value;
+        attrValue = trim(attrValue.toLowerCase());
+        return (
+            (tag === 'script' &&
+                attrName === 'language' &&
+                attrValue === 'javascript') ||
+
+                (tag === 'form' &&
+                    attrName === 'method' &&
+                    attrValue === 'get') ||
+
+                (tag === 'input' &&
+                    attrName === 'type' &&
+                    attrValue === 'text') ||
+
+                (tag === 'script' &&
+                    attrName === 'type' &&
+                    attrValue === 'text/javascript') ||
+
+                (tag === 'style' &&
+                    attrName === 'type' &&
+                    attrValue === 'text/css') ||
+
+                (tag === 'area' &&
+                    attrName === 'shape' &&
+                    attrValue === 'rect')
+            );
+    }
+
+    function isConditionalComment(text) {
+        return (/\[if[^\]]+\]/).test(text);
+    }
+
+    function isEventAttribute(attrName) {
+        return (/^on[a-z]+/).test(attrName);
+    }
+
+    function isUriTypeAttribute(attrName, tag) {
+        return (
+            ((/^(?:a|area|link|base)$/).test(tag) && attrName === 'href') ||
+                (tag === 'img' && (/^(?:src|longdesc|usemap)$/).test(attrName)) ||
+                (tag === 'object' && (/^(?:classid|codebase|data|usemap)$/).test(attrName)) ||
+                (tag === 'q' && attrName === 'cite') ||
+                (tag === 'blockquote' && attrName === 'cite') ||
+                ((tag === 'ins' || tag === 'del') && attrName === 'cite') ||
+                (tag === 'form' && attrName === 'action') ||
+                (tag === 'input' && (attrName === 'src' || attrName === 'usemap')) ||
+                (tag === 'head' && attrName === 'profile') ||
+                (tag === 'script' && (attrName === 'src' || attrName === 'for'))
+            );
+    }
+
+    function isNumberTypeAttribute(attrName, tag) {
+        return (
+            ((/^(?:a|area|object|button)$/).test(tag) && attrName === 'tabindex') ||
+                (tag === 'input' && (attrName === 'maxlength' || attrName === 'tabindex')) ||
+                (tag === 'select' && (attrName === 'size' || attrName === 'tabindex')) ||
+                (tag === 'textarea' && (/^(?:rows|cols|tabindex)$/).test(attrName)) ||
+                (tag === 'colgroup' && attrName === 'span') ||
+                (tag === 'col' && attrName === 'span') ||
+                ((tag === 'th' || tag == 'td') && (attrName === 'rowspan' || attrName === 'colspan'))
+            );
+    }
+
+    function cleanAttributeValue(el, attr) {
+        var tag = el.nodeName,
+            attrName = attr.name,
+            attrValue = attr.value;
+        if (isEventAttribute(attrName)) {
+            attrValue = trim(attrValue)
+                .replace(/^javascript:\s*/i, '')
+                .replace(/\s*;$/, '');
+        }
+        else if (attrName === 'class') {
+            attrValue = collapseWhitespace(trim(attrValue));
+        }
+        else if (isUriTypeAttribute(attrName, tag) ||
+            isNumberTypeAttribute(attrName, tag)) {
+            attrValue = trim(attrValue);
+        }
+        else if (attrName === 'style') {
+            attrValue = trim(attrValue).replace(/\s*;\s*$/, '');
+        }
+        return attrValue;
+    }
+
+    function cleanConditionalComment(comment) {
+        return comment
+            .replace(/^(\[[^\]]+\]>)\s*/, '$1')
+            .replace(/\s*(<!\[endif\])$/, '$1');
+    }
+
+    function removeCDATASections(text) {
+        return text
+            // "/* <![CDATA[ */" or "// <![CDATA["
+            .replace(/^(?:\s*\/\*\s*<!\[CDATA\[\s*\*\/|\s*\/\/\s*<!\[CDATA\[.*)/, '')// \s* ??
+            // "/* ]]> */" or "// ]]>"
+            .replace(/(?:\/\*\s*\]\]>\s*\*\/|\/\/\s*\]\]>)\s*$/, '');
+    }
+
+    function Minifier() {
+        var self = this;
+        Minifier.superclass.constructor.apply(self, arguments);
+        self.inPre = 0;
+    }
+
+    S.extend(Minifier, BasicWriter, {
+        /**
+         * remove non-conditional comment
+         */
+        comment:function(text) {
+            if (isConditionalComment(text)) {
+                text = cleanConditionalComment(text);
+                Minifier.superclass.comment.call(this, text);
+            }
+        },
+
+        /**
+         * record pre track
+         */
+        openTag:function(el) {
+            var self = this;
+            if (el.tagName == 'pre') {
+                self.inPre = 1;
+            }
+            Minifier.superclass.openTag.apply(self, arguments);
+        },
+
+        /**
+         * clean pre track
+         */
+        closeTag:function(el) {
+            var self = this;
+            if (el.tagName == 'pre') {
+                self.inPre = 0;
+            }
+            Minifier.superclass.closeTag.apply(self, arguments);
+        },
+
+        /**
+         * textarea | script | style
+         */
+        cdata:function(cdata) {
+            cdata = removeCDATASections(cdata);
+            Minifier.superclass.cdata.call(this, cdata);
+        },
+
+        attribute:function(attr, el) {
+            var self = this,
+                name = attr.name,
+                value = attr.value || "";
+            // remove empty attribute
+            if (canDeleteEmptyAttribute(el, attr) ||
+                // remove redundant attribute
+                isAttributeRedundant(el, attr)) {
+            } else if (isBooleanAttribute(name)) {
+                // collapse boolean attributes
+                self.append(" ", name);
+            } else if (canRemoveAttributeQuotes(value)) {
+                // remove quote
+                self.append(" ", name, "=",
+                    // clean attribute value
+                    S.escapeHTML(cleanAttributeValue(el, attr)));
+            } else {
+                self.append(" ", name, '="',
+                    // clean attribute value
+                    S.escapeHTML(cleanAttributeValue(el, attr)), '"');
+            }
+        },
+
+        /**
+         * note : pre is special
+         */
+        text:function(text) {
+            var self = this;
+            if (!self.inPre) {
+                // collapse whitespace
+                self.append(collapseWhitespace(text));
+            }
+        }
+    });
+
+    return Minifier;
+
+}, {
+    requires:['./basic']
+});
+
+/**
+ * refer :
+ *  - https://github.com/kangax/html-minifier/
+ **//**
  * HtmlParser for KISSY (Editor)
  * @author yiminghe@gmail.com
  */
-KISSY.add("htmlparser", function(S, Lexer, Parser, BasicWriter, BeautifyWriter, Filter) {
+KISSY.add("htmlparser", function(S, Lexer, Parser, BasicWriter, BeautifyWriter, MinifyWriter, Filter) {
     return {
         Lexer:Lexer,
         Parser:Parser,
         BasicWriter:BasicWriter,
         BeautifyWriter:BeautifyWriter,
+        MinifyWriter:MinifyWriter,
         Filter:Filter
     };
 }, {
@@ -2181,10 +2433,14 @@ KISSY.add("htmlparser", function(S, Lexer, Parser, BasicWriter, BeautifyWriter, 
         'htmlparser/Parser',
         'htmlparser/writer/basic',
         'htmlparser/writer/beautify',
+        'htmlparser/writer/minify',
         'htmlparser/writer/filter'
     ]
 });
 
 /**
  * 参考 http://htmlparser.sourceforge.net/
+ *
+ * TODO
+ *  - http://blogs.msdn.com/b/ie/archive/2010/09/13/interoperable-html-parsing-in-ie9.aspx
  **/

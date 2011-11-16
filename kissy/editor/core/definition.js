@@ -139,7 +139,7 @@ KISSY.Editor.add("definition", function(KE) {
             // With IE, the custom domain has to be taken care at first,
             // for other browsers, the 'src' attribute should be left empty to
             // trigger iframe's 'load' event.
-            ' src="' + ( IS_IE ? 'javascript:void(function(){' + encodeURIComponent(srcScript) + '}())' : '' ) + '" ' +
+            (IS_IE ? (' src="' + 'javascript:void(function(){' + encodeURIComponent(srcScript) + '}())"') : '') +
             //' tabIndex="' + ( UA.webkit ? -1 : "$(tabIndex)" ) + '" ' +
             ' allowTransparency="true" ' +
             '></iframe></div>' +
@@ -283,9 +283,11 @@ KISSY.Editor.add("definition", function(KE) {
             //其他可能处理
             self.fire("destroy");
             textarea.insertBefore(editorWrap);
+
             editorWrap.remove();
+
             textarea.css({
-                width:editorWrap.css("width"),
+                width:editorWrap[0].style.width,
                 height:self.wrap.css("height")
             });
             textarea.show();
@@ -310,12 +312,10 @@ KISSY.Editor.add("definition", function(KE) {
          * @this {KISSY.Editor}
          * @param name {string}
          * @param callback {function(Object)}
-         * @param cfg {Object}
          */
-        useDialog:function(name, callback, cfg) {
+        useDialog:function(name, callback) {
             var self = this,
                 Overlay = KE.Overlay;
-            cfg = cfg || {};
             Overlay && Overlay.loading();
             self.use(name, function() {
                 var dialog = self.getDialog(name);
@@ -329,8 +329,21 @@ KISSY.Editor.add("definition", function(KE) {
                 callback(dialog);
                 Overlay && Overlay.unloading();
             });
-        }
-        ,
+        },
+
+        showDialog:function(name, args, fn) {
+            var self = this;
+            args = args || [];
+            self.useDialog(name, function(dialog) {
+                dialog.show.apply(dialog, args);
+                fn && fn(dialog);
+                self.fire("dialogShow", {
+                    dialog:dialog.dialog,
+                    pluginDialog:dialog,
+                    dialogName:name
+                });
+            });
+        },
         /**
          *@this {KISSY.Editor}
          * @param name {string}
@@ -497,9 +510,11 @@ KISSY.Editor.add("definition", function(KE) {
             var self = this,
                 doc = self.document,
                 win = DOM._4e_getWin(doc);
-            UA.webkit && win && win.parent && win.parent.focus();
-            //yiminghe note:webkit need win.focus
-            UA.webkit && win && win.focus();
+            // firefox7 need this
+            win && win.parent && win.parent.focus();
+            // yiminghe note:webkit need win.focus
+            // firefox 7 needs also?
+            win && win.focus();
             //ie and firefox need body focus
             doc && doc.body.focus();
             self.notifySelectionChange();
@@ -802,7 +817,8 @@ KISSY.Editor.add("definition", function(KE) {
             self.focus();
             self.fire("save");
 
-            var editorDoc = self.document,saveInterval = 0;
+            var editorDoc = self.document,
+                saveInterval = 0;
             // ie9 仍然需要这样！
             // ie9 标准 selection 有问题，连续插入不能定位光标到插入内容后面
             if (IS_IE) {
@@ -819,19 +835,34 @@ KISSY.Editor.add("definition", function(KE) {
                 // ie9 仍然没有
                 // 1.webkit insert html 有问题！会把标签去掉，算了直接用 insertElement.
                 // 10.0 修复？？
+                // firefox 初始编辑器无焦点报异常
                 try {
-                    // firefox 初始编辑器无焦点报异常，等会再来就可以了
                     editorDoc.execCommand('inserthtml', FALSE, data);
                 } catch(e) {
                     setTimeout(function() {
+                        // still not ok in ff!
+                        // 手动选择 body 的第一个节点
+                        if (self.getSelection().getRanges().length == 0) {
+                            var r = new KE.Range(editorDoc);
+                            var node = DOM._4e_first(editorDoc.body, function(el) {
+                                return el[0].nodeType == 1 && el._4e_name() != "br";
+                            });
+                            if (!node) {
+                                node = new Node(editorDoc.createElement("p"));
+                                editorDoc.body.appendChild(node[0]);
+                            }
+                            r.setStartAt(node, KE.RANGE.POSITION_AFTER_START);
+                            r.select();
+                        }
                         editorDoc.execCommand('inserthtml', FALSE, data);
-                    }, 100);
-                    saveInterval = 100;
+                    }, saveInterval = 100);
                 }
             }
             // bug by zjw2004112@163.com :
             // 有的浏览器 ： chrome , ie67 貌似不会自动滚动到粘贴后的位置
-            self.getSelection().scrollIntoView();
+            setTimeout(function() {
+                self.getSelection().scrollIntoView();
+            }, saveInterval);
             self._saveLater(saveInterval);
         },
 
@@ -888,7 +919,7 @@ KISSY.Editor.add("definition", function(KE) {
         //2.0 body.contentEditable=true body外不是编辑模式
         if (IS_IE) {
             // Don't display the focus border.
-            body.hideFocus = TRUE;
+            body['hideFocus'] = TRUE;
             // Disable and re-enable the body to avoid IE from
             // taking the editing focus at startup. (#141 / #523)
             body.disabled = TRUE;

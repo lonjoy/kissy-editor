@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 13:54
+build time: Nov 7 12:10
 */
 /**
  * deletable menuitem
@@ -383,6 +383,12 @@ KISSY.add("menu/filtermenurender", function(S, Node, UIBase, MenuRender) {
  */
 KISSY.add("menu/menu", function(S, Event, UIBase, Component, MenuRender) {
     var KeyCodes = Event.KeyCodes;
+
+
+    function onMenuHide() {
+        this.set("highlightedItem", undefined);
+    }
+
     var Menu = UIBase.create(Component.Container, {
         _uiSetHighlightedItem:function(v, ev) {
             var pre = ev && ev.prevVal;
@@ -503,11 +509,8 @@ KISSY.add("menu/menu", function(S, Event, UIBase, Component, MenuRender) {
             /**
              * 隐藏后，去掉高亮与当前
              */
-            self.on("hide", function() {
-                self.set("highlightedItem", undefined);
-            });
+            self.on("hide", onMenuHide, self);
         },
-
 
         containsElement:function(element) {
             if (this.get("view").containsElement(element)) {
@@ -631,7 +634,7 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
         },
 
         containsElement:function(element) {
-            return this.get('view').containsElement(element);
+            return this.get('view') && this.get('view').containsElement(element);
         }
 
     }, {
@@ -817,10 +820,103 @@ KISSY.add("menu/menurender", function(S, UA, UIBase, Component) {
  * @author yiminghe@gmail.com
  */
 KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender) {
+
+    function getParentMenu(self) {
+        var subMenuItem = self.get("parent"),
+            parentMenu;
+        if (subMenuItem && subMenuItem.get("menu") === self) {
+            parentMenu = subMenuItem.get("parent");
+        }
+        return parentMenu;
+    }
+
+    function getAutoHideParentMenu(self) {
+        var parentMenu = getParentMenu(self);
+        if (parentMenu && parentMenu.get(autoHideOnMouseLeave)) {
+            return parentMenu;
+        }
+        return 0;
+    }
+
+    function getOldestMenu(self) {
+        var pre = self,now = self;
+        while (now) {
+            pre = now;
+            now = getAutoHideParentMenu(pre);
+            if (!now) {
+                break;
+            }
+        }
+        return pre;
+    }
+
+    var autoHideOnMouseLeave = "autoHideOnMouseLeave";
+
+    function clearOwn(self) {
+        var l;
+        if (l = self._leaveHideTimer) {
+            clearTimeout(l);
+            self._leaveHideTimer = 0;
+        }
+    }
+
     var PopMenu = UIBase.create(Menu, [
         UIBase.Position,
         UIBase.Align
     ], {
+        _clearLeaveHideTimers:function() {
+            var self = this,i,item,menu;
+            if (!self.get(autoHideOnMouseLeave)) {
+                return;
+            }
+            // 清除自身
+            clearOwn(self);
+            var cs = self.get("children");
+            for (i = 0; i < cs.length; i++) {
+                item = cs[i];
+                // 递归清除子菜单
+                if ((menu = item.get("menu")) &&
+                    menu.get(autoHideOnMouseLeave)) {
+                    menu._clearLeaveHideTimers();
+                }
+            }
+        },
+        _handleMouseLeave:function() {
+            var self = this;
+            if (!self.get(autoHideOnMouseLeave)) {
+                return;
+            }
+            self._leaveHideTimer = setTimeout(function() {
+                // only hide ancestor is enough , it will listen to its ancestor's hide event to hide
+                var oldMenu = getOldestMenu(self);
+                oldMenu.hide();
+                var parentMenu = getParentMenu(oldMenu);
+                if (parentMenu) {
+                    parentMenu.set("highlightedItem", null);
+                }
+            }, self.get("autoHideDelay"));
+        },
+
+        _handleMouseEnter:function() {
+            var self = this,
+                parent = getAutoHideParentMenu(self);
+            if (parent) {
+                parent._clearLeaveHideTimers();
+            } else {
+                self._clearLeaveHideTimers();
+            }
+        },
+
+
+        /**
+         *  suppose it has focus (as a context menu),
+         *  then it must hide when click document
+         */
+        _handleBlur:function() {
+            var self = this;
+            PopMenu.superclass._handleBlur.apply(self, arguments);
+            self.hide();
+        }
     }, {
         ATTRS:{
             // 弹出菜单一般不可聚焦，焦点在使它弹出的元素上
@@ -829,6 +925,10 @@ KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender
             },
             visibleMode:{
                 value:"visibility"
+            },
+            autoHideOnMouseLeave:{},
+            autoHideDelay:{
+                value:100
             }
         },
         DefaultRender:PopupMenuRender
@@ -909,7 +1009,26 @@ KISSY.add(
     "menu/submenu",
     function(S, Event, UIBase, Component, MenuItem, SubMenuRender) {
 
+
+        function _onDocClick(e) {
+            var self = this,
+                menu = self.get("menu"),
+                target = e.target,
+                el = self.get("el");
+            // only hide this menu, if click outside this menu and this menu's submenus
+            if (
+                ! el.contains(target) &&
+                    el[0] !== target &&
+                    ! menu.containsElement(target)
+                ) {
+                menu.hide();
+                // submenuitem should also hide
+                self.get("parent").set("highlightedItem", null);
+            }
+        }
+
         var KeyCodes = Event.KeyCodes,
+            doc = document,
             MENU_DELAY = 300;
         /**
          * Class representing a submenu that can be added as an item to other menus.
@@ -942,6 +1061,13 @@ KISSY.add(
                             });
                         });
 
+                        // if not bind doc click for parent menu
+                        // if already bind, then if parent menu hide, menu will hide too
+                        if (!parentMenu.__bindDocClickToHide) {
+                            Event.on(doc, "click", _onDocClick, self);
+                            menu.__bindDocClickToHide = 1;
+                        }
+
                         // 通知父级菜单
                         menu.on("afterActiveItemChange", function(ev) {
                             parentMenu.set("activeItem", ev.newVal);
@@ -957,25 +1083,29 @@ KISSY.add(
                     menu.on("beforeHighlightedItemChange", self.onChildHighlight_, self);
                 },
 
+
+
                 /**
                  * @inheritDoc
                  * Sets a timer to show the submenu
                  **/
                 _handleMouseEnter:function(e) {
-                    if (SubMenu.superclass._handleMouseEnter.call(this, e)) {
+                    var self = this;
+                    if (SubMenu.superclass._handleMouseEnter.call(self, e)) {
                         return true;
                     }
-                    this.clearTimers();
-                    this.showTimer_ = S.later(this.showMenu,
-                        this.get("menuDelay"), false, this);
+                    self.clearTimers();
+                    self.showTimer_ = S.later(self.showMenu,
+                        this.get("menuDelay"), false, self);
                 },
 
                 showMenu:function() {
-                    var menu = this.get("menu");
+                    var self = this;
+                    var menu = self.get("menu");
                     menu.set("align", S.mix({
-                        node:this.get("el"),
+                        node:self.get("el"),
                         points:['tr','tl']
-                    }, this.get("menuAlign")));
+                    }, self.get("menuAlign")));
                     menu.render();
                     /**
                      * If activation of your menuitem produces a popup menu,
@@ -983,7 +1113,7 @@ KISSY.add(
                      to allow the assistive technology to follow the menu hierarchy
                      and assist the user in determining context during menu navigation.
                      */
-                    this.get("el").attr("aria-haspopup",
+                    self.get("el").attr("aria-haspopup",
                         menu.get("el").attr("id"));
                     menu.show();
                 },
@@ -993,13 +1123,14 @@ KISSY.add(
                  * Clears the show and hide timers for the sub menu.
                  */
                 clearTimers : function() {
-                    if (this.dismissTimer_) {
-                        this.dismissTimer_.cancel();
-                        this.dismissTimer_ = null;
+                    var self = this;
+                    if (self.dismissTimer_) {
+                        self.dismissTimer_.cancel();
+                        self.dismissTimer_ = null;
                     }
-                    if (this.showTimer_) {
-                        this.showTimer_.cancel();
-                        this.showTimer_ = null;
+                    if (self.showTimer_) {
+                        self.showTimer_.cancel();
+                        self.showTimer_ = null;
                     }
                 },
 
@@ -1117,6 +1248,8 @@ KISSY.add(
                         menu = this.get("menu");
 
                     self.clearTimers();
+
+                    Event.remove(doc, "click", _onDocClick, self);
 
                     //当改菜单项所属的菜单隐藏后，该菜单项关联的子菜单也要隐藏
                     if (parentMenu) {

@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Oct 12 14:28
+build time: Nov 15 17:48
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -74,7 +74,8 @@ build time: Oct 12 14:28
     host = seed.__HOST || (seed.__HOST = host || {});
 
     // shortcut and meta for seed.
-    S = host[S] = meta.mix(seed, meta, false);
+    // override previous kissy
+    S = host[S] = meta.mix(seed, meta);
 
     S.mix(S, {
 
@@ -88,7 +89,7 @@ build time: Oct 12 14:28
          */
         version: '1.20dev',
 
-        buildTime:'20111012142802',
+        buildTime:'20111115174805',
 
         /**
          * Returns a new object containing all of the properties of
@@ -336,6 +337,7 @@ build time: Oct 12 14:28
         HEX_BASE = 16,
         CLONE_MARKER = '__~ks_cloned',
         COMPARE_MARKER = '__~ks_compared',
+        STAMP_MARKER = '__~ks_stamped',
         RE_TRIM = /^\s+|\s+$/g,
         encode = encodeURIComponent,
         decode = decodeURIComponent,
@@ -343,15 +345,21 @@ build time: Oct 12 14:28
         EQ = '=',
         // [[Class]] -> type pairs
         class2type = {},
+        // http://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat_Sheet
         htmlEntities = {
             '&amp;': '&',
             '&gt;': '>',
             '&lt;': '<',
-            '&quot;': '"'
+            '&#x60;':'`',
+            '&#x2F;':'/',
+            '&quot;': '"',
+            '&#x27;':"'"
         },
         reverseEntities = {},
         escapeReg,
-        unEscapeReg;
+        unEscapeReg,
+        // - # $ ^ * ( ) + [ ] { } | \ , . ?
+        escapeRegExp = /[\-#$\^*()+\[\]{}|\\,.?\s]/g;
     (function() {
         for (var k in htmlEntities) {
             reverseEntities[htmlEntities[k]] = k;
@@ -390,6 +398,30 @@ build time: Oct 12 14:28
     }
 
     S.mix(S, {
+
+        /**
+         * stamp a object by guid
+         * @return guid associated with this object
+         */
+        stamp:function(o, readOnly, marker) {
+            if (!o) {
+                return o
+            }
+            marker = marker || STAMP_MARKER;
+            var guid = o[marker];
+            if (guid) {
+                return guid;
+            } else if (!readOnly) {
+                try {
+                    guid = o[marker] = S.guid(marker);
+                }
+                catch(e) {
+                    guid = undefined;
+                }
+            }
+            return guid;
+        },
+
         noop:function() {
         },
 
@@ -481,15 +513,17 @@ build time: Oct 12 14:28
         /**
          * Creates a deep copy of a plain object or array. Others are returned untouched.
          * 稍微改改就和规范一样了 :)
+         * @param input
+         * @param {Function} filter filter function
          * @refer http://www.w3.org/TR/html5/common-dom-interfaces.html#safe-passing-of-structured-data
          */
-        clone: function(input, f) {
+        clone: function(input, filter) {
             // Let memory be an association list of pairs of objects,
             // initially empty. This is used to handle duplicate references.
             // In each pair of objects, one is called the source object
             // and the other the destination object.
             var memory = {},
-                ret = cloneInternal(input, f, memory);
+                ret = cloneInternal(input, filter, memory);
             S.each(memory, function(v) {
                 // 清理在源对象上做的标记
                 v = v.input;
@@ -798,13 +832,18 @@ build time: Oct 12 14:28
         },
         /**
          * escape string to html
-         * @refer http://yiminghe.javaeye.com/blog/788929
+         * @refer   http://yiminghe.javaeye.com/blog/788929
+         *          http://wonko.com/post/html-escaping
          * @param str {string} text2html show
          */
         escapeHTML:function(str) {
             return str.replace(getEscapeReg(), function(m) {
                 return reverseEntities[m];
             });
+        },
+
+        escapeRegExp:function(str) {
+            return str.replace(escapeRegExp, '\\$&');
         },
 
         /**
@@ -1115,9 +1154,9 @@ build time: Oct 12 14:28
             memory[stamp] = {destination:destination,input:input};
         }
         // If input is an Array object or an Object object,
-        // then, for each enumerable property in input, 
-        // add a new property to output having the same name, 
-        // and having a value created from invoking the internal structured cloning algorithm recursively 
+        // then, for each enumerable property in input,
+        // add a new property to output having the same name,
+        // and having a value created from invoking the internal structured cloning algorithm recursively
         // with the value of the property as the "input" argument and memory as the "memory" argument.
         // The order of the properties in the input and output objects must be the same.
 
@@ -1193,17 +1232,20 @@ build time: Oct 12 14:28
  * status constants
  * @author yiminghe@gmail.com
  */
-(function(S,data) {
-    if("require" in this) {
+(function(S, data) {
+    if ("require" in this) {
         return;
     }
+    // 脚本(loadQueue)/模块(mod) 公用状态
     S.mix(data, {
+        "INIT":0,
         "LOADING" : 1,
         "LOADED" : 2,
         "ERROR" : 3,
+        // 模块特有
         "ATTACHED" : 4
     });
-})(KISSY,KISSY.__loaderData);/**
+})(KISSY, KISSY.__loaderData);/**
  * utils for kissy loader
  * @author yiminghe@gmail.com
  */
@@ -1211,10 +1253,10 @@ build time: Oct 12 14:28
     if ("require" in this) {
         return;
     }
-    var ua=navigator.userAgent,doc=document;
+    var ua = navigator.userAgent,doc = document;
     S.mix(utils, {
-        docHead:function(){
-          return doc.getElementsByTagName('head')[0] || doc.documentElement;
+        docHead:function() {
+            return doc.getElementsByTagName('head')[0] || doc.documentElement;
         },
         isWebKit:!!ua.match(/AppleWebKit/),
         IE : !!ua.match(/MSIE/),
@@ -1287,14 +1329,16 @@ build time: Oct 12 14:28
          * 路径正则化，不能是相对地址
          * 相对地址则转换成相对页面的绝对地址
          * 用途:
-         * 1. package path 相对地址则相对于当前页面获取绝对地址
-         * 2. kissy.js 相对引用如何获取.
+         * package path 相对地址则相对于当前页面获取绝对地址
          */
         normalBasePath:function (path) {
-            if (path.charAt(path.length - 1) != '/') {
+            path = S.trim(path);
+
+            // path 为空时，不能变成 "/"
+            if (path && path.charAt(path.length - 1) != '/') {
                 path += "/";
             }
-            path = S.trim(path);
+
             /**
              * 一定要正则化，防止出现 ../ 等相对路径
              * 考虑本地路径
@@ -1304,6 +1348,15 @@ build time: Oct 12 14:28
                 path = loader.__pagePath + path;
             }
             return normalizePath(path);
+        },
+
+        /**
+         * 相对路径文件名转换为绝对路径
+         * @param path
+         */
+        absoluteFilePath:function(path) {
+            path = utils.normalBasePath(path);
+            return path.substring(0, path.length - 1);
         },
 
         //http://wiki.commonjs.org/wiki/Packages/Mappings/A
@@ -1328,71 +1381,67 @@ build time: Oct 12 14:28
     if ("require" in this) {
         return;
     }
-    var isWebKit = utils.isWebKit,
-        CSS_POLL_INTERVAL = 100,
+    var CSS_POLL_INTERVAL = 30,
         /**
          * central poll for link node
          */
-            timer = null,
+            timer = 0,
 
         monitors = {
             /**
-             * node.href:{node:node,callback:callback}
+             * node.id:[callback]
              */
         };
 
     function startCssTimer() {
         if (!timer) {
             S.log("start css polling");
-            ccsPoll();
+            cssPoll();
         }
     }
 
     // single thread is ok
-    function ccsPoll() {
-        var stop = true;
+    function cssPoll() {
         for (var url in monitors) {
-            var d = monitors[url],
-                node = d.node,
-                callbacks = d.callbacks,
-                loaded = false;
-            if (isWebKit) {
+            var callbacks = monitors[url],
+                node = callbacks.node,
+                loaded = 0;
+            if (utils.isWebKit) {
                 if (node['sheet']) {
                     S.log("webkit loaded : " + url);
-                    loaded = true;
+                    loaded = 1;
                 }
             } else if (node['sheet']) {
                 try {
-                    if (node['sheet'].cssRules) {
-                        S.log('firefox  ' + node['sheet'].cssRules + ' loaded : ' + url);
-                        loaded = true;
+                    var cssRules;
+                    if (cssRules = node['sheet'].cssRules) {
+                        S.log('firefox  ' + cssRules + ' loaded : ' + url);
+                        loaded = 1;
                     }
                 } catch(ex) {
-                    S.log('firefox  ' + ex.name + ' ' + url);
-                    if (ex.name === 'NS_ERROR_DOM_SECURITY_ERR') {
+                    // S.log('firefox  ' + ex.name + ' ' + ex.code + ' ' + url);
+                    // if (ex.name === 'NS_ERROR_DOM_SECURITY_ERR') {
+                    if (ex.code === 1000) {
                         S.log('firefox  ' + ex.name + ' loaded : ' + url);
-                        loaded = true;
+                        loaded = 1;
                     }
                 }
             }
 
             if (loaded) {
-                S.each(callbacks, function(callback) {
-                    callback.call(node);
-                });
+                for (var i = 0; i < callbacks.length; i++) {
+                    callbacks[i].call(node);
+                }
                 delete monitors[url];
-            } else {
-                stop = false;
             }
         }
-        if (stop) {
-            timer = null;
+        if (S.isEmptyObject(monitors)) {
+            timer = 0;
             S.log("end css polling");
         } else {
-            timer = setTimeout(ccsPoll, CSS_POLL_INTERVAL);
+            timer = setTimeout(cssPoll, CSS_POLL_INTERVAL);
         }
     }
-
 
     S.mix(utils, {
         scriptOnload:document.addEventListener ?
@@ -1419,9 +1468,17 @@ build time: Oct 12 14:28
 
         /**
          * monitor css onload across browsers
+         * 暂时不考虑如何判断失败，如 404 等
+         * @refer
+         *  - firefox 不可行（结论4错误）：
+         *    - http://yearofmoo.com/2011/03/cross-browser-stylesheet-preloading/
+         *  - 全浏览器兼容
+         *    - http://lifesinger.org/lab/2011/load-js-css/css-preload.html
+         *  - 其他
+         *    - http://www.zachleat.com/web/load-css-dynamically/
          */
         styleOnload:window.attachEvent ?
-            //ie/opera
+            // ie/opera
             function(node, callback) {
                 // whether to detach using function wrapper?
                 function t() {
@@ -1432,18 +1489,13 @@ build time: Oct 12 14:28
 
                 node.attachEvent('onload', t);
             } :
-            //refer : http://lifesinger.org/lab/2011/load-js-css/css-preload.html
-            //暂时不考虑如何判断失败，如 404 等
+            // refer : http://lifesinger.org/lab/2011/load-js-css/css-preload.html
+            // 暂时不考虑如何判断失败，如 404 等
             function(node, callback) {
-                var k = node.href;
-                if (monitors[k]) {
-                    monitors[k].callbacks.push(callback);
-                } else {
-                    monitors[k] = {
-                        node:node,
-                        callbacks:[callback]
-                    };
-                }
+                var href = node.href,arr;
+                arr = monitors[href] = monitors[href] || [];
+                arr.node = node;
+                arr.push(callback);
                 startCssTimer();
             }
     });
@@ -1455,8 +1507,8 @@ build time: Oct 12 14:28
     if ("require" in this) {
         return;
     }
-    var MILLISECONDS_OF_SECOND = 1000;
-    var scriptOnload = utils.scriptOnload;
+    var MILLISECONDS_OF_SECOND = 1000,
+        scriptOnload = utils.scriptOnload;
 
     S.mix(S, {
 
@@ -1727,7 +1779,10 @@ build time: Oct 12 14:28
             var self = this,
                 Config = self.Config;
 
+            base = base || Config.base;
+
             build("fullpath", "path");
+
             if (mod["cssfullpath"] !== data.LOADED) {
                 build("cssfullpath", "csspath");
             }
@@ -1736,7 +1791,7 @@ build time: Oct 12 14:28
                 if (!mod[fullpath] && mod[path]) {
                     //如果是 ./ 或 ../ 则相对当前模块路径
                     mod[path] = utils.normalDepModuleName(mod.name, mod[path]);
-                    mod[fullpath] = (base || Config.base) + mod[path];
+                    mod[fullpath] = base + mod[path];
                 }
                 // debug 模式下，加载非 min 版
                 if (mod[fullpath] && Config.debug) {
@@ -1757,38 +1812,35 @@ build time: Oct 12 14:28
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, loader) {
-    if("require" in this) {
+    if ("require" in this) {
         return;
     }
     S.mix(loader, {
-        __mixMods: function(global) {
-            var self=this,
+
+        // 按需从 global 迁移模块定义到当前 loader 实例，并根据 global 设置 fullpath
+        __mixMod: function(name, global) {
+            // 从 __mixMods 调用过来时，可能本实例没有该模块的数据结构
+            var self = this,
                 mods = self.Env.mods,
                 gMods = global.Env.mods,
-                name;
-            for (name in gMods) {
-                self.__mixMod(mods, gMods, name, global);
-            }
-        },
-
-        __mixMod: function(mods, gMods, name, global) {
-            var mod = mods[name] || {},
+                mod = mods[name] || {},
                 status = mod.status;
 
-            S.mix(mod, S.clone(gMods[name]));
+            if (gMods[name]) {
 
-            // status 属于实例，当有值时，不能被覆盖。
-            // 1. 只有没有初始值时，才从 global 上继承
-            // 2. 初始值为 0 时，也从 global 上继承
-            // 其他都保存自己的状态
-            if (status) {
-                mod.status = status;
+                S.mix(mod, S.clone(gMods[name]));
+
+                // status 属于实例，当有值时，不能被覆盖。
+                // 1. 只有没有初始值时，才从 global 上继承
+                // 2. 初始值为 0 时，也从 global 上继承
+                // 其他都保存自己的状态
+                if (status) {
+                    mod.status = status;
+                }
             }
 
-            // 来自 global 的 mod, path 应该基于 global
-            if (global) {
-                this.__buildPath(mod, global.Config.base);
-            }
+            // 来自 global 的 mod, path 也应该基于 global
+            self.__buildPath(mod, global.Config.base);
 
             mods[name] = mod;
         }
@@ -1830,8 +1882,7 @@ build time: Oct 12 14:28
             // src 必定是绝对路径
             // or re.hasAttribute ? re.src :  re.getAttribute('src', 4);
             // http://msdn.microsoft.com/en-us/library/ms536429(VS.85).aspx
-            var src = utils.normalBasePath(re.src);
-            src = src.substring(0, src.length - 1);
+            var src = utils.absoluteFilePath(re.src);
             // S.log("interactive src :" + src);
             // 注意：模块名不包含后缀名以及参数，所以去除
             // 系统模块去除系统路径
@@ -1876,19 +1927,21 @@ build time: Oct 12 14:28
             var self = this,
                 url = mod['fullpath'],
                 isCss = utils.isCss(url),
-                //这个是全局的，防止多实例对同一模块的重复下载
-                loadQueque = self.Env._loadQueue,
-                node = loadQueque[url],
-                ret;
+                // 这个是全局的，防止多实例对同一模块的重复下载
+                loadQueque = S.Env._loadQueue,
+                status = loadQueque[url],
+                node = status;
 
             mod.status = mod.status || 0;
 
             // 可能已经由其它模块触发加载
-            if (mod.status < LOADING && node) {
-                mod.status = node.nodeName ? LOADING : LOADED;
+            if (mod.status < LOADING && status) {
+                // 该模块是否已经载入到 global ?
+                mod.status = status === LOADED ? LOADED : LOADING;
             }
 
-            // 加载 css, 仅发出请求，不做任何其它处理
+            // 1.20 兼容 1.1x 处理：加载 cssfullpath 配置的 css 文件
+            // 仅发出请求，不做任何其它处理
             if (S.isString(mod["cssfullpath"])) {
                 S.getScript(mod["cssfullpath"]);
                 mod["cssfullpath"] = mod.csspath = LOADED;
@@ -1900,7 +1953,7 @@ build time: Oct 12 14:28
                     self.__startLoadModuleName = mod.name;
                     self.__startLoadTime = Number(+new Date());
                 }
-                ret = S.getScript(url, {
+                node = S.getScript(url, {
                     success: function() {
                         if (isCss) {
 
@@ -1913,6 +1966,7 @@ build time: Oct 12 14:28
                                     self.__currentModule.config);
                                 self.__currentModule = null;
                             }
+                            // 模块载入后，如果需要也要混入对应 global 上模块定义
                             mixGlobal();
                             if (mod.fns && mod.fns.length > 0) {
 
@@ -1932,20 +1986,26 @@ build time: Oct 12 14:28
                     charset: mod.charset
                 });
 
-                loadQueque[url] = ret;
+                loadQueque[url] = node;
             }
             // 已经在加载中，需要添加回调到 script onload 中
             // 注意：没有考虑 error 情形
             else if (mod.status === LOADING) {
-                utils.scriptOnload(node, _scriptOnComplete);
+                utils.scriptOnload(node, function() {
+                    // 模块载入后，如果需要也要混入对应 global 上模块定义
+                    mixGlobal();
+                    _scriptOnComplete();
+                });
             }
             // 是内嵌代码，或者已经 loaded
             else {
+                // 也要混入对应 global 上模块定义
+                mixGlobal();
                 callback();
             }
 
             function _modError() {
-                S.log(mod.name + ' is not loaded! , can not find module in path : ' + mod['fullpath'], 'error');
+                S.log(mod.name + ' is not loaded! can not find module in path : ' + mod['fullpath'], 'error');
                 mod.status = ERROR;
             }
 
@@ -1954,13 +2014,13 @@ build time: Oct 12 14:28
                 // 需要同步到 instance 上去
                 // 注意：要求 mod 对应的文件里，仅修改该 mod 信息
                 if (cfg.global) {
-                    self.__mixMod(self.Env.mods, cfg.global.Env.mods,
-                        mod.name, cfg.global);
+                    self.__mixMod(mod.name, cfg.global);
                 }
             }
 
             function _scriptOnComplete() {
                 loadQueque[url] = LOADED;
+
                 if (mod.status !== ERROR) {
 
                     // 注意：当多个模块依赖同一个下载中的模块A下，模块A仅需 attach 一次
@@ -2183,9 +2243,11 @@ build time: Oct 12 14:28
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
 (function(S, loader, utils, data) {
+
     if ("require" in this) {
         return;
     }
+
     var LOADED = data.LOADED,
         ATTACHED = data.ATTACHED;
 
@@ -2204,10 +2266,6 @@ build time: Oct 12 14:28
 
             var self = this,
                 fired;
-            //如果 use 指定了 global
-            if (cfg.global) {
-                self.__mixMods(cfg.global);
-            }
 
             // 已经全部 attached, 直接执行回调即可
             if (self.__isAttached(modNames)) {
@@ -2220,7 +2278,8 @@ build time: Oct 12 14:28
             S.each(modNames, function(modName) {
                 // 从 name 开始调用，防止不存在模块
                 self.__attachModByName(modName, function() {
-                    if (!fired && self.__isAttached(modNames)) {
+                    if (!fired &&
+                        self.__isAttached(modNames)) {
                         fired = true;
                         var mods = self.__getModules(modNames);
                         callback && callback.apply(self, mods);
@@ -2234,6 +2293,7 @@ build time: Oct 12 14:28
         __getModules:function(modNames) {
             var self = this,
                 mods = [self];
+
             S.each(modNames, function(modName) {
                 if (!utils.isCss(modName)) {
                     mods.push(self.require(modName));
@@ -2247,34 +2307,36 @@ build time: Oct 12 14:28
          * @param {string} moduleName
          */
         require:function(moduleName) {
-            var mods = S.Env.mods,
+            var self = this,
+                mods = self.Env.mods,
                 mod = mods[moduleName],
-                re = S['onRequire'] && S['onRequire'](mod);
+                re = self['onRequire'] && self['onRequire'](mod);
             if (re !== undefined) {
                 return re;
             }
             return mod && mod.value;
         },
 
-        //加载指定模块名模块，如果不存在定义默认定义为内部模块
+        // 加载指定模块名模块，如果不存在定义默认定义为内部模块
         __attachModByName: function(modName, callback, cfg) {
-
             var self = this,
-                mods = self.Env.mods,
-                mod = mods[modName];
+                mods = self.Env.mods;
+
+            var mod = mods[modName];
             //没有模块定义
             if (!mod) {
                 // 默认 js/css 名字
                 // 不指定 .js 默认为 js
                 // 指定为 css 载入 .css
-                var componentJsName = self.Config['componentJsName'] || function(m) {
-                    var suffix = "js";
-                    if (/(.+)\.(js|css)$/i.test(m)) {
-                        suffix = RegExp.$2;
-                        m = RegExp.$1;
-                    }
-                    return m + '-min.' + suffix;
-                },  path = S.isFunction(componentJsName) ?
+                var componentJsName = self.Config['componentJsName'] ||
+                    function(m) {
+                        var suffix = "js",match;
+                        if (match = m.match(/(.+)\.(js|css)$/i)) {
+                            suffix = match[2];
+                            m = match[1];
+                        }
+                        return m + '-min.' + suffix;
+                    },  path = S.isFunction(componentJsName) ?
                     //一个模块合并到了了另一个模块文件中去
                     componentJsName(self._combine(modName))
                     : componentJsName;
@@ -2288,6 +2350,10 @@ build time: Oct 12 14:28
             mod.name = modName;
             if (mod && mod.status === ATTACHED) {
                 return;
+            }
+            // 先从 global 里取
+            if (cfg.global) {
+                self.__mixMod(modName, cfg.global);
             }
 
             self.__attach(mod, callback, cfg);
@@ -2324,7 +2390,6 @@ build time: Oct 12 14:28
                 mod['requires'] = mod['requires'] || [];
 
                 var newRequires = mod['requires'];
-                //var    optimize = [];
 
                 //本模块下载成功后串行下载 require
                 S.each(newRequires, function(r, i, newRequires) {
@@ -2340,18 +2405,7 @@ build time: Oct 12 14:28
                         //新增的依赖项
                         self.__attachModByName(r, fn, cfg);
                     }
-                    /**
-                     * 依赖项需要重新下载，最好和被依赖者一起 use
-                     */
-//                    if (!inA && (!rMod || rMod.status < LOADED)) {
-//                        optimize.push(r);
-//                    }
                 });
-
-//                if (optimize.length != 0) {
-//                    optimize.unshift(mod.name);
-//                    S.log(optimize + " : better to be used together", "warn");
-//                }
 
                 fn();
             }, cfg);
@@ -2359,7 +2413,8 @@ build time: Oct 12 14:28
             var attached = false;
 
             function fn() {
-                if (!attached && self.__isAttached(mod['requires'])) {
+                if (!attached &&
+                    self.__isAttached(mod['requires'])) {
 
                     if (mod.status === LOADED) {
                         self.__attachMod(mod);
@@ -2374,15 +2429,15 @@ build time: Oct 12 14:28
 
         __attachMod: function(mod) {
             var self = this,
-                defs = mod.fns;
+                fns = mod.fns;
 
-            if (defs) {
-                S.each(defs, function(def) {
+            if (fns) {
+                S.each(fns, function(fn) {
                     var value;
-                    if (S.isFunction(def)) {
-                        value = def.apply(self, self.__getModules(mod['requires']));
+                    if (S.isFunction(fn)) {
+                        value = fn.apply(self, self.__getModules(mod['requires']));
                     } else {
-                        value = def;
+                        value = fn;
                     }
                     mod.value = mod.value || value;
                 });
@@ -2418,14 +2473,13 @@ build time: Oct 12 14:28
         baseTestReg = /(seed|kissy)(-aio)?(-min)?\.js/i;
 
     function getBaseUrl(script) {
-        var src = script.src,
+        var src = utils.absoluteFilePath(script.src),
             prefix = script.getAttribute('data-combo-prefix') || '??',
             sep = script.getAttribute('data-combo-sep') || ',',
             parts = src.split(sep),
             base,
             part0 = parts[0],
             index = part0.indexOf(prefix);
-
         // no combo
         if (index == -1) {
             base = src.replace(baseReg, '$1');
@@ -2457,9 +2511,9 @@ build time: Oct 12 14:28
     S.__initLoader = function() {
         var self = this;
         self.Env.mods = self.Env.mods || {}; // all added mods
-        self.Env._loadQueue = {}; // information for loading and loaded mods
     };
 
+    S.Env._loadQueue = {}; // information for loading and loaded mods
     S.__initLoader();
 
     (function() {
@@ -2498,9 +2552,6 @@ build time: Oct 12 14:28
 
         // The functions to execute on DOM ready.
         readyList = [],
-
-        // Has the ready events already been bound?
-        readyBound = false,
 
         // The number of poll times.
         POLL_RETRYS = 500,
@@ -2553,18 +2604,10 @@ build time: Oct 12 14:28
          */
         globalEval: function(data) {
             if (data && RE_NOT_WHITE.test(data)) {
-                // Inspired by code by Andrea Giammarchi
-                // http://webreflection.blogspot.com/2007/08/global-scope-evaluation-and-dom.html
-                var head = doc.getElementsByTagName('head')[0] || docElem,
-                    script = doc.createElement('script');
-
-                // It works! All browsers support!
-                script.text = data;
-
-                // Use insertBefore instead of appendChild to circumvent an IE6 bug.
-                // This arises when a base node is used.
-                head.insertBefore(script, head.firstChild);
-                head.removeChild(script);
+                // http://weblogs.java.net/blog/driscoll/archive/2009/09/08/eval-javascript-global-context
+                ( window.execScript || function(data) {
+                    window[ "eval" ].call(window, data);
+                } )(data);
             }
         },
 
@@ -2577,10 +2620,6 @@ build time: Oct 12 14:28
          * @return {KISSY}
          */
         ready: function(fn) {
-            // Attach the listeners
-            if (!readyBound) {
-                _bindReady();
-            }
 
             // If the DOM is already ready
             if (isReady) {
@@ -2621,15 +2660,12 @@ build time: Oct 12 14:28
      * Binds ready events.
      */
     function _bindReady() {
-        var doScroll = doc.documentElement.doScroll,
+        var doScroll = docElem.doScroll,
             eventType = doScroll ? 'onreadystatechange' : 'DOMContentLoaded',
             COMPLETE = 'complete',
             fire = function() {
                 _fireReady();
             };
-
-        // Set to true once it runs
-        readyBound = true;
 
         // Catch cases where ready() is called after the
         // browser event has already occurred.
@@ -2721,6 +2757,14 @@ build time: Oct 12 14:28
     if (location && (location.search || EMPTY).indexOf('ks-debug') !== -1) {
         S.Config.debug = true;
     }
+
+    /**
+     * bind on start
+     * in case when you bind but the DOMContentLoaded has triggered
+     * then you has to wait onload
+     * worst case no callback at all
+     */
+    _bindReady();
 
 })(KISSY, undefined);
 /**

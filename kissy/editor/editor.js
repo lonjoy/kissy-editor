@@ -2,15 +2,13 @@
  * @preserve Constructor for kissy editor,dependency moved to independent module
  *      thanks to CKSource's intelligent work on CKEditor
  * @author yiminghe@gmail.com, lifesinger@gmail.com
- * @version: 2.1.5
- * @buildtime: 2011-10-12 16:36:19
+ * @version: 2
+ * @buildtime: 2011-11-09 16:13:55
  */
 
 /**
  * ugly declartion
  */
-
-
 KISSY.add("editor/export", function(S) {
     var DOM = S.DOM,
         TRUE = true,
@@ -69,7 +67,6 @@ KISSY.add("editor/export", function(S) {
                 //通过 add 里面的又一层 addPlugin 保证
                 //use : 下载，非图形为乱序并行
                 //plugin 的attach（按钮）为串行
-
                 S.Editor.use("button,select", function() {
                     S.use.call(self, mods.join(","), function() {
                         //载入了插件的attach功能，现在按照顺序一个个attach
@@ -110,11 +107,13 @@ KISSY.add("editor/export", function(S) {
     var getJSName;
     if (parseFloat(S.version) < 1.2) {
         getJSName = function () {
-            return "plugin-min.js?t=2011-10-12 16:36:19";
+            return "plugin-min.js?t=" +
+                encodeURIComponent("2011-11-09 16:13:55");
         };
     } else {
         getJSName = function (m, tag) {
-            return m + '/plugin-min.js' + (tag ? tag : '?t=2011-10-12 16:36:19');
+            return m + '/plugin-min.js' + (tag ? tag : '?t=' +
+                encodeURIComponent('2011-11-09 16:13:55'));
         };
     }
 

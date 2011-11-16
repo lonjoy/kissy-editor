@@ -2,15 +2,13 @@
  * @preserve Constructor for kissy editor,dependency moved to independent module
  *      thanks to CKSource's intelligent work on CKEditor
  * @author yiminghe@gmail.com, lifesinger@gmail.com
- * @version: 2.1.5
- * @buildtime: 2011-10-12 16:36:19
+ * @version: 2
+ * @buildtime: 2011-11-09 16:13:55
  */
 
 /**
  * ugly declartion
  */
-
-
 KISSY.add("editor/export", function(S) {
     var DOM = S.DOM,
         TRUE = true,
@@ -69,7 +67,6 @@ KISSY.add("editor/export", function(S) {
                 //通过 add 里面的又一层 addPlugin 保证
                 //use : 下载，非图形为乱序并行
                 //plugin 的attach（按钮）为串行
-
                 S.Editor.use("button,select", function() {
                     S.use.call(self, mods.join(","), function() {
                         //载入了插件的attach功能，现在按照顺序一个个attach
@@ -110,11 +107,13 @@ KISSY.add("editor/export", function(S) {
     var getJSName;
     if (parseFloat(S.version) < 1.2) {
         getJSName = function () {
-            return "plugin-min.js?t=2011-10-12 16:36:19";
+            return "plugin-min.js?t=" +
+                encodeURIComponent("2011-11-09 16:13:55");
         };
     } else {
         getJSName = function (m, tag) {
-            return m + '/plugin-min.js' + (tag ? tag : '?t=2011-10-12 16:36:19');
+            return m + '/plugin-min.js' + (tag ? tag : '?t=' +
+                encodeURIComponent('2011-11-09 16:13:55'));
         };
     }
 
@@ -175,7 +174,7 @@ KISSY.Editor.add("utils", function(KE) {
                     } else {
                         url += "?";
                     }
-                    url += "t=" + encodeURIComponent("2011-09-19 15:00:39");
+                    url += "t=" + encodeURIComponent("2011-10-31 11:10:42");
                 }
                 return KE["Config"].base + url;
             },
@@ -2311,7 +2310,7 @@ KISSY.Editor.add("definition", function(KE) {
             // With IE, the custom domain has to be taken care at first,
             // for other browsers, the 'src' attribute should be left empty to
             // trigger iframe's 'load' event.
-            ' src="' + ( IS_IE ? 'javascript:void(function(){' + encodeURIComponent(srcScript) + '}())' : '' ) + '" ' +
+            (IS_IE ? (' src="' + 'javascript:void(function(){' + encodeURIComponent(srcScript) + '}())"') : '') +
             //' tabIndex="' + ( UA.webkit ? -1 : "$(tabIndex)" ) + '" ' +
             ' allowTransparency="true" ' +
             '></iframe></div>' +
@@ -2455,9 +2454,11 @@ KISSY.Editor.add("definition", function(KE) {
             //其他可能处理
             self.fire("destroy");
             textarea.insertBefore(editorWrap);
+
             editorWrap.remove();
+
             textarea.css({
-                width:editorWrap.css("width"),
+                width:editorWrap[0].style.width,
                 height:self.wrap.css("height")
             });
             textarea.show();
@@ -2482,12 +2483,10 @@ KISSY.Editor.add("definition", function(KE) {
          * @this {KISSY.Editor}
          * @param name {string}
          * @param callback {function(Object)}
-         * @param cfg {Object}
          */
-        useDialog:function(name, callback, cfg) {
+        useDialog:function(name, callback) {
             var self = this,
                 Overlay = KE.Overlay;
-            cfg = cfg || {};
             Overlay && Overlay.loading();
             self.use(name, function() {
                 var dialog = self.getDialog(name);
@@ -2501,8 +2500,21 @@ KISSY.Editor.add("definition", function(KE) {
                 callback(dialog);
                 Overlay && Overlay.unloading();
             });
-        }
-        ,
+        },
+
+        showDialog:function(name, args, fn) {
+            var self = this;
+            args = args || [];
+            self.useDialog(name, function(dialog) {
+                dialog.show.apply(dialog, args);
+                fn && fn(dialog);
+                self.fire("dialogShow", {
+                    dialog:dialog.dialog,
+                    pluginDialog:dialog,
+                    dialogName:name
+                });
+            });
+        },
         /**
          *@this {KISSY.Editor}
          * @param name {string}
@@ -2669,9 +2681,11 @@ KISSY.Editor.add("definition", function(KE) {
             var self = this,
                 doc = self.document,
                 win = DOM._4e_getWin(doc);
-            UA.webkit && win && win.parent && win.parent.focus();
-            //yiminghe note:webkit need win.focus
-            UA.webkit && win && win.focus();
+            // firefox7 need this
+            win && win.parent && win.parent.focus();
+            // yiminghe note:webkit need win.focus
+            // firefox 7 needs also?
+            win && win.focus();
             //ie and firefox need body focus
             doc && doc.body.focus();
             self.notifySelectionChange();
@@ -2974,7 +2988,8 @@ KISSY.Editor.add("definition", function(KE) {
             self.focus();
             self.fire("save");
 
-            var editorDoc = self.document,saveInterval = 0;
+            var editorDoc = self.document,
+                saveInterval = 0;
             // ie9 仍然需要这样！
             // ie9 标准 selection 有问题，连续插入不能定位光标到插入内容后面
             if (IS_IE) {
@@ -2991,19 +3006,34 @@ KISSY.Editor.add("definition", function(KE) {
                 // ie9 仍然没有
                 // 1.webkit insert html 有问题！会把标签去掉，算了直接用 insertElement.
                 // 10.0 修复？？
+                // firefox 初始编辑器无焦点报异常
                 try {
-                    // firefox 初始编辑器无焦点报异常，等会再来就可以了
                     editorDoc.execCommand('inserthtml', FALSE, data);
                 } catch(e) {
                     setTimeout(function() {
+                        // still not ok in ff!
+                        // 手动选择 body 的第一个节点
+                        if (self.getSelection().getRanges().length == 0) {
+                            var r = new KE.Range(editorDoc);
+                            var node = DOM._4e_first(editorDoc.body, function(el) {
+                                return el[0].nodeType == 1 && el._4e_name() != "br";
+                            });
+                            if (!node) {
+                                node = new Node(editorDoc.createElement("p"));
+                                editorDoc.body.appendChild(node[0]);
+                            }
+                            r.setStartAt(node, KE.RANGE.POSITION_AFTER_START);
+                            r.select();
+                        }
                         editorDoc.execCommand('inserthtml', FALSE, data);
-                    }, 100);
-                    saveInterval = 100;
+                    }, saveInterval = 100);
                 }
             }
             // bug by zjw2004112@163.com :
             // 有的浏览器 ： chrome , ie67 貌似不会自动滚动到粘贴后的位置
-            self.getSelection().scrollIntoView();
+            setTimeout(function() {
+                self.getSelection().scrollIntoView();
+            }, saveInterval);
             self._saveLater(saveInterval);
         },
 
@@ -3060,7 +3090,7 @@ KISSY.Editor.add("definition", function(KE) {
         //2.0 body.contentEditable=true body外不是编辑模式
         if (IS_IE) {
             // Don't display the focus border.
-            body.hideFocus = TRUE;
+            body['hideFocus'] = TRUE;
             // Disable and re-enable the body to avoid IE from
             // taking the editing focus at startup. (#141 / #523)
             body.disabled = TRUE;
@@ -7381,9 +7411,6 @@ KISSY.Editor.add("selection", function(KE) {
             Event.on(doc, 'keyup', editor._monitor, editor);
         }
 
-        // List of elements in which has no way to move editing focus outside.
-        var nonExitableElementNames = { "table":1,"pre":1 };
-
         // Matching an empty paragraph at the end of document.
         //注释也要排除掉
         var emptyParagraphRegexp = /\s*<(p|div|address|h\d|center)[^>]*>\s*(?:<br[^>]*>|&nbsp;|\u00A0|&#160;|(<!--[\s\S]*?-->))?\s*(:?<\/\1>)?(?=\s*$|<\/body>)/gi;
@@ -7399,6 +7426,14 @@ KISSY.Editor.add("selection", function(KE) {
         var nextValidEl = function(node) {
             return isNotWhitespace(node) && node && node[0].nodeType != 8
         };
+
+        // 光标可以不能放在里面
+        function cannotCursorPlaced(element) {
+            var dtd = KE.XHTML_DTD;
+            return element._4e_isBlockBoundary() && dtd.$empty[ element._4e_name() ];
+        }
+
+
         /**
          * 如果选择了body下面的直接inline元素，则新建p
          */
@@ -7415,7 +7450,6 @@ KISSY.Editor.add("selection", function(KE) {
                 ) return;
 
             if (blockLimit._4e_name() == "body") {
-
                 var fixedBlock = range.fixBlock(TRUE, "p");
                 if (fixedBlock) {
                     //firefox选择区域变化时自动添加空行，不要出现裸的text
@@ -7423,14 +7457,14 @@ KISSY.Editor.add("selection", function(KE) {
                         var element = fixedBlock._4e_next(nextValidEl);
                         if (element &&
                             element[0].nodeType == KEN.NODE_ELEMENT &&
-                            !nonExitableElementNames[ element._4e_name() ]) {
+                            !cannotCursorPlaced[ element ]) {
                             range.moveToElementEditablePosition(element);
                             fixedBlock._4e_remove();
                         } else {
                             element = fixedBlock._4e_previous(nextValidEl);
                             if (element &&
                                 element[0].nodeType == KEN.NODE_ELEMENT &&
-                                !nonExitableElementNames[element._4e_name()]) {
+                                !cannotCursorPlaced[element]) {
                                 range.moveToElementEditablePosition(element,
                                     //空行的话还是要移到开头的
                                     isBlankParagraph(element) ? FALSE : TRUE);
@@ -8033,7 +8067,8 @@ KISSY.Editor.add("styles", function(KE) {
      * @param range {KISSY.Editor.Range}
      */
     function applyInlineStyle(range) {
-        var self = this,document = range.document;
+        var self = this,
+            document = range.document;
 
         if (range.collapsed) {
             // Create the element to be inserted in the DOM.
@@ -8095,9 +8130,27 @@ KISSY.Editor.add("styles", function(KE) {
                     && ( !def["childRule"] || def["childRule"](currentNode) ) )) {
                     var currentParent = currentNode.parent();
 
+
+                    // hack for
+                    // 1<a href='http://www.taobao.com'>2</a>3
+                    // select all ,set link to http://www.ckeditor.com
+                    // expect => <a href='http://www.ckeditor.com'>123</a> (same with tinymce)
+                    // but now => <a href="http://www.ckeditor.com">1</a>
+                    // <a href="http://www.taobao.com">2</a>
+                    // <a href="http://www.ckeditor.com">3</a>
+                    // http://dev.ckeditor.com/ticket/8470
+                    if (currentParent &&
+                        elementName == "a" &&
+                        currentParent._4e_name() == elementName) {
+                        var tmpANode = getElement(self, document, undefined);
+                        currentParent._4e_moveChildren(tmpANode);
+                        currentParent[0].parentNode.replaceChild(tmpANode[0], currentParent[0]);
+                        tmpANode._4e_mergeSiblings();
+                    }
+
                     // Check if the style element can be a child of the current
                     // node parent or if the element is not defined in the DTD.
-                    if (currentParent && currentParent[0]
+                    else if (currentParent && currentParent[0]
                         && ( ( KE.XHTML_DTD[currentParent._4e_name()] ||
                         KE.XHTML_DTD["span"] )[ elementName ] ||
                         isUnknownElement )
@@ -8807,14 +8860,14 @@ KISSY.Editor.add("styles", function(KE) {
 
     var StyleP = KEStyle.prototype;
     KE.Utils.extern(StyleP, {
-            "apply":StyleP.apply,
-            "remove":StyleP.remove,
-            "applyToRange":StyleP.applyToRange,
-            "removeFromRange":StyleP.removeFromRange,
-            "applyToObject":StyleP.applyToObject,
-            "checkElementRemovable":StyleP.checkElementRemovable,
-            "checkActive":StyleP.checkActive
-        });
+        "apply":StyleP.apply,
+        "remove":StyleP.remove,
+        "applyToRange":StyleP.applyToRange,
+        "removeFromRange":StyleP.removeFromRange,
+        "applyToObject":StyleP.applyToObject,
+        "checkElementRemovable":StyleP.checkElementRemovable,
+        "checkActive":StyleP.checkActive
+    });
 });/**
  * modified from ckeditor,htmlparser for malform html string
  * @author yiminghe@gmail.com
@@ -10673,13 +10726,20 @@ KISSY.Editor.add("button", function() {
         return;
     }
 
+    function getTipText(str) {
+        if (str && str.indexOf("<") == -1) {
+            return str;
+        }
+        return 0;
+    }
+
     var TripleButton = S['UIBase'].create([S['UIBase']['Box']['Render']
         || S['UIBase']['Box']
     ], {
         _updateHref:function() {
             var self = this;
             self.get("el").attr("href", "javascript:void('" +
-                (self.get("text") || self.get("title") ) + "')");
+                (getTipText(self.get("text")) || getTipText(self.get("title")) ) + "')");
         },
         bindUI:function() {
             var self = this,el = self.get("el");
@@ -10709,7 +10769,7 @@ KISSY.Editor.add("button", function() {
             var self = this,
                 el = self.get("el");
             if (contentCls !== undefined) {
-                el.html("<span class='ke-toolbar-item " + contentCls + "'>");
+                el.html("<span class='ke-toolbar-item " + contentCls + "' />");
                 //ie 失去焦点
                 el._4e_unselectable();
             }
@@ -10953,6 +11013,14 @@ KISSY.Editor.add("select", function() {
 
     };
     var addRes = KE.Utils.addRes,destroyRes = KE.Utils.destroyRes;
+
+    function getTipText(str) {
+        if (str && str.indexOf("<") == -1) {
+            return str;
+        }
+        return 0;
+    }
+
     S.extend(Select, S.Base, {
         _init:function() {
             var self = this,
@@ -10978,7 +11046,7 @@ KISSY.Editor.add("select", function() {
             if (title) {
                 el.attr(TITLE, title);
             }
-            titleA.attr("href", "javascript:void('" + ( title || 0) + "')");
+            titleA.attr("href", "javascript:void('" + getTipText(title) + "')");
             if (cls) {
                 el.addClass(cls);
             }
@@ -11034,7 +11102,7 @@ KISSY.Editor.add("select", function() {
                 for (var i = 0; i < items.length; i++) {
                     var item = items[i],a = new Node("<a " +
                         "class='ke-select-menu-item' " +
-                        "href='javascript:void(\"" + item.name + "\")' data-value='" + item.value + "'>"
+                        "href='javascript:void(\"" + getTipText(item.name) + "\")' data-value='" + item.value + "'>"
                         + item.name + "</a>", item.attrs)
                         .appendTo(_selectList)
                         ._4e_unselectable();
@@ -11042,7 +11110,7 @@ KISSY.Editor.add("select", function() {
             } else if (empty = self.get("emptyText")) {
                 new Node("<a " +
                     "class='ke-select-menu-item' " +
-                    "href='javascript:void(\"" + empty + "\")'>"
+                    "href='javascript:void(\"" + getTipText(empty) + "\")'>"
                     + empty + "</a>")
                     .appendTo(_selectList)
                     ._4e_unselectable();
@@ -12086,9 +12154,7 @@ KISSY.Editor.add("colorsupport", function() {
             others.on("click", function(ev) {
                 ev.halt();
                 colorWin.hide();
-                editor.useDialog("color/dialog", function(dialog) {
-                    dialog.show(self);
-                });
+                editor.showDialog("color/dialog", [self]);
             });
             cfg._prepare = cfg._show;
             cfg._show.call(self);
@@ -13587,9 +13653,7 @@ KISSY.Editor.add("flash/support", function() {
         show:function(ev, selected) {
             var self = this,
                 editor = self.editor;
-            editor.useDialog(self._type + "/dialog", function(dialog) {
-                dialog.show(selected);
-            });
+            editor.showDialog(self._type + "/dialog", [selected]);
         },
 
         destroy:function() {
@@ -14573,7 +14637,6 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
     //每个编辑器的规则独立
     if (editor.htmlDataProcessor) return;
 
-
     /**
      * 给 fragment,Element,Dtd 加一些常用功能
      */
@@ -14696,7 +14759,7 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
                 //firefox 自有属性名
                 [/^-moz/i],
                 //webkit 自有属性名
-                [/^-webkit/i],
+                [/^-webkit/i]//,
                 //qc 3711，只能出现我们规定的字体
                 /*
                  [ /font-size/i,'',function(v) {
@@ -14728,7 +14791,9 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
                 // qc 3701，去除行高，防止乱掉
                 // beily_cn 报告需要去掉
                 // [/line-height/i],
-                [/display/i,/none/i]
+
+                // 旺铺编辑 html ，幻灯片切换 html
+                // [/display/i,/none/i]
             ], undefined);
 
         function isListBulletIndicator(element) {
@@ -15037,41 +15102,29 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
                         assembleList(el);
                     }
                 },
-                /*
-                 td:function(
-                 el
-                 ) {
-                 if (el.attributes.style) {
-                 //去掉td的style，word copy非常讨厌
-                 //现在要加padding了
-                 delete el.attributes.style;
-                 }
-                 },*/
                 /**
                  * ul,li 从 ms word 重建
                  * @param element
                  */
-                span
-                    :
-                    function(element) {
-                        // IE/Safari: remove the span if it comes from list bullet text.
-                        if (!UA.gecko &&
-                            isListBulletIndicator(element.parent)
-                            )
-                            return false;
+                span:function(element) {
+                    // IE/Safari: remove the span if it comes from list bullet text.
+                    if (!UA.gecko &&
+                        isListBulletIndicator(element.parent)
+                        )
+                        return false;
 
-                        // For IE/Safari: List item bullet type is supposed to be indicated by
-                        // the text of a span with style 'mso-list : Ignore' or an image.
-                        if (!UA.gecko &&
-                            isListBulletIndicator(element)) {
-                            var listSymbolNode = element.firstChild(function(node) {
-                                return node.value || node.name == 'img';
-                            });
-                            var listSymbol = listSymbolNode && ( listSymbolNode.value || 'l.' ),
-                                listType = listSymbol.match(/^([^\s]+?)([.)]?)$/);
-                            return createListBulletMarker(listType, listSymbol);
-                        }
+                    // For IE/Safari: List item bullet type is supposed to be indicated by
+                    // the text of a span with style 'mso-list : Ignore' or an image.
+                    if (!UA.gecko &&
+                        isListBulletIndicator(element)) {
+                        var listSymbolNode = element.firstChild(function(node) {
+                            return node.value || node.name == 'img';
+                        });
+                        var listSymbol = listSymbolNode && ( listSymbolNode.value || 'l.' ),
+                            listType = listSymbol.match(/^([^\s]+?)([.)]?)$/);
+                        return createListBulletMarker(listType, listSymbol);
                     }
+                }
             },
 
             attributes:{
@@ -15083,7 +15136,12 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
                     function(value
                              // , element
                         ) {
-                        if (/(^|\s+)Mso/.test(value)) return false;
+                        if (
+                            !value ||
+                                /(^|\s+)Mso/.test(value)
+                            ) {
+                            return false;
+                        }
                         return value;
                     },
                 'style'
@@ -15091,7 +15149,9 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
                     function(value) {
                         //去除<i style="mso-bidi-font-style: normal">微软垃圾
                         var re = filterStyle(value);
-                        if (!re) return false;
+                        if (!re) {
+                            return false;
+                        }
                         return re;
                     }
             },
@@ -15179,42 +15239,24 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
                 },
                 // Remove empty link but not empty anchor.(#3829)
                 a : function(element) {
-                    if (!( element.children.length ||
-                        element.attributes.name ||
-                        element.attributes['_ke_saved_name'])) {
+                    if (!element.children.length
+                        && S.isEmptyObject(element.attributes)) {
                         return false;
                     }
                 },
-                //对应 table plugin , _genTable method
-                td:function(element) {
-                    var c = element.children;
-
-                    // firefox 添加的 br 去掉
-                    // 无缘无故去掉？为什么？？
-                    // for (var i = 0; i < c.length; i++) {
-                    //     if (c[i].name == "br") {
-                    //         c.splice(i, 1);
-                    //         --i;
-                    //     }
-                    // }
-
-                    //ie预览完美需要 &nbsp;
-                    if (!c.length) {
-                        var t = new KE.HtmlParser.Text("&nbsp;");
-                        c.push(t);
-                    }
-                },
                 span:function(element) {
-
-                    if (! element.children.length
-                        && S.isEmptyObject(element.attributes))return false;
+                    if (!element.children.length
+                        && S.isEmptyObject(element.attributes)) {
+                        return false;
+                    }
                 }
             },
             attributes :  {
                 //清除空style
                 style:function(v) {
-                    if (!S.trim(v))
+                    if (!S.trim(v)) {
                         return false;
+                    }
                 }
             },
             attributeNames :  [
@@ -15247,10 +15289,13 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
         if (UA.ie) {
             // IE outputs style attribute in capital letters. We should convert
             // them back to lower case.
-            defaultHtmlFilterRules.attributes.style = function(value
-                                                               // , element
+            // bug: style='background:url(www.G.cn)' =>  style='background:url(www.g.cn)'
+            // 只对 propertyName 小写
+            defaultHtmlFilterRules.attributes.style = function(value // , element
                 ) {
-                return value.toLowerCase();
+                return value.replace(/(^|;)([^:]+)/g, function(match) {
+                    return match.toLowerCase();
+                });
             };
         }
 
@@ -15301,7 +15346,6 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
         function trimFillers(block, fromSource) {
             // If the current node is a block, and if we're converting from source or
             // we're not in IE then search for and remove any tailing BR node.
-            //
             // Also, any &nbsp; at the end of blocks are fillers, remove them as well.
             // (#2886)
             var children = block.children,
@@ -15309,11 +15353,13 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
             if (lastChild) {
                 if (( fromSource || !UA.ie ) &&
                     lastChild.type == KEN.NODE_ELEMENT &&
-                    lastChild.name == 'br')
+                    lastChild.name == 'br') {
                     children.pop();
+                }
                 if (lastChild.type == KEN.NODE_TEXT &&
-                    tailNbspRegex.test(lastChild.value))
+                    tailNbspRegex.test(lastChild.value)) {
                     children.pop();
+                }
             }
         }
 
@@ -15322,7 +15368,6 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
 
             if (blockNeedsExtension(block)) {
                 //任何浏览器都要加空格！，否则空表格可能间隙太小，不能容下光标
-
                 if (UA.ie) {
                     block.add(new KE.HtmlParser.Text('\xa0'));
                 } else {
@@ -15336,8 +15381,9 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
 
         function extendBlockForOutput(block) {
             trimFillers(block, false);
-            if (blockNeedsExtension(block))
+            if (blockNeedsExtension(block)) {
                 block.add(new KE.HtmlParser.Text('\xa0'));
+            }
         }
 
         // Find out the list of block-like tags that can contain <br>.
@@ -15347,9 +15393,14 @@ KISSY.Editor.add("htmldataprocessor", function(editor) {
             dtd.$listItem,
             dtd.$tableContent),i;
         for (i in blockLikeTags) {
-            if (! ( 'br' in dtd[i] ))
+            if (! ( 'br' in dtd[i] )) {
                 delete blockLikeTags[i];
+            }
         }
+
+        // table 布局需要，不要自动往 td 中加东西
+        delete blockLikeTags.td;
+
         // We just avoid filler in <pre> right now.
         // TODO: Support filler for <pre>, line break is also occupy line height.
         delete blockLikeTags.pre;
@@ -15548,9 +15599,7 @@ KISSY.Editor.add("image", function(editor) {
             },
             show:function(ev, _selectedEl) {
                 var editor = this.editor;
-                editor.useDialog("image/dialog", function(dialog) {
-                    dialog.show(_selectedEl);
-                });
+                editor.showDialog("image/dialog", [_selectedEl]);
             }
         });
 
@@ -16133,7 +16182,7 @@ KISSY.Editor.add("link", function(editor) {
             /**
              * bubbleview/tip 初始化，所有共享一个 tip
              */
-            tipHtml = '前往链接： '
+                tipHtml = '前往链接： '
                 + ' <a ' +
                 'href="" '
                 + ' target="_blank" ' +
@@ -16243,9 +16292,7 @@ KISSY.Editor.add("link", function(editor) {
             },
             offClick:function() {
                 var self = this;
-                self.editor.useDialog("link/dialog", function(dialog) {
-                    dialog.show(self);
-                });
+                self.editor.showDialog("link/dialog", [self]);
             },
             destroy:function() {
                 this.editor.destroyDialog("link/dialog");
@@ -17931,7 +17978,7 @@ KISSY.Editor.add("progressbar", function() {
                         "</div>" +
                         "</div>"
                     ).appendTo(el),
-                title = new Node("<span class='ke-progressbar-title'>").appendTo(el);
+                title = new Node("<span class='ke-progressbar-title'></span>").appendTo(el);
             if (container)
                 el.appendTo(container);
             self.el = el;
@@ -18619,9 +18666,7 @@ KISSY.Editor.add("table/support", function() {
     S.augment(TableUI, {
         _tableShow:function(ev, selectedTable, td) {
             var editor = this.editor;
-            editor.useDialog("table/dialog", function(dialog) {
-                dialog.show(selectedTable, td);
-            });
+            editor.showDialog("table/dialog", [selectedTable, td]);
         },
         destroy:function() {
             destroyRes.call(this);

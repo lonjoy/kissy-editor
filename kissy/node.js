@@ -1,197 +1,98 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 13:54
+build time: Nov 11 11:39
 */
 /**
  * @module  anim-node-plugin
- * @author  lifesinger@gmail.com,
+ * @author  yiminghe@gmail.com,
+ *          lifesinger@gmail.com,
  *          qiaohua@taobao.com,
- *          yiminghe@gmail.com
+ *
  */
-KISSY.add('node/anim-plugin', function(S, DOM, Anim, N, undefined) {
+KISSY.add('node/anim', function(S, DOM, Anim, Node, undefined) {
 
-    var NLP = N.prototype,
-        ANIM_KEY = "ksAnims" + S.now(),
-        DISPLAY = 'display',
-        NONE = 'none',
-        OVERFLOW = 'overflow',
-        HIDDEN = 'hidden',
-        OPCACITY = 'opacity',
-        HEIGHT = 'height',
-        SHOW = "show",
-        HIDE = "hide",
-        FADE = "fade",
-        SLIDE = "slide",
-        TOGGLE = "toggle",
-        WIDTH = 'width',
-        FX = {
-            show: [OVERFLOW, OPCACITY, HEIGHT, WIDTH],
-            fade: [OPCACITY],
-            slide: [OVERFLOW, HEIGHT]
-        };
+    var FX = [
+        // height animations
+        [ "height", "marginTop", "marginBottom", "paddingTop", "paddingBottom" ],
+        // width animations
+        [ "width", "marginLeft", "marginRight", "paddingLeft", "paddingRight" ],
+        // opacity animations
+        [ "opacity" ]
+    ];
 
-    N.__ANIM_KEY = ANIM_KEY;
-
-    (function(P) {
-
-        function attachAnim(elem, anim) {
-            var anims = DOM.data(elem, ANIM_KEY);
-            if (!anims) {
-                DOM.data(elem, ANIM_KEY, anims = []);
-            }
-            anim.on("complete", function() {
-                var anims = DOM.data(elem, ANIM_KEY);
-                if (anims) {
-                    // 结束后从关联的动画队列中删除当前动画
-                    var index = S.indexOf(anim, anims);
-                    if (index >= 0) {
-                        anims.splice(index, 1);
-                    }
-                    if (!anims.length) {
-                        DOM.removeData(elem, ANIM_KEY);
-                    }
-                }
-            });
-            // 当前节点的所有动画队列
-            anims.push(anim);
+    function getFxs(type, num, from) {
+        var ret = [],
+            obj = {};
+        for (var i = from || 0; i < num; i++) {
+            ret.push.apply(ret, FX[i]);
         }
+        for (i = 0; i < ret.length; i++) {
+            obj[ret[i]] = type;
+        }
+        return obj;
+    }
 
-        P.animate = function() {
+    S.augment(Node, {
+        animate:function() {
             var self = this,
                 args = S.makeArray(arguments);
             S.each(self, function(elem) {
-                var anim = Anim.apply(undefined, [elem].concat(args)).run();
-                attachAnim(elem, anim);
+                Anim.apply(undefined, [elem].concat(args)).run();
             });
             return self;
-        };
-
-        P.stop = function(finish) {
+        },
+        stop:function(end, clearQueue, queue) {
             var self = this;
             S.each(self, function(elem) {
-                var anims = DOM.data(elem, ANIM_KEY);
-                if (anims) {
-                    S.each(anims, function(anim) {
-                        anim.stop(finish);
-                    });
-                    DOM.removeData(elem, ANIM_KEY);
-                }
+                Anim.stop(elem, end, clearQueue, queue);
             });
             return self;
-        };
-
-        S.each({
-                show: [SHOW, 1],
-                hide: [SHOW, 0],
-                fadeIn: [FADE, 1],
-                fadeOut: [FADE, 0],
-                slideDown: [SLIDE, 1],
-                slideUp: [SLIDE, 0]
-            },
-            function(v, k) {
-                P[k] = function(speed, callback, easing, nativeSupport) {
-                    var self = this;
-                    // 没有参数时，调用 DOM 中的对应方法
-                    if (DOM[k] && !speed) {
-                        DOM[k](self);
-                    } else {
-                        S.each(self, function(elem) {
-                            var anim = fx(elem, v[0], speed, callback,
-                                v[1], easing || 'easeOut', nativeSupport);
-                            attachAnim(elem, anim);
-                        });
-                    }
-                    return self;
-                };
-            });
-
-        // toggle 提出来单独写，清晰点
-        P[TOGGLE] = function(speed) {
+        },
+        isRunning:function() {
             var self = this;
-            P[self.css(DISPLAY) === NONE ? SHOW : HIDE].apply(self, arguments);
-        };
-    })(NLP);
-
-    function fx(elem, which, speed, callback, visible, easing, nativeSupport) {
-
-        if (visible) {
-            DOM.show(elem);
+            for (var i = 0; i < self.length; i++) {
+                if (Anim.isRunning(self[i])) {
+                    return 1;
+                }
+            }
+            return 0;
         }
+    });
 
-        // 根据不同类型设置初始 css 属性, 并设置动画参数
-        var originalStyle = {}, style = {};
-        S.each(FX[which], function(prop) {
-            /**
-             * 2011-08-19
-             * originalStyle 记录行内样式，防止外联样式干扰！
-             */
-            var elemStyle = elem.style;
-            if (prop === OVERFLOW) {
-                originalStyle[OVERFLOW] = elemStyle[OVERFLOW];
-                DOM.css(elem, OVERFLOW, HIDDEN);
-            }
-            else if (prop === OPCACITY) {
-                // 取行内 opacity
-                originalStyle[OPCACITY] = DOM.style(elem, OPCACITY);
-                style.opacity = visible ? 1 : 0;
-                if (visible) {
-                    DOM.css(elem, OPCACITY, 0);
+    S.each({
+            show: getFxs("show", 3),
+            hide: getFxs("hide", 3),
+            toggle:getFxs("toggle", 3),
+            fadeIn: getFxs("show", 3, 2),
+            fadeOut: getFxs("hide", 3, 2),
+            fadeToggle:getFxs("toggle", 3, 2),
+            slideDown: getFxs("show", 1),
+            slideUp: getFxs("hide", 1),
+            slideToggle:getFxs("toggle", 1)
+        },
+        function(v, k) {
+            Node.prototype[k] = function(speed, callback, easing) {
+                var self = this;
+                // 没有参数时，调用 DOM 中的对应方法
+                if (DOM[k] && !speed) {
+                    DOM[k](self);
+                } else {
+                    S.each(self, function(elem) {
+                        Anim(elem, v, speed, easing || 'easeOut', callback).run();
+                    });
                 }
-            }
-            else if (prop === HEIGHT) {
-                originalStyle[HEIGHT] = elemStyle[HEIGHT];
-                //http://arunprasad.wordpress.com/2008/08/26/naturalwidth-and-naturalheight-for-image-element-in-internet-explorer/
-                style.height = (visible ?
-                    DOM.height(elem) || elem.naturalHeight :
-                    0) + "px";
-                if (visible) {
-                    DOM.css(elem, HEIGHT, 0);
-                }
-            }
-            else if (prop === WIDTH) {
-                originalStyle[WIDTH] = elemStyle[WIDTH];
-                style.width = (visible ?
-                    DOM.width(elem) || elem.naturalWidth :
-                    0) + "px";
-                if (visible) {
-                    DOM.css(elem, WIDTH, 0);
-                }
-            }
+                return self;
+            };
         });
-
-        // 开始动画
-        return new Anim(elem, style, speed, easing, function() {
-            // 如果是隐藏，需要设置 diaplay
-            if (!visible) {
-                DOM.hide(elem);
-            }
-
-            // 还原样式
-            if (originalStyle[HEIGHT] !== undefined) {
-                DOM.css(elem, "height", originalStyle[HEIGHT]);
-            }
-            if (originalStyle[WIDTH] !== undefined) {
-                DOM.css(elem, "width", originalStyle[WIDTH]);
-            }
-            if (originalStyle[OPCACITY] !== undefined) {
-                DOM.css(elem, "opacity", originalStyle[OPCACITY]);
-            }
-            if (originalStyle[OVERFLOW] !== undefined) {
-                DOM.css(elem, "overflow", originalStyle[OVERFLOW]);
-            }
-
-            if (callback) {
-                callback();
-            }
-
-        }, nativeSupport).run();
-    }
 
 }, {
     requires:["dom","anim","./base"]
 });
 /**
+ * 2011-11-10
+ *  - 重写，逻辑放到 Anim 模块，这边只进行转发
+ *
  * 2011-05-17
  *  - 承玉：添加 stop ，随时停止动画
  *
@@ -243,6 +144,7 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
 //            "toggle",
             "scrollIntoView",
             "remove",
+            "empty",
             "removeData",
             "hasData",
             "unselectable"
@@ -354,7 +256,7 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
  */
 /**
  * definition for node and nodelist
- * @author lifesinger@gmail.com,yiminghe@gmail.com
+ * @author yiminghe@gmail.com,lifesinger@gmail.com
  */
 KISSY.add("node/base", function(S, DOM, undefined) {
 
@@ -367,7 +269,8 @@ KISSY.add("node/base", function(S, DOM, undefined) {
      * @constructor
      */
     function NodeList(html, props, ownerDocument) {
-        var self = this,domNode;
+        var self = this,
+            domNode;
 
         if (!(self instanceof NodeList)) {
             return new NodeList(html, props, ownerDocument);
@@ -458,14 +361,14 @@ KISSY.add("node/base", function(S, DOM, undefined) {
          * @param context An optional context to apply the function with Default context is the current NodeList instance
          */
         each: function(fn, context) {
-            var self = this,len = self.length, i = 0, node;
+            var self = this;
 
-            for (node = new NodeList(self[0]);
-                 i < len && fn.call(context || node, node, i, self) !== false;
-                 node = new NodeList(self[++i])) {
-            }
+            S.each(self, function(n, i) {
+                n = new NodeList(n);
+                return fn.call(context || n, n, i, self);
+            });
 
-            return this;
+            return self;
         },
         /**
          * Retrieves the DOMNode.
@@ -504,23 +407,6 @@ KISSY.add("node/base", function(S, DOM, undefined) {
     });
 
     S.mix(NodeList, {
-
-        /**
-         * enumeration of dom node type
-         */
-        ELEMENT_NODE : DOM.ELEMENT_NODE,
-        ATTRIBUTE_NODE : DOM.ATTRIBUTE_NODE,
-        TEXT_NODE:DOM.TEXT_NODE,
-        CDATA_SECTION_NODE : DOM.CDATA_SECTION_NODE,
-        ENTITY_REFERENCE_NODE: DOM.ENTITY_REFERENCE_NODE,
-        ENTITY_NODE : DOM.ENTITY_NODE,
-        PROCESSING_INSTRUCTION_NODE :DOM.PROCESSING_INSTRUCTION_NODE,
-        COMMENT_NODE : DOM.COMMENT_NODE,
-        DOCUMENT_NODE : DOM.DOCUMENT_NODE,
-        DOCUMENT_TYPE_NODE : DOM.DOCUMENT_TYPE_NODE,
-        DOCUMENT_FRAGMENT_NODE : DOM.DOCUMENT_FRAGMENT_NODE,
-        NOTATION_NODE : DOM.NOTATION_NODE,
-
         /**
          * 查找位于上下文中并且符合选择器定义的节点列表或根据 html 生成新节点
          * @param {String|HTMLElement[]|NodeList} selector html 字符串或<a href='http://docs.kissyui.com/docs/html/api/core/dom/selector.html'>选择器</a>或节点列表
@@ -554,6 +440,8 @@ KISSY.add("node/base", function(S, DOM, undefined) {
             return all.length ? all.slice(0, 1) : null;
         }
     });
+
+    S.mix(NodeList, DOM._NODE_TYPE);
 
     return NodeList;
 }, {
@@ -623,5 +511,5 @@ KISSY.add("node/override", function(S, DOM, Event, NodeList) {
         "node/base",
         "node/attach",
         "node/override",
-        "node/anim-plugin"]
+        "node/anim"]
 });

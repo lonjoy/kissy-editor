@@ -19,13 +19,20 @@ KISSY.Editor.add("button", function() {
         return;
     }
 
+    function getTipText(str) {
+        if (str && str.indexOf("<") == -1) {
+            return str;
+        }
+        return 0;
+    }
+
     var TripleButton = S['UIBase'].create([S['UIBase']['Box']['Render']
         || S['UIBase']['Box']
     ], {
         _updateHref:function() {
             var self = this;
             self.get("el").attr("href", "javascript:void('" +
-                (self.get("text") || self.get("title") ) + "')");
+                (getTipText(self.get("text")) || getTipText(self.get("title")) ) + "')");
         },
         bindUI:function() {
             var self = this,el = self.get("el");
@@ -55,7 +62,7 @@ KISSY.Editor.add("button", function() {
             var self = this,
                 el = self.get("el");
             if (contentCls !== undefined) {
-                el.html("<span class='ke-toolbar-item " + contentCls + "'>");
+                el.html("<span class='ke-toolbar-item " + contentCls + "' />");
                 //ie 失去焦点
                 el._4e_unselectable();
             }
