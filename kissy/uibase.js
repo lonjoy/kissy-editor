@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Oct 28 11:58
+build time: Nov 23 12:36
 */
 /**
  * UIBase.Align
@@ -1423,7 +1423,9 @@ KISSY.add("uibase/drag", function(S) {
     }
 
     Drag.ATTRS = {
-        handlers:{value:[]},
+        handlers:{
+            value:[]
+        },
         draggable:{value:true}
     };
 
@@ -1441,8 +1443,7 @@ KISSY.add("uibase/drag", function(S) {
                 el = self.get("el");
             if (self.get("draggable") && Draggable) {
                 self.__drag = new Draggable({
-                    node:el,
-                    handlers:self.get("handlers")
+                    node:el
                 });
             }
         },
@@ -1603,7 +1604,7 @@ KISSY.add("uibase/maskrender", function(S, UA, Node) {
             this.get("prefixCls") + "ext-mask'/>")
             .prependTo("body");
         mask.css({
-            "position":"fixed", // mask 不会撑大 docWidth
+            "position":ie6 ? "absolute" : "fixed", // mask 不会撑大 docWidth
             left:0,
             top:0,
             width: docWidth(),
@@ -1635,7 +1636,7 @@ KISSY.add("uibase/maskrender", function(S, UA, Node) {
     function Mask() {
     }
 
-    var resizeMask = S.buffer(function() {
+    var resizeMask = S.throttle(function() {
         var v = {
             width : docWidth(),
             height : docHeight()
@@ -1665,7 +1666,7 @@ KISSY.add("uibase/maskrender", function(S, UA, Node) {
                 mask.css(display);
                 iframe && iframe.css(display);
                 if (ie6) {
-                    win.on("resize", resizeMask);
+                    win.on("resize scroll", resizeMask);
                 }
             }
         },
@@ -1682,7 +1683,7 @@ KISSY.add("uibase/maskrender", function(S, UA, Node) {
                 mask && mask.css(display);
                 iframe && iframe.css(display);
                 if (ie6) {
-                    win.detach("resize", resizeMask);
+                    win.detach("resize scroll", resizeMask);
                 }
             }
         },
@@ -1835,7 +1836,7 @@ KISSY.add("uibase/resize", function(S) {
 
     Resize.prototype = {
         __destructor:function() {
-            self.resizer && self.resizer.destroy();
+            this.resizer && this.resizer.destroy();
         },
         _uiSetResize:function(v) {
 

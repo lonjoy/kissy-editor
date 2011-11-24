@@ -1328,6 +1328,8 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
                             });
                             success = true;
                         } catch(e) {
+                            // a <= "<a>"
+                            // a.innerHTML='<p>1</p>';
                         }
 
                     }
@@ -1381,6 +1383,10 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
                     return null;
                 }
 
+                // TODO
+                // ie bug :
+                // 1. ie<9 <script>xx</script> => <script></script>
+                // 2. ie will execute external script
                 var clone = elem.cloneNode(deep);
 
                 if (isElementNode(elem) ||
@@ -1925,23 +1931,32 @@ KISSY.add('dom/insertion', function(S, UA, DOM) {
 
     // extract script nodes and execute alone later
     function filterScripts(nodes, scripts) {
-        var ret = [];
-        for (var i = 0; nodes[i]; i++) {
-            var el = nodes[i],nodeName = el.nodeName.toLowerCase();
+        var ret = [],i,el,nodeName;
+        for (i = 0; nodes[i]; i++) {
+            el = nodes[i];
+            nodeName = el.nodeName.toLowerCase();
             if (el.nodeType == DOM.DOCUMENT_FRAGMENT_NODE) {
                 ret.push.apply(ret, filterScripts(makeArray(el.childNodes), scripts));
             } else if (nodeName === "script" && isJs(el)) {
+                // remove script to make sure ie9 does not invoke when append
+                if (el.parentNode) {
+                    el.parentNode.removeChild(el)
+                }
                 if (scripts) {
-                    scripts.push(el.parentNode ? el.parentNode.removeChild(el) : el);
+                    scripts.push(el);
                 }
             } else {
                 if (_isElementNode(el) &&
                     // ie checkbox getElementsByTagName 后造成 checked 丢失
                     !rformEls.test(nodeName)) {
-                    var tmp = [],ss = el.getElementsByTagName("script");
-                    for (var j = 0; j < ss.length; j++) {
-                        if (isJs(ss[j])) {
-                            tmp.push(ss[j]);
+                    var tmp = [],
+                        s,
+                        j,
+                        ss = el.getElementsByTagName("script");
+                    for (j = 0; j < ss.length; j++) {
+                        s = ss[j];
+                        if (isJs(s)) {
+                            tmp.push(s);
                         }
                     }
                     nodes.splice.apply(nodes, [i + 1,0].concat(tmp));
@@ -2002,7 +2017,7 @@ KISSY.add('dom/insertion', function(S, UA, DOM) {
                 var node = i > 0 ? DOM.clone(clonedNode, true) : newNode;
                 fn(node, refNode);
             }
-            if (scripts) {
+            if (scripts && scripts.length) {
                 S.each(scripts, evalScript);
             }
         }
@@ -4933,11 +4948,15 @@ KISSY.add('event/target', function(S, Event, EventObject) {
     function attach(method) {
         return function(type, fn, scope) {
             var self = this;
-            S.each(S.trim(type).split(/\s+/), function(t) {
+            splitAndRun(type, function(t) {
                 Event["__" + method](false, self, t, fn, scope);
             });
             return self; // chain
         };
+    }
+
+    function splitAndRun(type, fn) {
+        S.each(S.trim(type).split(/\s+/), fn);
     }
 
     /**
@@ -4960,9 +4979,21 @@ KISSY.add('event/target', function(S, Event, EventObject) {
             var self = this,
                 ret,
                 r2,
-                customEvent = getCustomEvent(self, type, eventData);
+                customEvent;
+            if ((type = S.trim(type)) &&
+                type.indexOf(" ") > 0) {
+                splitAndRun(type, function(t) {
+                    r2 = self.fire(t, eventData);
+                    if (r2 === false) {
+                        ret = false;
+                    }
+                });
+                return ret;
+            }
+            customEvent = getCustomEvent(self, type, eventData);
             ret = Event._handle(self, customEvent);
-            if (!customEvent.isPropagationStopped && isBubblable(self, type)) {
+            if (!customEvent.isPropagationStopped &&
+                isBubblable(self, type)) {
                 r2 = self.bubble(type, customEvent);
                 // false 优先返回
                 if (r2 === false) {

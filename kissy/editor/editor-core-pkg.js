@@ -3,7 +3,7 @@
  *      thanks to CKSource's intelligent work on CKEditor
  * @author yiminghe@gmail.com, lifesinger@gmail.com
  * @version: 2
- * @buildtime: 2011-11-09 16:13:55
+ * @buildtime: 2011-11-17 20:54:46
  */
 
 /**
@@ -108,12 +108,12 @@ KISSY.add("editor/export", function(S) {
     if (parseFloat(S.version) < 1.2) {
         getJSName = function () {
             return "plugin-min.js?t=" +
-                encodeURIComponent("2011-11-09 16:13:55");
+                encodeURIComponent("2011-11-17 20:54:46");
         };
     } else {
         getJSName = function (m, tag) {
             return m + '/plugin-min.js' + (tag ? tag : '?t=' +
-                encodeURIComponent('2011-11-09 16:13:55'));
+                encodeURIComponent('2011-11-17 20:54:46'));
         };
     }
 
@@ -174,7 +174,7 @@ KISSY.Editor.add("utils", function(KE) {
                     } else {
                         url += "?";
                     }
-                    url += "t=" + encodeURIComponent("2011-10-31 11:10:42");
+                    url += "t=" + encodeURIComponent("2011-11-17 19:34:39");
                 }
                 return KE["Config"].base + url;
             },
@@ -589,19 +589,21 @@ KISSY.Editor.add("utils", function(KE) {
 
                 var form = DOM._4e_unwrap(o.form),
                     buf = {
-                        target: form.target,
-                        method: form.method,
-                        encoding: form.encoding,
-                        enctype: form.enctype,
-                        action: form.action
+                        target: DOM.attr(form, "target"),
+                        method:DOM.attr(form, "method"),
+                        encoding: DOM.attr(form, "encoding"),
+                        enctype: DOM.attr(form, "enctype"),
+                        action: DOM.attr(form, "action")
                     };
-                form.target = id;
-                form.method = 'POST';
-                form.enctype = form.encoding = 'multipart/form-data';
+                DOM.attr(form, {
+                    target:id,
+                    "method":"post",
+                    enctype:'multipart/form-data',
+                    encoding:   'multipart/form-data'
+                });
                 if (url) {
-                    form.action = url;
+                    DOM.attr(form, "action", url);
                 }
-
                 var hiddens, hd;
                 if (ps) { // add dynamic params
                     hiddens = [];
@@ -646,8 +648,9 @@ KISSY.Editor.add("utils", function(KE) {
                     }
                     catch(e) {
                         // ignore
-                        //2010-11-15 由于外边设置了document.domain导致读不到数据抛异常
-                        S.log(e);
+                        // 2010-11-15 由于外边设置了document.domain导致读不到数据抛异常
+                        S.log("after data returns error ,maybe domain problem:");
+                        S.log(e, "error");
                     }
 
                     Event.remove(frame, 'load', cb);
@@ -663,11 +666,7 @@ KISSY.Editor.add("utils", function(KE) {
 
                 form.submit();
 
-                form.target = buf.target;
-                form.method = buf.method;
-                form.enctype = buf.enctype;
-                form.encoding = buf.encoding;
-                form.action = buf.action;
+                DOM.attr(form, buf);
 
                 if (hiddens) { // remove dynamic params
                     for (var i = 0, len = hiddens.length; i < len; i++) {
@@ -2682,7 +2681,11 @@ KISSY.Editor.add("definition", function(KE) {
                 doc = self.document,
                 win = DOM._4e_getWin(doc);
             // firefox7 need this
-            win && win.parent && win.parent.focus();
+            if (!UA.ie) {
+                // note : 2011-11-17 report by 石霸
+                // ie 的 parent 不能 focus ，否则会使得 iframe 内的编辑器光标回到开头
+                win && win.parent && win.parent.focus();
+            }
             // yiminghe note:webkit need win.focus
             // firefox 7 needs also?
             win && win.focus();

@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Nov 15 17:48
+build time: Nov 23 12:07
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -89,7 +89,7 @@ build time: Nov 15 17:48
          */
         version: '1.20dev',
 
-        buildTime:'20111115174805',
+        buildTime:'20111123120737',
 
         /**
          * Returns a new object containing all of the properties of
@@ -338,7 +338,7 @@ build time: Nov 15 17:48
         CLONE_MARKER = '__~ks_cloned',
         COMPARE_MARKER = '__~ks_compared',
         STAMP_MARKER = '__~ks_stamped',
-        RE_TRIM = /^\s+|\s+$/g,
+        RE_TRIM = /^[\s\xa0]+|[\s\xa0]+$/g,
         encode = encodeURIComponent,
         decode = decodeURIComponent,
         SEP = '&',
@@ -1617,7 +1617,7 @@ build time: Nov 15 17:48
 
 })(KISSY, KISSY.__loaderUtils);/**
  * add module definition
- * @author  lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  yiminghe@gmail.com,lifesinger@gmail.com
  */
 (function(S, loader, utils, data) {
     if ("require" in this) {
@@ -1766,7 +1766,12 @@ build time: Nov 15 17:48
         }
     });
 
-})(KISSY, KISSY.__loader, KISSY.__loaderUtils, KISSY.__loaderData);/**
+})(KISSY, KISSY.__loader, KISSY.__loaderUtils, KISSY.__loaderData);
+
+/**
+ * @refer
+ *  - https://github.com/amdjs/amdjs-api/wiki/AMD
+ **//**
  * build full path from relative path and base path
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
@@ -2038,7 +2043,7 @@ build time: Nov 15 17:48
 
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils, KISSY.__loaderData);/**
  * @module loader
- * @author lifesinger@gmail.com, lijing00333@163.com, yiminghe@gmail.com
+ * @author lifesinger@gmail.com,yiminghe@gmail.com,lijing00333@163.com
  * @description: constant member and common method holder
  */
 (function(S, loader, data) {
@@ -2206,7 +2211,7 @@ build time: Nov 15 17:48
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**
  * register module ,associate module name with module factory(definition)
- * @author  lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  yiminghe@gmail.com,lifesinger@gmail.com
  */
 (function(S, loader,data) {
     if ("require" in this) {
@@ -2240,7 +2245,7 @@ build time: Nov 15 17:48
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderData);/**
  * use and attach mod
- * @author  lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  yiminghe@gmail.com,lifesinger@gmail.com
  */
 (function(S, loader, utils, data) {
 
@@ -4109,6 +4114,8 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
                             });
                             success = true;
                         } catch(e) {
+                            // a <= "<a>"
+                            // a.innerHTML='<p>1</p>';
                         }
 
                     }
@@ -4162,6 +4169,10 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
                     return null;
                 }
 
+                // TODO
+                // ie bug :
+                // 1. ie<9 <script>xx</script> => <script></script>
+                // 2. ie will execute external script
                 var clone = elem.cloneNode(deep);
 
                 if (isElementNode(elem) ||
@@ -4706,23 +4717,32 @@ KISSY.add('dom/insertion', function(S, UA, DOM) {
 
     // extract script nodes and execute alone later
     function filterScripts(nodes, scripts) {
-        var ret = [];
-        for (var i = 0; nodes[i]; i++) {
-            var el = nodes[i],nodeName = el.nodeName.toLowerCase();
+        var ret = [],i,el,nodeName;
+        for (i = 0; nodes[i]; i++) {
+            el = nodes[i];
+            nodeName = el.nodeName.toLowerCase();
             if (el.nodeType == DOM.DOCUMENT_FRAGMENT_NODE) {
                 ret.push.apply(ret, filterScripts(makeArray(el.childNodes), scripts));
             } else if (nodeName === "script" && isJs(el)) {
+                // remove script to make sure ie9 does not invoke when append
+                if (el.parentNode) {
+                    el.parentNode.removeChild(el)
+                }
                 if (scripts) {
-                    scripts.push(el.parentNode ? el.parentNode.removeChild(el) : el);
+                    scripts.push(el);
                 }
             } else {
                 if (_isElementNode(el) &&
                     // ie checkbox getElementsByTagName 后造成 checked 丢失
                     !rformEls.test(nodeName)) {
-                    var tmp = [],ss = el.getElementsByTagName("script");
-                    for (var j = 0; j < ss.length; j++) {
-                        if (isJs(ss[j])) {
-                            tmp.push(ss[j]);
+                    var tmp = [],
+                        s,
+                        j,
+                        ss = el.getElementsByTagName("script");
+                    for (j = 0; j < ss.length; j++) {
+                        s = ss[j];
+                        if (isJs(s)) {
+                            tmp.push(s);
                         }
                     }
                     nodes.splice.apply(nodes, [i + 1,0].concat(tmp));
@@ -4783,7 +4803,7 @@ KISSY.add('dom/insertion', function(S, UA, DOM) {
                 var node = i > 0 ? DOM.clone(clonedNode, true) : newNode;
                 fn(node, refNode);
             }
-            if (scripts) {
+            if (scripts && scripts.length) {
                 S.each(scripts, evalScript);
             }
         }
@@ -7714,11 +7734,15 @@ KISSY.add('event/target', function(S, Event, EventObject) {
     function attach(method) {
         return function(type, fn, scope) {
             var self = this;
-            S.each(S.trim(type).split(/\s+/), function(t) {
+            splitAndRun(type, function(t) {
                 Event["__" + method](false, self, t, fn, scope);
             });
             return self; // chain
         };
+    }
+
+    function splitAndRun(type, fn) {
+        S.each(S.trim(type).split(/\s+/), fn);
     }
 
     /**
@@ -7741,9 +7765,21 @@ KISSY.add('event/target', function(S, Event, EventObject) {
             var self = this,
                 ret,
                 r2,
-                customEvent = getCustomEvent(self, type, eventData);
+                customEvent;
+            if ((type = S.trim(type)) &&
+                type.indexOf(" ") > 0) {
+                splitAndRun(type, function(t) {
+                    r2 = self.fire(t, eventData);
+                    if (r2 === false) {
+                        ret = false;
+                    }
+                });
+                return ret;
+            }
+            customEvent = getCustomEvent(self, type, eventData);
             ret = Event._handle(self, customEvent);
-            if (!customEvent.isPropagationStopped && isBubblable(self, type)) {
+            if (!customEvent.isPropagationStopped &&
+                isBubblable(self, type)) {
                 r2 = self.bubble(type, customEvent);
                 // false 优先返回
                 if (r2 === false) {
@@ -13135,7 +13171,7 @@ KISSY.use('core');
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 13:54
+build time: Nov 18 17:23
 */
 /*!
  * Sizzle CSS Selector Engine
@@ -14560,12 +14596,12 @@ KISSY.add("sizzle", function(S, sizzle) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 13:54
+build time: Nov 18 17:23
 */
 /**
  * 数据延迟加载组件
  * @module   datalazyload
- * @creator  玉伯<lifesinger@gmail.com>
+ * @creator lifesinger@gmail.com
  */
 KISSY.add('datalazyload/impl', function(S, DOM, Event, undefined) {
 
@@ -15063,7 +15099,7 @@ KISSY.add("datalazyload", function(S, D) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Nov 8 11:52
+build time: Nov 18 17:24
 */
 /**
  * @fileoverview KISSY Template Engine.
@@ -15306,7 +15342,7 @@ KISSY.add("template", function(S, T) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 13:54
+build time: Nov 18 17:23
 */
 /**
  * @module   Flash 全局静态类
@@ -15825,7 +15861,7 @@ KISSY.add("flash", function(S, F) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Nov 4 17:09
+build time: Nov 22 22:35
 */
 /**
  * dd support for kissy , dd objects central management module
@@ -15834,21 +15870,44 @@ build time: Nov 4 17:09
 KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
 
     var doc = document,
-        BUFFER_TIME = 200,
+        win = window,
+
+        // prevent collision with click , only start when move
+        PIXEL_THRESH = 3,
+        // or start when mousedown for 1 second
+        BUFFER_TIME = 1000,
+
         MOVE_DELAY = 30,
+        _showShimMove = S.throttle(move,
+            MOVE_DELAY),
         SHIM_ZINDEX = 999999;
 
     function DDM() {
-        DDM.superclass.constructor.apply(this, arguments);
-        this._init();
+        var self = this;
+        DDM.superclass.constructor.apply(self, arguments);
     }
 
     DDM.ATTRS = {
         prefixCls:{
             value:"ks-dd-"
         },
+
         /**
-         * mousedown 后 buffer 触发时间  timeThred
+         * shim 鼠标 icon (drag icon)
+         */
+        dragCursor:{
+            value:'move'
+        },
+
+        /***
+         * 移动的像素值（用于启动拖放）
+         */
+        clickPixelThresh: {
+            value: PIXEL_THRESH
+        },
+
+        /**
+         * mousedown 后 buffer 触发时间  time threshold
          */
         bufferTime: { value: BUFFER_TIME },
 
@@ -15858,16 +15917,196 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
         activeDrag: {},
 
         /**
-         *当前激活的drop对象，在同一时间只有一个值
+         * 当前激活的 drop 对象，在同一时间只有一个值
          */
         activeDrop:{},
+
         /**
-         * 所有注册的可被防止对象，统一管理
+         * 所有注册的可放置对象，统一管理
          */
         drops:{
             value:[]
         }
     };
+
+    /*
+     全局鼠标移动事件通知当前拖动对象正在移动
+     注意：chrome8: click 时 mousedown-mousemove-mouseup-click 也会触发 mousemove
+     */
+    function move(ev) {
+        var self = this,
+            __activeToDrag = self.__activeToDrag,
+            activeDrag = self.get('activeDrag');
+
+        if (activeDrag || __activeToDrag) {
+            //防止 ie 选择到字
+            ev.preventDefault();
+        }
+        // 优先处理激活的
+        if (activeDrag) {
+            activeDrag._move(ev);
+            /**
+             * 获得当前的激活drop
+             */
+            notifyDropsMove(self, ev);
+        } else if (__activeToDrag) {
+            __activeToDrag._move(ev);
+        }
+    }
+
+
+    function notifyDropsMove(self, ev) {
+
+        var activeDrag = self.get("activeDrag"),
+            mode = activeDrag.get("mode"),
+            drops = self.get("drops"),
+            activeDrop,
+            oldDrop = 0,
+            vArea = 0,
+            dragRegion = region(activeDrag.get("node")),
+            dragArea = area(dragRegion);
+
+        S.each(drops, function(drop) {
+            var a,
+                node = drop.getNodeFromTarget(ev,
+                    // node
+                    activeDrag.get("dragNode")[0],
+                    // proxy node
+                    activeDrag.get("node")[0]);
+
+            if (!node
+            // 当前 drop 区域已经包含  activeDrag.get("node")
+            // 不要返回，可能想调整位置
+                ) {
+                return;
+            }
+
+            if (mode == "point") {
+                //取鼠标所在的 drop 区域
+                if (inNodeByPointer(node, activeDrag.mousePos)) {
+                    a = area(region(node));
+                    if (!activeDrop) {
+                        activeDrop = drop;
+                        vArea = a;
+                    } else {
+                        // 当前得到的可放置元素范围更小，取范围小的那个
+                        if (a < vArea) {
+                            activeDrop = drop;
+                            vArea = a;
+                        }
+                    }
+                }
+            } else if (mode == "intersect") {
+                //取一个和activeDrag交集最大的drop区域
+                a = area(intersect(dragRegion, region(node)));
+                if (a > vArea) {
+                    vArea = a;
+                    activeDrop = drop;
+                }
+
+            } else if (mode == "strict") {
+                //drag 全部在 drop 里面
+                a = area(intersect(dragRegion, region(node)));
+                if (a == dragArea) {
+                    activeDrop = drop;
+                    return false;
+                }
+            }
+        });
+        oldDrop = self.get("activeDrop");
+        if (oldDrop && oldDrop != activeDrop) {
+            oldDrop._handleOut(ev);
+            activeDrag._handleOut(ev);
+        }
+        self.set("activeDrop", activeDrop);
+        if (activeDrop) {
+            if (oldDrop != activeDrop) {
+                activeDrop._handleEnter(ev);
+            } else {
+                // 注意处理代理时内部节点变化导致的 out、enter
+                activeDrop._handleOver(ev);
+            }
+        }
+    }
+
+
+    /**
+     * 垫片只需创建一次
+     */
+    function activeShim(self) {
+        var doc = document;
+        //创造垫片，防止进入iframe，外面document监听不到 mousedown/up/move
+        self._shim = new Node("<div " +
+            "style='" +
+            //red for debug
+            "background-color:red;" +
+            "position:absolute;" +
+            "left:0;" +
+            "top:0;" +
+            "cursor:" + ddm.get("dragCursor") + ";" +
+            "z-index:" +
+            //覆盖iframe上面即可
+            SHIM_ZINDEX
+            + ";" +
+            "'><" + "/div>")
+            .prependTo(doc.body || doc.documentElement)
+            //0.5 for debug
+            .css("opacity", 0);
+
+        activeShim = showShim;
+
+        // support dd-scroll
+        // prevent empty when scroll outside initial window
+        Event.on(win, "resize", adjustShimSize, self);
+        Event.on(win, "scroll", adjustShimSize, self);
+
+        showShim(self);
+    }
+
+    var adjustShimSize = S.throttle(function() {
+        var self = this,
+            activeDrag;
+        if ((activeDrag = self.get("activeDrag")) &&
+            activeDrag.get("shim")) {
+            self._shim.css({
+                width:DOM.docWidth(),
+                height:DOM.docHeight()
+            });
+        }
+    }, MOVE_DELAY);
+
+    function showShim(self) {
+        // determin cursor according to activeHandler and dragCursor
+        var ah = self.get("activeDrag").get('activeHandler'),
+            cur = 'auto';
+        if (ah) {
+            cur = ah.css('cursor');
+        }
+        if (cur == 'auto') {
+            cur = self.get('dragCursor');
+        }
+        self._shim.css({
+            cursor:cur,
+            display: "block"
+        });
+        adjustShimSize.call(self);
+    }
+
+    /**
+     * 开始时注册全局监听事件
+     */
+    function registerEvent(self) {
+        Event.on(doc, 'mouseup', self._end, self);
+        Event.on(doc, 'mousemove', _showShimMove, self);
+    }
+
+    /**
+     * 结束时需要取消掉，防止平时无谓的监听
+     */
+    function unregisterEvent(self) {
+        Event.remove(doc, 'mousemove', _showShimMove, self);
+        Event.remove(doc, 'mouseup', self._end, self);
+    }
 
     /*
      负责拖动涉及的全局事件：
@@ -15877,239 +16116,91 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
      */
     S.extend(DDM, Base, {
 
+        /**
+         * 可能要进行拖放的对象，需要通过 buffer/pixelThresh 考验
+         */
+        __activeToDrag:0,
+
         _regDrop:function(d) {
             this.get("drops").push(d);
         },
 
         _unregDrop:function(d) {
-            var index = S.indexOf(d, this.get("drops"));
+            var self = this,
+                index = S.indexOf(d, self.get("drops"));
             if (index != -1) {
-                this.get("drops").splice(index, 1);
-            }
-        },
-
-        _init: function() {
-            var self = this;
-            self._showShimMove = S.throttle(self._move, MOVE_DELAY, self);
-        },
-
-        /*
-         全局鼠标移动事件通知当前拖动对象正在移动
-         注意：chrome8: click 时 mousedown-mousemove-mouseup-click 也会触发 mousemove
-         */
-        _move: function(ev) {
-            var activeDrag = this.get('activeDrag');
-            //S.log("move");
-            if (!activeDrag) {
-                return;
-            }
-            //防止 ie 选择到字
-            ev.preventDefault();
-            activeDrag._move(ev);
-            /**
-             * 获得当前的激活drop
-             */
-            this._notifyDropsMove(ev);
-        },
-
-        _notifyDropsMove:function(ev) {
-
-            var activeDrag = this.get("activeDrag"),mode = activeDrag.get("mode");
-            var drops = this.get("drops");
-            var activeDrop,
-                vArea = 0,
-                dragRegion = region(activeDrag.get("node")),
-                dragArea = area(dragRegion);
-
-            S.each(drops, function(drop) {
-
-                var node = drop.getNodeFromTarget(ev,
-                    // node
-                    activeDrag.get("dragNode")[0],
-                    // proxy node
-                    activeDrag.get("node")[0]);
-
-                if (!node
-                // 当前 drop 区域已经包含  activeDrag.get("node")
-                // 不要返回，可能想调整位置
-                    ) {
-                    return;
-                }
-
-                var a;
-                if (mode == "point") {
-                    //取鼠标所在的 drop 区域
-                    if (inNodeByPointer(node, activeDrag.mousePos)) {
-                        if (!activeDrop ||
-                            // 当前得到的可放置元素范围更小，取范围小的那个
-                            activeDrop.get("node").contains(node)
-                            ) {
-                            activeDrop = drop;
-                        }
-                    }
-                } else if (mode == "intersect") {
-                    //取一个和activeDrag交集最大的drop区域
-                    a = area(intersect(dragRegion, region(node)));
-                    if (a > vArea) {
-                        vArea = a;
-                        activeDrop = drop;
-                    }
-
-                } else if (mode == "strict") {
-                    //drag 全部在 drop 里面
-                    a = area(intersect(dragRegion, region(node)));
-                    if (a == dragArea) {
-                        activeDrop = drop;
-                        return false;
-                    }
-                }
-            });
-            var oldDrop = this.get("activeDrop");
-            if (oldDrop && oldDrop != activeDrop) {
-                oldDrop._handleOut(ev);
-            }
-            if (activeDrop) {
-                activeDrop._handleOver(ev);
-            } else {
-                activeDrag.get("node").removeClass(this.get("prefixCls") + "drag-over");
-                this.set("activeDrop", null);
-            }
-        },
-
-        _deactivateDrops:function() {
-            var activeDrag = this.get("activeDrag"),
-                activeDrop = this.get("activeDrop");
-            activeDrag.get("node").removeClass(this.get("prefixCls") + "drag-over");
-            if (activeDrop) {
-                var ret = { drag: activeDrag, drop: activeDrop};
-                activeDrop.get("node").removeClass(this.get("prefixCls") + "drop-over");
-                activeDrop.fire('drophit', ret);
-                activeDrag.fire('dragdrophit', ret);
-                this.fire("drophit", ret);
-                this.fire("dragdrophit", ret);
-            } else {
-                activeDrag.fire('dragdropmiss', {
-                    drag:activeDrag
-                });
-                this.fire("dragdropmiss", {
-                    drag:activeDrag
-                });
+                self.get("drops").splice(index, 1);
             }
         },
 
         /**
-         * 当前拖动对象通知全局：我要开始啦
-         * 全局设置当前拖动对象，
-         * 还要根据配置进行 buffer 处理
+         * 注册可能将要拖放的节点
          * @param drag
          */
-        _start: function(drag) {
-            var self = this,
-                bufferTime = self.get("bufferTime") || 0;
-
-            //事件先要注册好，防止点击，导致 mouseup 时还没注册事件
-            self._registerEvent();
-
-            //是否中央管理，强制限制拖放延迟
-            if (bufferTime) {
-                self._bufferTimer = setTimeout(function() {
-                    self._bufferStart(drag);
-                }, bufferTime);
-            } else {
-                self._bufferStart(drag);
-            }
-        },
-
-        _bufferStart: function(drag) {
+        _regToDrag: function(drag) {
             var self = this;
-            self.set('activeDrag', drag);
-
-            //真正开始移动了才激活垫片
-            if (drag.get("shim")) {
-                self._activeShim();
-            }
-
-            drag._start();
-            drag.get("dragNode").addClass(this.get("prefixCls") + "dragging");
+            // 事件先要注册好，防止点击，导致 mouseup 时还没注册事件
+            registerEvent(self);
+            self.__activeToDrag = drag;
         },
 
         /**
-         * 全局通知当前拖动对象：你结束拖动了！
-         * @param ev
+         * 真正开始 drag
+         * 当前拖动对象通知全局：我要开始啦
+         * 全局设置当前拖动对象，
          */
-        _end: function(ev) {
-            var self = this,
-                activeDrag = self.get("activeDrag");
-            self._unregisterEvent();
-            if (self._bufferTimer) {
-                clearTimeout(self._bufferTimer);
-                self._bufferTimer = null;
-            }
-            self._shim && self._shim.css({
-                display:"none"
-            });
+        _start:function () {
 
+            var self = this,
+                drag = self.__activeToDrag;
+
+            self.set('activeDrag', drag);
+            // 预备役清掉
+            self.__activeToDrag = 0;
+            // 真正开始移动了才激活垫片
+
+            if (drag.get("shim")) {
+                activeShim(self);
+            }
+            self.fire("dragstart", {
+                drag:drag
+            });
+        },
+
+        /**
+         * 全局通知当前拖动对象：结束拖动了！
+         */
+        _end: function() {
+            var self = this,
+                activeDrag = self.get("activeDrag"),
+                activeDrop = self.get("activeDrop"),
+                ret = { drag: activeDrag,
+                    drop: activeDrop};
+            unregisterEvent(self);
+            // 预备役清掉 , click 情况下 mousedown->mouseup 极快过渡
+            if (self.__activeToDrag) {
+                self.__activeToDrag._clearBufferTimer();
+                self.__activeToDrag = 0;
+            }
+            self._shim && self._shim.hide();
             if (!activeDrag) {
                 return;
             }
-            activeDrag._end(ev);
-            activeDrag.get("dragNode").removeClass(this.get("prefixCls") + "dragging");
-            //处理 drop，看看到底是否有 drop 命中
-            this._deactivateDrops(ev);
+            activeDrag._end();
+            if (activeDrop) {
+                activeDrop._end();
+                self.fire("drophit", ret);
+                self.fire("dragdrophit", ret);
+            } else {
+                self.fire("dragdropmiss", {
+                    drag:activeDrag
+                });
+            }
+            self.fire("dragend", {
+                drag:activeDrag
+            });
             self.set("activeDrag", null);
             self.set("activeDrop", null);
-        },
-
-        /**
-         * 垫片只需创建一次
-         */
-        _activeShim: function() {
-            var self = this,doc = document;
-            //创造垫片，防止进入iframe，外面document监听不到 mousedown/up/move
-            self._shim = new Node("<div " +
-                "style='" +
-                //red for debug
-                "background-color:red;" +
-                "position:absolute;" +
-                "left:0;" +
-                "width:100%;" +
-                "top:0;" +
-                "cursor:move;" +
-                "z-index:" +
-                //覆盖iframe上面即可
-                SHIM_ZINDEX
-                + ";" +
-                "'><" + "/div>").prependTo(doc.body || doc.documentElement);
-            //0.5 for debug
-            self._shim.css("opacity", 0);
-            self._activeShim = self._showShim;
-            self._showShim();
-        },
-
-        _showShim: function() {
-            var self = this;
-            self._shim.css({
-                display: "",
-                height: DOM['docHeight']()
-            });
-        },
-
-        /**
-         * 开始时注册全局监听事件
-         */
-        _registerEvent: function() {
-            var self = this;
-            Event.on(doc, 'mouseup', self._end, self);
-            Event.on(doc, 'mousemove', self._showShimMove, self);
-        },
-
-        /**
-         * 结束时需要取消掉，防止平时无谓的监听
-         */
-        _unregisterEvent: function() {
-            var self = this;
-            Event.remove(doc, 'mousemove', self._showShimMove, self);
-            Event.remove(doc, 'mouseup', self._end, self);
         }
     });
 
@@ -16139,9 +16230,9 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
     }
 
     function intersect(r1, r2) {
-        var t = Math.max(r1.top, r2.top),
+        var t = Math.max(r1['top'], r2.top),
             r = Math.min(r1.right, r2.right),
-            b = Math.min(r1.bottom, r2.bottom),
+            b = Math.min(r1['bottom'], r2.bottom),
             l = Math.max(r1.left, r2.left);
         return {
             left:l,
@@ -16158,10 +16249,16 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
     var ddm = new DDM();
     ddm.inRegion = inRegion;
     ddm.region = region;
+    ddm.area = area;
     return ddm;
 }, {
     requires:["dom","event","node","base"]
 });
+
+/**
+ * refer
+ *  - YUI3 dd
+ */
 /**
  * dd support for kissy, drag for dd
  * @author  yiminghe@gmail.com
@@ -16192,13 +16289,23 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
                 return Node.one(v);
             }
         },
+
+
+        clickPixelThresh:{
+            value: DDM.get("clickPixelThresh")
+        },
+
+        bufferTime:{
+            value:  DDM.get("bufferTime")
+        },
+
         /*
          真实的节点
          */
         dragNode:{},
 
         /**
-         * 是否需要遮罩跨越iframe
+         * 是否需要遮罩跨越 iframe 以及其他阻止 mousemove 事件的元素
          */
         shim:{
             value:true
@@ -16210,8 +16317,7 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
         handlers:{
             value:[],
             getter:function(vs) {
-                var self = this,
-                    cursor = self.get("cursor");
+                var self = this;
                 if (!vs.length) {
                     vs[0] = self.get("node");
                 }
@@ -16224,18 +16330,17 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
                     }
                     //ie 不能在其内开始选择区域
                     v.unselectable();
-                    if (cursor) {
-                        v.css('cursor', cursor);
-                    }
                     vs[i] = v;
                 });
                 self.__set("handlers", vs);
                 return vs;
             }
         },
-        cursor:{
-            value:"move"
-        },
+
+        /**
+         * 激活 drag 的 handler
+         */
+        activeHandler:{},
 
         mode:{
             /**
@@ -16252,6 +16357,11 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
 
     S.extend(Draggable, Base, {
 
+        /**
+         * 是否已经开始拖放
+         */
+        __started:0,
+
         _init: function() {
             var self = this,
                 node = self.get('node');
@@ -16261,22 +16371,21 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
 
         destroy:function() {
             var self = this,
-                node = self.get('dragNode'),
-                handlers = self.get('handlers');
-            each(handlers, function(handler) {
-                handler.css("cursor", "auto");
-            });
+                node = self.get('dragNode');
             node.detach('mousedown', self._handleMouseDown, self);
             self.detach();
         },
 
         _check: function(t) {
-            var handlers = this.get('handlers'),ret = 0;
+            var self = this,
+                handlers = self.get('handlers'),
+                ret = 0;
             each(handlers, function(handler) {
                 //子区域内点击也可以启动
                 if (handler.contains(t) ||
                     handler[0] == t[0]) {
                     ret = 1;
+                    self.set("activeHandler", handler);
                     return false;
                 }
             });
@@ -16305,15 +16414,12 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
         },
 
         _prepare:function(ev) {
-            var self = this;
-
-            DDM._start(self);
-
-            var node = self.get("node"),
+            var self = this,
+                node = self.get("node"),
                 mx = ev.pageX,
                 my = ev.pageY,
                 nxy = node.offset();
-            self['startMousePos'] = self.mousePos = {
+            self.startMousePos = self.mousePos = {
                 left:mx,
                 top:my
             };
@@ -16322,47 +16428,123 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
                 left:mx - nxy.left,
                 top:my - nxy.top
             };
+            DDM._regToDrag(self);
+
+            var bufferTime = self.get("bufferTime");
+
+            // 是否中央管理，强制限制拖放延迟
+            if (bufferTime) {
+                self._bufferTimer = setTimeout(function() {
+                    // 事件到了，仍然是 mousedown 触发！
+                    //S.log("drag start by timeout");
+                    self._start();
+                }, bufferTime);
+            }
+
+        },
+
+        _clearBufferTimer:function() {
+            var self = this;
+            if (self._bufferTimer) {
+                clearTimeout(self._bufferTimer);
+                self._bufferTimer = 0;
+            }
         },
 
         _move: function(ev) {
             var self = this,
                 ret,
                 diff = self._diff,
-                left = ev.pageX - diff.left,
-                top = ev.pageY - diff.top;
+                startMousePos = self.startMousePos,
+                pageX = ev.pageX,
+                pageY = ev.pageY,
+                left = pageX - diff.left,
+                top = pageY - diff.top;
+
+
+            if (!self.__started) {
+                var clickPixelThresh = self.get("clickPixelThresh"),l1,l2;
+                // 鼠标经过了一定距离，立即开始
+                if ((l1 = Math.abs(pageX - startMousePos.left)) >= clickPixelThresh ||
+                    (l2 = Math.abs(pageY - startMousePos.top)) >= clickPixelThresh
+                    ) {
+                    //S.log("start drag by pixel : " + l1 + " : " + l2);
+                    self._start();
+                }
+                // 开始后，下轮 move 开始触发 drag 事件
+                return;
+            }
+
             self.mousePos = {
-                left:ev.pageX,
-                top:ev.pageY
+                left:pageX,
+                top:pageY
             };
+
             ret = {
                 left:left,
                 top:top,
-                pageX:ev.pageX,
-                pageY:ev.pageY,
-                drag:this
+                pageX:pageX,
+                pageY:pageY,
+                drag:self
             };
+
             self.fire("drag", ret);
             DDM.fire("drag", ret);
         },
 
         _end: function() {
-            var self = this;
+            var self = this,
+                activeDrop;
+            self.get("dragNode").removeClass(DDM.get("prefixCls") + "dragging");
+            self.get("node").removeClass(DDM.get("prefixCls") + "drag-over");
+            self._clearBufferTimer();
+            if (activeDrop = DDM.get("activeDrop")) {
+                self.fire('dragdrophit', {
+                    drag:self,
+                    drop:activeDrop
+                });
+            } else {
+                self.fire('dragdropmiss', {
+                    drag:self
+                });
+            }
             self.fire("dragend", {
                 drag:self
             });
-            DDM.fire("dragend", {
-                drag:self
+            self.__started = 0;
+        },
+
+        _handleOut:function() {
+            var self = this;
+            self.get("node").removeClass(DDM.get("prefixCls") + "drag-over");
+            self.fire("dragexit", {
+                drag:self,
+                drop:DDM.get("activeDrop")
             });
+        },
+
+        _handleEnter:function(e) {
+            var self = this;
+            self.get("node").addClass(DDM.get("prefixCls") + "drag-over");
+            //第一次先触发 dropenter,dragenter
+            self.fire("dragenter", e);
+        },
+
+
+        _handleOver:function(e) {
+            this.fire("dragover", e);
         },
 
         _start: function() {
             var self = this;
+            self._clearBufferTimer();
+            self.__started = 1;
+            self.get("dragNode").addClass(DDM.get("prefixCls") + "dragging");
+            DDM._start();
             self.fire("dragstart", {
                 drag:self
             });
-            DDM.fire("dragstart", {
-                drag:self
-            });
+
         }
     });
 
@@ -16390,7 +16572,7 @@ KISSY.add("dd/droppable", function(S, Node, Base, DDM) {
         node: {
             setter:function(v) {
                 if (v) {
-                    return Node.one(v).addClass(DDM.get("prefixCls") + "drop");
+                    return Node.one(v);
                 }
             }
         }
@@ -16405,50 +16587,58 @@ KISSY.add("dd/droppable", function(S, Node, Base, DDM) {
             var node = this.get("node"),
                 domNode = node[0];
             // 排除当前拖放和代理节点
-            return domNode == dragNode || domNode == proxyNode
+            return domNode == dragNode ||
+                domNode == proxyNode
                 ? null : node;
         },
+
         _init:function() {
             DDM._regDrop(this);
         },
+
+        __getCustomEvt:function(ev) {
+            return S.mix({
+                drag:DDM.get("activeDrag"),
+                drop:this
+            }, ev);
+        },
+
         _handleOut:function() {
             var self = this,
-                activeDrag = DDM.get("activeDrag"),
-                ret = {
-                    drop:self,
-                    drag:activeDrag
-                };
+                ret = self.__getCustomEvt();
             self.get("node").removeClass(DDM.get("prefixCls") + "drop-over");
             self.fire("dropexit", ret);
             DDM.fire("dropexit", ret);
-            activeDrag.get("node").removeClass(DDM.get("prefixCls") + "drag-over");
-            activeDrag.fire("dragexit", ret);
             DDM.fire("dragexit", ret);
         },
+
+        _handleEnter:function(ev) {
+            var self = this,
+                e = self.__getCustomEvt(ev);
+            e.drag._handleEnter(e);
+            self.get("node").addClass(DDM.get("prefixCls") + "drop-over");
+            this.fire("dropenter", e);
+            DDM.fire("dragenter", e);
+            DDM.fire("dropenter", e);
+        },
+
+
         _handleOver:function(ev) {
             var self = this,
-                oldDrop = DDM.get("activeDrop");
-            DDM.set("activeDrop", this);
-            var activeDrag = DDM.get("activeDrag");
-            self.get("node").addClass(DDM.get("prefixCls") + "drop-over");
-            var evt = S.mix({
-                drag:activeDrag,
-                drop:this
-            }, ev);
-            if (self != oldDrop) {
-                activeDrag.get("node").addClass(DDM.get("prefixCls") + "drag-over");
-                //第一次先触发 dropenter,dragenter
-                activeDrag.fire("dragenter", evt);
-                this.fire("dropenter", evt);
-                DDM.fire("dragenter", evt);
-                DDM.fire("dropenter", evt);
-            } else {
-                activeDrag.fire("dragover", evt);
-                self.fire("dropover", evt);
-                DDM.fire("dragover", evt);
-                DDM.fire("dropover", evt);
-            }
+                e = self.__getCustomEvt(ev);
+            e.drag._handleOver(e);
+            self.fire("dropover", e);
+            DDM.fire("dragover", e);
+            DDM.fire("dropover", e);
         },
+
+        _end:function() {
+            var self = this,
+                ret = self.__getCustomEvt();
+            self.get("node").removeClass(DDM.get("prefixCls") + "drop-over");
+            self.fire('drophit', ret);
+        },
+
         destroy:function() {
             DDM._unregDrop(this);
         }
@@ -16506,11 +16696,16 @@ KISSY.add("dd/proxy", function(S, Node) {
                 var node = self.get("node"),
                     dragNode = drag.get("node");
 
-                if (!self[PROXY_ATTR] && S.isFunction(node)) {
-                    node = node(drag);
-                    node.addClass("ks-dd-proxy");
-                    node.css("position", "absolute");
-                    self[PROXY_ATTR] = node;
+                // cache proxy node
+                if (!self[PROXY_ATTR]) {
+                    if (S.isFunction(node)) {
+                        node = node(drag);
+                        node.addClass("ks-dd-proxy");
+                        node.css("position", "absolute");
+                        self[PROXY_ATTR] = node;
+                    }
+                } else {
+                    node = self[PROXY_ATTR];
                 }
                 dragNode.parent()
                     .append(node);
@@ -16626,8 +16821,10 @@ KISSY.add("dd/draggable-delegate", function(S, DDM, Draggable, DOM, Node) {
             _handleMouseDown:function(ev) {
                 var self = this,
                     handler,
+                    node,
                     handlers = self.get("handlers"),
                     target = new Node(ev.target);
+
                 // 不需要像 Draggble 一样，判断 target 是否在 handler 内
                 // 委托时，直接从 target 开始往上找 handler
                 if (handlers.length) {
@@ -16635,8 +16832,11 @@ KISSY.add("dd/draggable-delegate", function(S, DDM, Draggable, DOM, Node) {
                 } else {
                     handler = target;
                 }
-                var node = handler && self._getNode(handler);
-                if (!node) {
+
+                if (handler) {
+                    self.set("activeHandler", handler);
+                    node = self._getNode(handler);
+                } else {
                     return;
                 }
 
@@ -16695,8 +16895,19 @@ KISSY.add("dd/draggable-delegate", function(S, DDM, Draggable, DOM, Node) {
  * @author yiminghe@gmail.com
  */
 KISSY.add("dd/droppable-delegate", function(S, DDM, Droppable, DOM, Node) {
+
+    function dragStart() {
+        var self = this,
+            container = self.get("container"),
+            selector = self.get("selector");
+        self.__allNodes = container.all(selector);
+    }
+
     function DroppableDelegate() {
-        DroppableDelegate.superclass.constructor.apply(this, arguments);
+        var self = this;
+        DroppableDelegate.superclass.constructor.apply(self, arguments);
+        // 提高性能，拖放开始时缓存代理节点
+        DDM.on("dragstart", dragStart, self);
     }
 
     S.extend(DroppableDelegate, Droppable, {
@@ -16711,23 +16922,31 @@ KISSY.add("dd/droppable-delegate", function(S, DDM, Droppable, DOM, Node) {
                     top:ev.pageY
                 },
                     self = this,
-                    container = self.get("container"),
-                    selector = self.get("selector"),
-                    allNodes = container.all(selector),
-                    ret = 0;
+                    allNodes = self.__allNodes,
+                    ret = 0,
+                    vArea = Number.MAX_VALUE;
 
-                allNodes.each(function(n) {
+                allNodes && allNodes.each(function(n) {
                     var domNode = n[0];
                     // 排除当前拖放的元素以及代理节点
-                    if (domNode == proxyNode || domNode == dragNode) {
+                    if (domNode === proxyNode || domNode === dragNode) {
                         return;
                     }
                     if (DDM.inRegion(DDM.region(n), pointer)) {
-                        self.set("lastNode", self.get("node"));
-                        self.set("node", ret = n);
-                        return false;
+                        // 找到面积最小的那个
+                        var a = DDM.area(DDM.region(n));
+                        if (a < vArea) {
+                            vArea = a;
+                            ret = n;
+                        }
                     }
                 });
+
+                if (ret) {
+                    self.set("lastNode", self.get("node"));
+                    self.set("node", ret);
+                }
+
                 return ret;
             },
 
@@ -16740,44 +16959,25 @@ KISSY.add("dd/droppable-delegate", function(S, DDM, Droppable, DOM, Node) {
 
             _handleOver:function(ev) {
                 var self = this,
-                    activeDrag = DDM.get("activeDrag"),
-                    oldDrop = DDM.get("activeDrop"),
-                    evt = S.mix({
-                        drag:activeDrag,
-                        drop:self
-                    }, ev),
                     node = self.get("node"),
+                    superOut = DroppableDelegate.superclass._handleOut,
+                    superOver = DroppableDelegate.superclass._handleOver,
+                    superEnter = DroppableDelegate.superclass._handleEnter,
                     lastNode = self.get("lastNode");
 
-                DDM.set("activeDrop", self);
-                node.addClass(DDM.get("prefixCls") + "drop-over");
-
-                if (self != oldDrop
-                    || !lastNode
-                    || (lastNode && lastNode[0] !== node[0])
-                    ) {
+                if (lastNode[0] !== node[0]) {
                     /**
-                     * 两个可 drop 节点相邻，先通知上次的离开
+                     * 同一个 drop 对象内委托的两个可 drop 节点相邻，先通知上次的离开
                      */
-                    if (lastNode) {
-                        self.set("node", lastNode);
-                        DroppableDelegate.superclass._handleOut.apply(self, arguments);
-                    }
+                    self.set("node", lastNode);
+                    superOut.apply(self, arguments);
                     /**
                      * 再通知这次的进入
                      */
                     self.set("node", node);
-                    activeDrag.get("node").addClass(DDM.get("prefixCls") + "drag-over");
-                    //第一次先触发 dropenter,dragenter
-                    activeDrag.fire("dragenter", evt);
-                    self.fire("dropenter", evt);
-                    DDM.fire("dragenter", evt);
-                    DDM.fire("dropenter", evt);
+                    superEnter.call(self, ev);
                 } else {
-                    activeDrag.fire("dragover", evt);
-                    this.fire("dropover", evt);
-                    DDM.fire("dragover", evt);
-                    DDM.fire("dropover", evt);
+                    superOver.call(self, ev);
                 }
             }
         },
@@ -17064,7 +17264,7 @@ KISSY.add("dd", function(S, DDM, Draggable, Droppable, Proxy, Delegate, Droppabl
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Nov 15 12:05
+build time: Nov 18 17:23
 */
 /**
  * resizable support for kissy
@@ -17258,7 +17458,7 @@ KISSY.add("resizable", function(S, R) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Oct 28 11:58
+build time: Nov 21 16:36
 */
 /**
  * UIBase.Align
@@ -18680,7 +18880,9 @@ KISSY.add("uibase/drag", function(S) {
     }
 
     Drag.ATTRS = {
-        handlers:{value:[]},
+        handlers:{
+            value:[]
+        },
         draggable:{value:true}
     };
 
@@ -18698,8 +18900,7 @@ KISSY.add("uibase/drag", function(S) {
                 el = self.get("el");
             if (self.get("draggable") && Draggable) {
                 self.__drag = new Draggable({
-                    node:el,
-                    handlers:self.get("handlers")
+                    node:el
                 });
             }
         },
@@ -19092,7 +19293,7 @@ KISSY.add("uibase/resize", function(S) {
 
     Resize.prototype = {
         __destructor:function() {
-            self.resizer && self.resizer.destroy();
+            this.resizer && this.resizer.destroy();
         },
         _uiSetResize:function(v) {
 
@@ -19346,7 +19547,7 @@ KISSY.add("uibase/stdmodrender", function(S, Node) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 13:54
+build time: Nov 18 17:23
 */
 /**
  * container can delegate event for its children
@@ -19581,7 +19782,7 @@ KISSY.add("component/modelcontrol", function(S, Event, UIBase, UIStore, Render) 
                 /**
                  * 将渲染层初始化所需要的属性，直接构造器设置过去
                  */
-                var attrs = self.__attrs,
+                var attrs = self['__attrs'] || {},
                     cfg = {};
                 for (var attrName in attrs) {
                     if (attrs.hasOwnProperty(attrName)) {
@@ -19634,7 +19835,7 @@ KISSY.add("component/modelcontrol", function(S, Event, UIBase, UIStore, Render) 
                      * 整理属性，对纯属于 view 的属性，添加 getter setter 直接到 view
                      */
                     var self = this,
-                        attrs = self.__attrs;
+                        attrs = self['__attrs'] || {};
                     for (var attrName in attrs) {
                         if (attrs.hasOwnProperty(attrName)) {
                             var attrCfg = attrs[attrName];
@@ -20246,7 +20447,7 @@ KISSY.add("component", function(KISSY, ModelControl, Render, Container, UIStore,
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Nov 2 16:30
+build time: Nov 23 11:43
 */
 /**
  * Switchable
@@ -22851,7 +23052,7 @@ KISSY.add("switchable", function(S, Switchable, Aria, Accordion, AAria, autoplay
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Nov 10 21:44
+build time: Nov 18 17:23
 */
 /**
  * KISSY Overlay
@@ -23362,7 +23563,7 @@ KISSY.add('overlay/popup', function(S, Component, Overlay, undefined) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 13:54
+build time: Nov 18 17:24
 */
 KISSY.add("suggest", function(S, Sug) {
     S.Suggest = Sug;
@@ -23372,7 +23573,7 @@ KISSY.add("suggest", function(S, Sug) {
 });/**
  * 提示补全组件
  * @module   suggest
- * @creator  玉伯<lifesinger@gmail.com>
+ * @creator lifesinger@gmail.com
  */
 KISSY.add('suggest/base', function(S, DOM, Event, UA, undefined) {
 
@@ -24552,7 +24753,7 @@ KISSY.add('suggest/base', function(S, DOM, Event, UA, undefined) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Nov 2 16:28
+build time: Nov 18 17:23
 */
 /**
  * @fileoverview 图像放大区域
@@ -25186,7 +25387,7 @@ KISSY.add("imagezoom", function(S, ImageZoom) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Oct 27 16:21
+build time: Nov 18 17:22
 */
 /**
  * KISSY Calendar
@@ -26472,7 +26673,7 @@ KISSY.add("calendar", function(S, C, Page, Time, Date) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Nov 7 12:10
+build time: Nov 18 17:23
 */
 /**
  * deletable menuitem
@@ -27837,7 +28038,7 @@ KISSY.add("menu/submenurender", function(S, UIBase, MenuItemRender) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 23 13:05
+build time: Nov 18 17:26
 */
 /**
  * Model and Control for button
@@ -28077,7 +28278,7 @@ KISSY.add("button", function(S, Button, Render, Split) {
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 23 13:05
+build time: Nov 18 17:23
 */
 /**
  * combination of menu and button ,similar to native select
@@ -28237,6 +28438,7 @@ KISSY.add("menubutton/menubutton", function(S, UIBase, Node, Button, MenuButtonR
              */
             _handleBlur:function(e) {
                 MenuButton.superclass._handleBlur.call(this, e);
+                // such as : click the document
                 this.set("collapsed", true);
             },
 
@@ -28613,7 +28815,1289 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, Component, MenuButton, 
 /*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Sep 22 13:55
+build time: Nov 18 17:24
+*/
+/**
+ * @fileOverview abstraction of tree node ,root and other node will extend it
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("tree/basenode", function(S, Node, UIBase, Component, BaseNodeRender) {
+    var $ = Node.all,
+        ITEM_CLS = BaseNodeRender.ITEM_CLS,
+        KeyCodes = Node.KeyCodes;
+
+
+    /**
+     * 基类树节点
+     * @constructor
+     */
+    var BaseNode = UIBase.create(Component.ModelControl,
+        /*
+         * 可多继承从某个子节点开始装饰儿子组件
+         */
+        [Component.DecorateChild],
+        {
+            _keyNav:function(e) {
+                var self = this,
+                    processed = true,
+                    n,
+                    children = self.get("children"),
+                    keyCode = e.keyCode;
+
+                // 顺序统统为前序遍历顺序
+                switch (keyCode) {
+                    // home
+                    // 移到树的顶层节点
+                    case KeyCodes.HOME:
+                        n = self.get("tree");
+                        break;
+
+                    // end
+                    // 移到最后一个可视节点
+                    case KeyCodes.END:
+                        n = self.get("tree").getLastVisibleDescendant();
+                        break;
+
+                    // 上
+                    // 当前节点的上一个兄弟节点的最后一个可显示节点
+                    case KeyCodes.UP:
+                        n = self.getPreviousVisibleNode();
+                        break;
+
+                    // 下
+                    // 当前节点的下一个可显示节点
+                    case KeyCodes.DOWN:
+                        n = self.getNextVisibleNode();
+                        break;
+
+                    // 左
+                    // 选择父节点或 collapse 当前节点
+                    case KeyCodes.LEFT:
+                        if (self.get("expanded") && (children.length || self.get("isLeaf") === false)) {
+                            self.set("expanded", false);
+                        } else {
+                            n = self.get("parent");
+                        }
+                        break;
+
+                    // 右
+                    // expand 当前节点
+                    case KeyCodes.RIGHT:
+                        if (children.length || self.get("isLeaf") === false) {
+                            if (!self.get("expanded")) {
+                                self.set("expanded", true);
+                            } else {
+                                children[0].select();
+                            }
+                        }
+                        break;
+
+                    default:
+                        processed = false;
+                        break;
+
+                }
+                if (n) {
+                    n.select();
+                }
+                return processed;
+            },
+
+            getLastVisibleDescendant:function() {
+                var self = this,children = self.get("children");
+                // 没有展开或者根本没有儿子节点，可视的只有自己
+                if (!self.get("expanded") || !children.length) {
+                    return self;
+                }
+                // 可视的最后一个子孙
+                return children[children.length - 1].getLastVisibleDescendant();
+            },
+
+            getNextVisibleNode:function() {
+                var self = this,
+                    children = self.get("children"),
+                    parent = self.get("parent");
+                if (self.get("expanded") && children.length) {
+                    return children[0];
+                }
+                // 没有展开或者根本没有儿子节点
+                // 深度遍历的下一个
+                var n = self.next();
+                while (parent && !n) {
+                    n = parent.next();
+                    parent = parent.get("parent");
+                }
+                return n;
+            },
+
+            getPreviousVisibleNode:function() {
+                var self = this,prev = self.prev();
+                if (!prev) {
+                    prev = self.get("parent");
+                } else {
+                    prev = prev.getLastVisibleDescendant();
+                }
+                return prev;
+            },
+
+            next:function() {
+                var self = this,parent = self.get("parent");
+                if (!parent) {
+                    return null;
+                }
+                var siblings = parent.get('children');
+                var index = S.indexOf(self, siblings);
+                if (index == siblings.length - 1) {
+                    return null;
+                }
+                return siblings[index + 1];
+            },
+
+            prev:function() {
+                var self = this, parent = self.get("parent");
+                if (!parent) {
+                    return null;
+                }
+                var siblings = parent.get('children');
+                var index = S.indexOf(self, siblings);
+                if (index === 0) {
+                    return null;
+                }
+                return siblings[index - 1];
+            },
+
+            /**
+             * 选中当前节点
+             * @public
+             */
+            select : function() {
+                var self = this;
+                self.get("tree").set("selectedItem", self);
+            },
+
+            _performInternal:function(e) {
+                var self = this,
+                    target = $(e.target),
+                    tree = self.get("tree"),
+                    view = self.get("view");
+                tree.get("el")[0].focus();
+                if (target.equals(view.get("expandIconEl"))) {
+                    // 忽略双击
+                    if (e.type != 'dblclick') {
+                        self.set("expanded", !self.get("expanded"));
+                    }
+                } else if (e.type == 'dblclick') {
+                    self.set("expanded", !self.get("expanded"));
+                }
+                else {
+                    self.select();
+                    tree.fire("click", {
+                        target:self
+                    });
+                }
+            },
+
+            // 默认 addChild，这里需要设置 tree 属性
+            decorateChildrenInternal:function(ui, c, cls) {
+                var self = this;
+                self.addChild(new ui({
+                    srcNode:c,
+                    tree:self.get("tree"),
+                    prefixCls:cls
+                }));
+            },
+
+            addChild:function(c) {
+                var self = this,tree = self.get("tree");
+                c.set("tree", tree);
+                c.set("depth", self.get('depth') + 1);
+                BaseNode.superclass.addChild.call(self, c);
+                self._updateRecursive();
+                tree._register(c);
+                S.each(c.get("children"), function(cc) {
+                    tree._register(cc);
+                });
+            },
+
+            /*
+             每次添加/删除节点，都检查自己以及自己子孙 class
+             每次 expand/collapse，都检查
+             */
+            _computeClass:function(cause) {
+                var self = this,view = self.get("view");
+                view._computeClass(self.get('children'), self.get("parent"), cause);
+            },
+
+            _updateRecursive:function() {
+                var self = this,len = self.get('children').length;
+                self._computeClass("_updateRecursive");
+                S.each(self.get("children"), function(c, index) {
+                    c._computeClass("_updateRecursive_children");
+                    c.get("view").set("ariaPosInSet", index + 1);
+                    c.get("view").set("ariaSize", len);
+                });
+            },
+
+            removeChild:function(c) {
+                var self = this,tree = self.get("tree");
+                tree._unregister(c);
+                S.each(c.get("children"), function(cc) {
+                    tree._unregister(cc);
+                });
+                BaseNode.superclass.removeChild.apply(self, S.makeArray(arguments));
+                self._updateRecursive();
+            },
+
+            _uiSetExpanded:function(v) {
+                var self = this,
+                    tree = self.get("tree");
+                self._computeClass("expanded-" + v);
+                if (v) {
+                    tree.fire("expand", {
+                        target:self
+                    });
+                } else {
+                    tree.fire("collapse", {
+                        target:self
+                    });
+                }
+            },
+
+            _uiSetSelected:function(v) {
+                this._forwardSetAttrToView("selected", v);
+            },
+
+
+            expandAll:function() {
+                var self = this;
+                self.set("expanded", true);
+                S.each(self.get("children"), function(c) {
+                    c.expandAll();
+                });
+            },
+
+            collapseAll:function() {
+                var self = this;
+                self.set("expanded", false);
+                S.each(self.get("children"), function(c) {
+                    c.collapseAll();
+                });
+            }
+        },
+
+        {
+            DefaultRender:BaseNodeRender,
+            ATTRS:{
+                /*事件代理*/
+                handleMouseEvents:{
+                    value:false
+                },
+                id:{
+                    getter:function() {
+                        var self = this,
+                            id = self.get("el").attr("id");
+                        if (!id) {
+                            self.get("el").attr("id", id = S.guid("tree-node"));
+                        }
+                        return id;
+                    }
+                },
+                /**
+                 * 节点字内容
+                 * @type String
+                 */
+                content:{view:true},
+
+                /**
+                 * 强制指明该节点是否具备子孙，影响样式，不配置默认样式自动变化
+                 * @type Boolean
+                 */
+                isLeaf:{
+                    view:true
+                },
+
+                expandIconEl:{ view:true},
+
+                iconEl:{ view:true},
+
+                /**
+                 * 是否选中
+                 * @type Boolean
+                 */
+                selected:{},
+
+                expanded:{
+                    value:false,
+                    view:true
+                },
+
+                /**
+                 * html title
+                 * @type String
+                 */
+                tooltip:{view:true},
+                tree:{
+                },
+
+                /**
+                 * depth of node
+                 */
+                depth:{
+                    value:0,
+                    view:true
+                },
+                focusable:{value:false},
+                decorateChildCls:{
+                    value:"tree-children"
+                }
+            },
+
+            HTML_PARSER:{
+                expanded:function(el) {
+                    var children = el.one("." + this.getCls("tree-children"));
+                    if (!children) {
+                        return false;
+                    }
+                    return children.css("display") != "none";
+                }
+            }
+        });
+
+    Component.UIStore.setUIByClass(ITEM_CLS, {
+        priority:10,
+        ui:BaseNode
+    });
+
+    return BaseNode;
+
+}, {
+    requires:['node','uibase','component','./basenoderender']
+});/**
+ * common render for node
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("tree/basenoderender", function(S, Node, UIBase, Component) {
+    var $ = Node.all,
+        LABEL_CLS = "tree-item-label",
+        FILE_CLS = "tree-file-icon",
+        FILE_EXPAND = "tree-expand-icon-{t}",
+        FOLDER_EXPAND = FILE_EXPAND + "minus",
+        FOLDER_COLLAPSED = FILE_EXPAND + "plus",
+
+        INLINE_BLOCK = "inline-block",
+        ITEM_CLS = "tree-item",
+
+        FOLDER_ICON_EXPANED = "tree-expanded-folder-icon",
+        FOLDER_ICON_COLLAPSED = "tree-collapsed-folder-icon",
+
+        CHILDREN_CLS = "tree-children",
+        CHILDREN_CLS_L = "tree-lchildren",
+
+        EXPAND_ICON_CLS = "tree-expand-icon",
+        ICON_CLS = "tree-icon",
+
+        LEAF_CLS = "tree-item-leaf",
+
+        NOT_LEAF_CLS = "tree-item-folder",
+
+        ROW_CLS = "tree-row";
+
+    return UIBase.create(Component.Render, {
+
+        _computeClass:function(children, parent
+                               //, cause
+            ) {
+            // S.log("hi " + cause + ": " + this.get("content"));
+            var self = this,
+                expanded = self.get("expanded"),
+                isLeaf = self.get("isLeaf"),
+                iconEl = self.get("iconEl"),
+                expandIconEl = self.get("expandIconEl"),
+                childrenEl = self.get("childrenEl"),
+                expand_cls = [INLINE_BLOCK,ICON_CLS,EXPAND_ICON_CLS,""].join(" "),
+                icon_cls = self.getCls([INLINE_BLOCK,ICON_CLS,FILE_CLS,""].join(" ")),
+                folder_cls = self.getCls(
+                    [INLINE_BLOCK,ICON_CLS,expanded ? FOLDER_ICON_EXPANED : FOLDER_ICON_COLLAPSED,""].join(" ")),
+                last = !parent ||
+                    parent.get("children")[parent.get("children").length - 1].get("view") == self;
+            // 强制指定了 isLeaf，否则根据儿子节点集合自动判断
+            if (isLeaf === false || (isLeaf === undefined && children.length)) {
+                iconEl.attr("class", folder_cls);
+                if (expanded) {
+                    expand_cls += FOLDER_EXPAND;
+                } else {
+                    expand_cls += FOLDER_COLLAPSED;
+                }
+                expandIconEl.attr("class", self.getCls(S.substitute(expand_cls, {
+                    "t":last ? "l" : "t"
+                })));
+            } else
+            //if (isLeaf !== false && (isLeaf ==true || !children.length))
+            {
+                iconEl.attr("class", icon_cls);
+                expandIconEl.attr("class",
+                    self.getCls(S.substitute((expand_cls + FILE_EXPAND), {
+                        "t":last ? "l" : "t"
+                    })));
+            }
+            childrenEl && childrenEl.attr("class", self.getCls(last ? CHILDREN_CLS_L : CHILDREN_CLS));
+
+        },
+
+        createDom:function() {
+            var self = this,
+                el = self.get("el"),
+                id,
+                rowEl,
+                labelEl = self.get("labelEl");
+
+
+            rowEl = $("<div class='" + self.getCls(ROW_CLS) + "'/>");
+            id = S.guid('tree-item');
+            self.set("rowEl", rowEl);
+
+            var expandIconEl = $("<div/>")
+                .appendTo(rowEl);
+            var iconEl = $("<div />")
+                .appendTo(rowEl);
+
+            if (!labelEl) {
+                labelEl = $("<span id='" + id + "' class='" + self.getCls(LABEL_CLS) + "'/>");
+                self.set("labelEl", labelEl);
+            }
+            labelEl.appendTo(rowEl);
+
+            el.attr({
+                "role":"treeitem",
+                "aria-labelledby":id
+            }).prepend(rowEl);
+
+            self.set("expandIconEl", expandIconEl);
+            self.set("iconEl", iconEl);
+
+        },
+
+        _uiSetExpanded:function(v) {
+            var self = this,
+                childrenEl = self.get("childrenEl");
+            if (childrenEl) {
+                if (!v) {
+                    childrenEl.hide();
+                } else if (v) {
+                    childrenEl.show();
+                }
+            }
+            self.get("el").attr("aria-expanded", v);
+        },
+
+        _setSelected:function(v, classes) {
+            var self = this,
+                // selected 放在 row 上，防止由于子选择器而干扰节点的子节点显示
+                // .selected .label {background:xx;}
+                rowEl = self.get("rowEl");
+            rowEl[v ? "addClass" : "removeClass"](self._completeClasses(classes, "-selected"));
+            self.get("el").attr("aria-selected", v);
+        },
+
+        _uiSetContent:function(c) {
+            this.get("labelEl").html(c);
+        },
+
+        _uiSetDepth:function(v) {
+            this.get("el").attr("aria-level", v);
+        },
+
+        _uiSetAriaSize:function(v) {
+            this.get("el").attr("aria-setsize", v);
+        },
+
+        _uiSetAriaPosInSet:function(v) {
+            this.get("el").attr("aria-posinset", v);
+        },
+
+        _uiSetTooltip:function(v) {
+            this.get("el").attr("title", v);
+        },
+
+        /**
+         * 内容容器节点，子树节点都插到这里
+         * 默认调用 Component.Render.prototype.getContentElement 为当前节点的容器
+         * 而对于子树节点，它有自己的子树节点容器（单独的div），而不是儿子都直接放在自己的容器里面
+         * @override
+         */
+        getContentElement:function() {
+            var self = this;
+            if (self.get("childrenEl")) {
+                return self.get("childrenEl");
+            }
+            var c = $("<div " + (self.get("expanded") ? "" : "style='display:none'")
+                + " role='group'><" + "/div>")
+                .appendTo(self.get("el"));
+            self.set("childrenEl", c);
+            return c;
+        }
+    }, {
+        ATTRS:{
+            ariaSize:{},
+            ariaPosInSet:{},
+            childrenEl:{},
+            expandIconEl:{},
+            tooltip:{},
+            iconEl:{},
+            expanded:{},
+            rowEl:{},
+            depth:{},
+            labelEl:{},
+            content:{},
+            isLeaf:{}
+        },
+
+        HTML_PARSER:{
+            childrenEl:function(el) {
+                return el.children("." + this.getCls(CHILDREN_CLS));
+            },
+            labelEl:function(el) {
+                return el.children("." + this.getCls(LABEL_CLS));
+            },
+            content:function(el) {
+                return el.children("." + this.getCls(LABEL_CLS)).html();
+            },
+            isLeaf:function(el) {
+                var self = this;
+                if (el.hasClass(self.getCls(LEAF_CLS))) {
+                    return true;
+                }
+                if (el.hasClass(self.getCls(NOT_LEAF_CLS))) {
+                    return false;
+                }
+            }
+        },
+
+        ITEM_CLS:ITEM_CLS
+
+    });
+
+}, {
+    requires:['node','uibase','component']
+});/**
+ * checkable tree node
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("tree/checknode", function(S, Node, UIBase, Component, BaseNode, CheckNodeRender) {
+    var $ = Node.all,
+        PARTIAL_CHECK = 2,
+        CHECK_CLS = "tree-item-check",
+        CHECK = 1,
+        EMPTY = 0;
+
+    var CheckNode = UIBase.create(BaseNode, {
+        _performInternal:function(e) {
+            var self=this;
+            // 需要通知 tree 获得焦点
+            self.get("tree").get("el")[0].focus();
+            var target = $(e.target),
+                view = self.get("view"),
+                tree = self.get("tree");
+
+            if (e.type == "dblclick") {
+                // 双击在 +- 号上无效
+                if (target.equals(view.get("expandIconEl"))) {
+                    return;
+                }
+                // 双击在 checkbox 上无效
+                if (target.equals(view.get("checkEl"))) {
+                    return;
+                }
+                // 双击在字或者图标上，切换 expand 装tai
+                self.set("expanded", !self.get("expanded"));
+            }
+
+            // 点击在 +- 号，切换状态
+            if (target.equals(view.get("expandIconEl"))) {
+                self.set("expanded", !self.get("expanded"));
+                return;
+            }
+
+            // 单击任何其他地方都切换 check 状态
+            var checkState = self.get("checkState");
+            if (checkState == CHECK) {
+                checkState = EMPTY;
+            } else {
+                checkState = CHECK;
+            }
+            self.set("checkState", checkState);
+            tree.fire("click", {
+                target:self
+            });
+        },
+
+        _uiSetCheckState:function(s) {
+            var self=this;
+            if (s == CHECK || s == EMPTY) {
+                S.each(self.get("children"), function(c) {
+                    c.set("checkState", s);
+                });
+            }
+            // 每次状态变化都通知 parent 沿链检查，一层层向上通知
+            // 效率不高，但是结构清晰
+            var parent = self.get("parent");
+            if (parent) {
+                var checkCount = 0;
+                var cs = parent.get("children");
+                for (var i = 0; i < cs.length; i++) {
+                    var c = cs[i],cState = c.get("checkState");
+                    // 一个是部分选，父亲必定是部分选，立即结束
+                    if (cState == PARTIAL_CHECK) {
+                        parent.set("checkState", PARTIAL_CHECK);
+                        return;
+                    } else if (cState == CHECK) {
+                        checkCount++;
+                    }
+                }
+
+                // 儿子全都选了，父亲也全选
+                if (checkCount == cs.length) {
+                    parent.set("checkState", CHECK);
+                }
+                // 儿子都没选，父亲也不选
+                else if (checkCount === 0) {
+                    parent.set("checkState", EMPTY);
+                }
+                // 有的儿子选了，有的没选，父亲部分选
+                else {
+                    parent.set("checkState", PARTIAL_CHECK);
+                }
+            }
+        }
+    }, {
+        ATTRS:{
+            checkState:{
+                view:true,
+                // check 的三状态
+                // 0 一个不选
+                // 1 儿子有选择
+                // 2 全部都选了
+                value:0
+            }
+        },
+        CHECK_CLS :CHECK_CLS,
+        DefaultRender:CheckNodeRender,
+        PARTIAL_CHECK:PARTIAL_CHECK,
+        CHECK:CHECK,
+        EMPTY:EMPTY
+    });
+
+    Component.UIStore.setUIByClass(CHECK_CLS, {
+        priority:Component.UIStore.PRIORITY.LEVEL2,
+        ui:CheckNode
+    });
+
+    return CheckNode;
+}, {
+    requires:['node','uibase','component','./basenode','./checknoderender']
+});KISSY.add("tree/checknoderender", function(S, Node, UIBase, Component, BaseNodeRender) {
+    var $ = Node.all,
+        ICON_CLS = "tree-icon",
+        CHECK_CLS = "tree-item-check",
+        ALL_STATES_CLS = "tree-item-checked0 tree-item-checked1 tree-item-checked2",
+        INLINE_BLOCK = "inline-block";
+    return UIBase.create(BaseNodeRender, {
+
+        createDom:function() {
+            var self = this;
+            var expandIconEl = self.get("expandIconEl"),
+                checkEl = $("<div class='" + self.getCls(INLINE_BLOCK + " " + " "
+                    + ICON_CLS) + "'/>").insertAfter(expandIconEl);
+            self.set("checkEl", checkEl);
+        },
+
+        _uiSetCheckState:function(s) {
+            var self = this;
+            var checkEl = self.get("checkEl");
+            checkEl.removeClass(self.getCls(ALL_STATES_CLS))
+                .addClass(self.getCls(CHECK_CLS + "ed" + s));
+        }
+
+    }, {
+        ATTRS:{
+            checkEl:{},
+            checkState:{}
+        },
+
+        CHECK_CLS:CHECK_CLS
+    });
+}, {
+    requires:['node','uibase','component','./basenoderender']
+});/**
+ * root node represent a check tree
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("tree/checktree", function(S, UIBase, Component, CheckNode, CheckTreeRender, TreeMgr) {
+    var CHECK_TREE_CLS = CheckTreeRender.CHECK_TREE_CLS;
+    /*多继承*/
+    var CheckTree = UIBase.create(CheckNode, [Component.DelegateChildren,TreeMgr], {
+    }, {
+        DefaultRender:CheckTreeRender
+    });
+
+    Component.UIStore.setUIByClass(CHECK_TREE_CLS, {
+        priority:Component.UIStore.PRIORITY.LEVEL4,
+        ui:CheckTree
+    });
+
+    return CheckTree;
+
+}, {
+    requires:['uibase','component','./checknode','./checktreerender','./treemgr']
+});/**
+ * root node render for checktree
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("tree/checktreerender", function(S, UIBase, Component, CheckNodeRender, TreeMgrRender) {
+    var CHECK_TREE_CLS="tree-root-check";
+    return UIBase.create(CheckNodeRender, [TreeMgrRender],{
+    },{
+        CHECK_TREE_CLS:CHECK_TREE_CLS
+    });
+}, {
+    requires:['uibase','component','./checknoderender','./treemgrrender']
+});/**
+ * root node represent a simple tree
+ * @author yiminghe@gmail.com
+ * @refer http://www.w3.org/TR/wai-aria-practices/#TreeView
+ */
+KISSY.add("tree/tree", function(S, UIBase, Component, BaseNode, TreeRender, TreeMgr) {
+
+    var TREE_CLS = TreeRender.TREE_CLS;
+
+    /*多继承
+     *1. 继承基节点（包括可装饰儿子节点功能）
+     *2. 继承 mixin 树管理功能
+     *3. 继承 mixin 儿子事件代理功能
+     */
+    var Tree = UIBase.create(BaseNode, [Component.DelegateChildren,TreeMgr], {
+    }, {
+        DefaultRender:TreeRender
+    });
+
+
+    Component.UIStore.setUIByClass(TREE_CLS, {
+        priority:Component.UIStore.PRIORITY.LEVEL3,
+        ui:Tree
+    });
+
+
+    return Tree;
+
+}, {
+    requires:['uibase','component','./basenode','./treerender','./treemgr']
+});
+
+/**
+ * note bug:
+ *
+ * 1. checked tree 根节点总是 selected ！
+ * 2. 根节点 hover 后取消不了了
+ **//**
+ * tree management utils
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("tree/treemgr", function(S, Event) {
+
+    function TreeMgr() {
+    }
+
+    TreeMgr.ATTRS = {
+        // 默认 true
+        // 是否显示根节点
+        showRootNode:{
+            view:true
+        },
+        selectedItem:{},
+        tree:{
+            valueFn:function() {
+                return this;
+            }
+        },
+        focusable:{
+            value:true
+        }
+    };
+
+    S.augment(TreeMgr, {
+        /*
+         加快从事件代理获取原事件节点
+         */
+        __getAllNodes:function() {
+            var self=this;
+            if (!self._allNodes) {
+                self._allNodes = {};
+            }
+            return self._allNodes;
+        },
+
+        __renderUI:function() {
+             var self=this;
+            // add 过那么一定调用过 checkIcon 了
+            if (!self.get("children").length) {
+                self._computeClass("root_renderUI");
+            }
+        },
+
+        _register:function(c) {
+            this.__getAllNodes()[c.get("id")] = c;
+        },
+
+        _unregister:function(c) {
+            delete this.__getAllNodes()[c.get("id")];
+        },
+
+        _handleKeyEventInternal:function(e) {
+            var current = this.get("selectedItem");
+            if (e.keyCode == Event.KeyCodes.ENTER) {
+                // 传递给真正的单个子节点
+                return current._performInternal(e);
+            }
+            return current._keyNav(e);
+        },
+
+        // 重写 delegatechildren ，缓存加快从节点获取对象速度
+        getOwnerControl:function(node) {
+            var self = this,
+                n,
+                allNodes = self.__getAllNodes(),
+                elem = self.get("el")[0];
+            while (node && node !== elem) {
+                if (n = allNodes[node.id]) {
+                    return n;
+                }
+                node = node.parentNode;
+            }
+            // 最终自己处理
+            return self;
+        },
+
+        // 单选
+        _uiSetSelectedItem:function(n, ev) {
+            if (ev.prevVal) {
+                ev.prevVal.set("selected", false);
+            }
+            n.set("selected", true);
+        },
+
+
+        _uiSetFocused:function(v) {
+            var self = this;
+            self.constructor.superclass._uiSetFocused.call(self, v);
+            // 得到焦点时没有选择节点
+            // 默认选择自己
+            if (v && !self.get("selectedItem")) {
+                self.select();
+            }
+        }
+    });
+
+    return TreeMgr;
+}, {
+    requires:['event']
+});/**
+ * tree management utils render
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("tree/treemgrrender", function(S) {
+    var FOCUSED_CLS = "tree-item-focused";
+
+    function TreeMgrRender() {
+    }
+
+    TreeMgrRender.ATTRS = {
+        // 默认 true
+        // 是否显示根节点
+        showRootNode:{
+        }
+    };
+
+    S.augment(TreeMgrRender, {
+        __renderUI:function() {
+            var self=this;
+            self.get("el").attr("role", "tree")[0]['hideFocus'] = true;
+            self.get("rowEl").addClass(self.getCls("tree-root-row"));
+        },
+
+        _uiSetShowRootNode:function(v) {
+            this.get("rowEl")[v ? "show" : "hide"]();
+        },
+
+        _uiSetFocused:function(v) {
+            this.get("el")[v ? "addClass" : "removeClass"](this.getCls(FOCUSED_CLS));
+        }
+    });
+
+    return TreeMgrRender;
+});/**
+ * root node render
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("tree/treerender", function(S, UIBase, Component, BaseNodeRender, TreeMgrRender) {
+    var TREE_CLS="tree-root";
+    return UIBase.create(BaseNodeRender, [TreeMgrRender],{},{
+        TREE_CLS:TREE_CLS
+    });
+}, {
+    requires:['uibase','component','./basenoderender','./treemgrrender']
+});/**
+ * tree component for kissy
+ * @author yiminghe@gmail.com
+ */
+KISSY.add('tree', function(S, Tree, TreeNode, CheckNode, CheckTree) {
+    Tree.Node = TreeNode;
+    Tree.CheckNode = CheckNode;
+    Tree.CheckTree = CheckTree;
+    return Tree;
+}, {
+    requires:["tree/tree","tree/basenode","tree/checknode","tree/checktree"]
+});
+/*
+Copyright 2011, KISSY UI Library v1.20dev
+MIT Licensed
+build time: Nov 18 17:24
+*/
+/**
+ * intervein elements dynamically
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("waterfall/base", function(S, Node, Base) {
+
+    var $ = Node.all,
+        RESIZE_DURATION = 50;
+
+    function Intervein() {
+        Intervein.superclass.constructor.apply(this, arguments);
+        this._init();
+    }
+
+
+    function timedChunk(items, process, context, callback) {
+        var todo = S.makeArray(items),
+            stopper = {},
+            timer;
+        if (todo.length > 0) {
+            timer = setTimeout(function() {
+                var start = +new Date();
+                do {
+                    var item = todo.shift();
+                    process.call(context, item);
+                } while (todo.length > 0 && (+new Date() - start < 50));
+
+                if (todo.length > 0) {
+                    timer = setTimeout(arguments.callee, 25);
+                } else {
+                    callback && callback.call(context, items);
+                }
+            }, 25);
+        } else {
+            callback && S.later(callback, 0, false, context, [items]);
+        }
+
+        stopper.stop = function() {
+            if (timer) {
+                clearTimeout(timer);
+                todo = [];
+            }
+        };
+
+        return stopper;
+    }
+
+
+    Intervein.ATTRS = {
+        /**
+         * 错乱节点容器
+         * @type Node
+         */
+        container:{
+            setter:function(v) {
+                return $(v);
+            }
+        },
+
+        /**
+         * @private
+         */
+        curColHeights:{
+            value:[]
+        },
+
+
+        minColCount:{
+            value:1
+        },
+
+        effect:{
+            value:{
+                effect:"fadeIn",
+                duration:1
+            }
+        },
+
+        colWidth:{}
+    };
+
+    function doResize() {
+        var self = this,
+            containerRegion = self._containerRegion;
+        // 宽度没变就没必要调整
+        if (containerRegion && self.get("container").width() === containerRegion.width) {
+            return
+        }
+        self.adjust();
+    }
+
+    function recalculate() {
+        var self = this,
+            container = self.get("container"),
+            containerWidth = container.width(),
+            curColHeights = self.get("curColHeights");
+        curColHeights.length = Math.max(parseInt(containerWidth / self.get("colWidth")),
+            self.get("minColCount"));
+        self._containerRegion = {
+            width:containerWidth
+        };
+        S.each(curColHeights, function(v, i) {
+            curColHeights[i] = 0;
+        });
+    }
+
+    function adjustItem(itemRaw) {
+        var self = this,
+            item = $(itemRaw),
+            curColHeights = self.get("curColHeights"),
+            container = self.get("container"),
+            curColCount = curColHeights.length,
+            dest = 0,
+            containerRegion = self._containerRegion,
+            guard = Number.MAX_VALUE;
+        for (var i = 0; i < curColCount; i++) {
+            if (curColHeights[i] < guard) {
+                guard = curColHeights[i];
+                dest = i;
+            }
+        }
+        if (!curColCount) {
+            guard = 0;
+        }
+        // 元素保持间隔不变，居中
+        var margin = Math.max(containerRegion.width - curColCount * self.get("colWidth"), 0) / 2;
+        item.css({
+            //left:dest * Math.max(containerRegion.width / curColCount, self.get("colWidth"))
+            //    + containerRegion.left,
+            // 元素间固定间隔好点
+            left:dest * self.get("colWidth") + margin,
+            top:guard
+        });
+        /*不在容器里，就加上*/
+        if (!container.contains(item)) {
+            container.append(item);
+        }
+        curColHeights[dest] += item.outerHeight(true);
+        return item;
+    }
+
+    S.extend(Intervein, Base, {
+        isAdjusting:function() {
+            return !!this._adjuster;
+        },
+        _init:function() {
+            var self = this;
+            // 一开始就 adjust 一次，可以对已有静态数据处理
+            doResize.call(self);
+            self.__onResize = S.buffer(doResize, RESIZE_DURATION, self);
+            $(window).on("resize", self.__onResize);
+        },
+
+        /**
+         * 调整所有的元素位置
+         * @param callback
+         */
+        adjust:function(callback) {
+            S.log("waterfall:adjust");
+            var self = this,
+                items = self.get("container").all(".ks-waterfall");
+            /* 正在加，直接开始这次调整，剩余的加和正在调整的一起处理 */
+            /* 正在调整中，取消上次调整，开始这次调整 */
+            if (self.isAdjusting()) {
+                self._adjuster.stop();
+            }
+            /*计算容器宽度等信息*/
+            recalculate.call(self);
+            return self._adjuster = timedChunk(items, adjustItem, self, function() {
+                self.get("container").height(Math.max.apply(Math, self.get("curColHeights")));
+                self._adjuster = 0;
+                callback && callback.call(self);
+            });
+        },
+
+        addItems:function(items, callback) {
+            var self = this;
+
+            /* 正在调整中，直接这次加，和调整的节点一起处理 */
+            /* 正在加，直接这次加，一起处理 */
+            self._adder = timedChunk(items,
+                self._addItem,
+                self,
+                function() {
+                    self.get("container").height(Math.max.apply(Math,
+                        self.get("curColHeights")));
+                    self._adder = 0;
+                    callback && callback.call(self);
+                });
+
+            return self._adder;
+        },
+
+        _addItem:function(itemRaw) {
+            var self = this,
+                curColHeights = self.get("curColHeights"),
+                container = self.get("container"),
+                item = adjustItem.call(self, itemRaw),
+                effect = self.get("effect");
+            if (!effect.effect) {
+                return;
+            }
+            item[effect.effect](effect.duration, undefined, effect.easing);
+        },
+
+        destroy:function() {
+            $(window).detach("resize", this.__onResize);
+        }
+    });
+
+
+    return Intervein;
+
+}, {
+    requires:['node','base']
+});/**
+ * load content
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("waterfall/loader", function(S, Node, Intervein) {
+
+    var $ = Node.all,
+        SCROLL_TIMER = 50;
+
+    function Loader() {
+        Loader.superclass.constructor.apply(this, arguments);
+    }
+
+
+    function doScroll() {
+        var self = this;
+        if (self.__pause) {
+            return;
+        }
+        S.log("waterfall:doScroll");
+        if (self.__loading) {
+            return;
+        }
+        // 如果正在调整中，等会再看
+        // 调整中的高度不确定，现在不适合判断是否到了加载新数据的条件
+        if (self.isAdjusting()) {
+            // 恰好 __onScroll 是 buffered . :)
+            self.__onScroll();
+            return;
+        }
+        var container = self.get("container"),
+            colHeight = container.offset().top,
+            diff = self.get("diff"),
+            curColHeights = self.get("curColHeights");
+        // 找到最小列高度
+        if (curColHeights.length) {
+            colHeight += Math.min.apply(Math, curColHeights);
+        }
+        // 动态载
+        // 最小高度(或被用户看到了)低于预加载线
+        if (diff + $(window).scrollTop() + $(window).height() > colHeight) {
+            S.log("waterfall:loading");
+            loadData.call(self);
+        }
+    }
+
+    function loadData() {
+        var self = this,
+            container = this.get("container");
+
+        self.__loading = 1;
+
+        var load = self.get("load");
+
+        load && load(success, end);
+
+        function success(items) {
+            self.__loading = 0;
+            self.addItems(items);
+        }
+
+        function end() {
+            self.end();
+        }
+
+    }
+
+    Loader.ATTRS = {
+        diff:{
+            getter:function(v) {
+                return v || 0;
+                // 默认一屏内加载
+                //return $(window).height() / 4;
+            }
+        }
+    };
+
+
+    S.extend(Loader, Intervein, {
+        _init:function() {
+            var self = this;
+            Loader.superclass._init.apply(self, arguments);
+            self.__onScroll = S.buffer(doScroll, SCROLL_TIMER, self);
+            $(window).on("scroll", self.__onScroll);
+            doScroll.call(self);
+        },
+
+        end:function() {
+            $(window).detach("scroll", this.__onScroll);
+        },
+
+
+        pause:function() {
+            this.__pause = 1;
+        },
+
+        resume:function() {
+            this.__pause = 0;
+        },
+
+        destroy:function() {
+            var self = this;
+            Loader.superclass.destroy.apply(self, arguments);
+            $(window).detach("scroll", self.__onScroll);
+        }
+    });
+
+    return Loader;
+
+}, {
+    requires:['node','./base']
+});KISSY.add("waterfall", function(S, Intervein, Loader) {
+    Intervein.Loader = Loader;
+    return Intervein;
+}, {
+    requires:['waterfall/base','waterfall/loader']
+});
+/*
+Copyright 2011, KISSY UI Library v1.20dev
+MIT Licensed
+build time: Nov 18 17:24
 */
 /**
  * @author: 常胤 (lzlu.com)
@@ -30133,3 +31617,1019 @@ KISSY.add("validation", function(S, Validation) {
 		requires:["validation/base","validation/assets/base.css"]
 	}
 );
+/*
+Copyright 2011, KISSY UI Library v1.20dev
+MIT Licensed
+build time: Nov 18 17:23
+*/
+/**
+ * mvc base
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("mvc/base", function(S, sync) {
+    return {
+        sync:sync
+    };
+}, {
+    requires:['./sync']
+});/**
+ * collection of models
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("mvc/collection", function(S, Event, Model, mvc, Base) {
+
+    function findModelIndex(mods, mod, comparator) {
+        var i = mods.length;
+        if (comparator) {
+            var k = comparator(mod);
+            for (i = 0; i < mods.length; i++) {
+                var k2 = comparator(mods[i]);
+                if (k < k2) {
+                    break;
+                }
+            }
+        }
+        return i;
+    }
+
+    function Collection() {
+        Collection.superclass.constructor.apply(this, arguments);
+    }
+
+    Collection.ATTRS = {
+        model:{
+            value:Model
+        },
+        models:{
+            /**
+             * normalize model list
+             * @param models
+             */
+            setter:function(models) {
+                var prev = this.get("models");
+                this.remove(prev, {silent:1});
+                this.add(models, {silent:1});
+                return this.get("models");
+            },
+            value:[]
+        },
+        url:{value:S.noop},
+        comparator:{},
+        sync:{
+            value:function() {
+                mvc.sync.apply(this, arguments);
+            }
+        },
+        parse:{
+            value:function(resp) {
+                return resp;
+            }
+        }
+    };
+
+    S.extend(Collection, Base, {
+        sort:function() {
+            var comparator = this.get("comparator");
+            if (comparator) {
+                this.get("models").sort(function(a, b) {
+                    return comparator(a) - comparator(b);
+                });
+            }
+        },
+
+        toJSON:function() {
+            return S.map(this.get("models"), function(m) {
+                return m.toJSON();
+            });
+        },
+
+        /**
+         *
+         * @param model
+         * @param opts
+         * @return  boolean flag
+         *          true:add success
+         *          false:validate error
+         */
+        add:function(model, opts) {
+            var self = this,
+                ret = true;
+            if (S.isArray(model)) {
+                var orig = [].concat(model);
+                S.each(orig, function(m) {
+                    ret = ret && self._add(m, opts);
+                });
+            } else {
+                ret = self._add(model, opts);
+            }
+            return ret;
+        },
+
+        remove:function(model, opts) {
+            var self = this;
+            if (S.isArray(model)) {
+                var orig = [].concat(model);
+                S.each(orig, function(m) {
+                    self._remove(m, opts);
+                });
+            } else if (model) {
+                self._remove(model, opts);
+            }
+        },
+
+        at:function(i) {
+            return this.get("models")[i];
+        },
+
+        _normModel:function(model) {
+            var ret = true;
+            if (!(model instanceof Model)) {
+                var data = model,
+                    modelConstructor = this.get("model");
+                model = new modelConstructor();
+                ret = model.set(data, {
+                    silent:1
+                });
+            }
+            return ret && model;
+        },
+
+        load:function(opts) {
+            var self = this;
+            opts = opts || {};
+            var success = opts.success;
+            opts.success = function(resp) {
+                if (resp) {
+                    var v = self.get("parse").call(self, resp);
+                    if (v) {
+                        self.set("models", v, opts);
+                    }
+                }
+                success && success.apply(this, arguments);
+            };
+            self.get("sync").call(self, self, 'read', opts);
+            return self;
+        },
+
+        create:function(model, opts) {
+            var self = this;
+            opts = opts || {};
+            model = this._normModel(model);
+            if (model) {
+                model.addToCollection(self);
+                var success = opts.success;
+                opts.success = function() {
+                    self.add(model, opts);
+                    success && success();
+                };
+                model.save(opts);
+            }
+            return model;
+        },
+
+        _add:function(model, opts) {
+            model = this._normModel(model);
+            if (model) {
+                opts = opts || {};
+                var index = findModelIndex(this.get("models"), model, this.get("comparator"));
+                this.get("models").splice(index, 0, model);
+                model.addToCollection(this);
+                if (!opts['silent']) {
+                    this.fire("add", {
+                        model:model
+                    });
+                }
+            }
+            return model;
+        },
+
+        /**
+         * not call model.destroy ,maybe model belongs to multiple collections
+         * @private
+         * @param model
+         * @param opts
+         */
+        _remove:function(model, opts) {
+            opts = opts || {};
+            var index = S.indexOf(model, this.get("models"));
+            if (index != -1) {
+                this.get("models").splice(index, 1);
+                model.removeFromCollection(this);
+            }
+            if (!opts['silent']) {
+                this.fire("remove", {
+                    model:model
+                });
+            }
+        },
+
+        getById:function(id) {
+            var models = this.get("models");
+            for (var i = 0; i < models.length; i++) {
+                var model = models[i];
+                if (model.getId() === id) {
+                    return model;
+                }
+            }
+            return null;
+        },
+
+        getByCid:function(cid) {
+            var models = this.get("models");
+            for (var i = 0; i < models.length; i++) {
+                var model = models[i];
+                if (model.get("clientId") === cid) {
+                    return model;
+                }
+            }
+            return null;
+        }
+
+    });
+
+    return Collection;
+
+}, {
+    requires:['event','./model','./base','base']
+});/**
+ * enhanced base for model with sync
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("mvc/model", function(S, Base, mvc) {
+
+    var blacklist = [
+        "idAttribute",
+        "clientId",
+        "urlRoot",
+        "url",
+        "parse",
+        "sync"
+    ];
+
+    function Model() {
+        var self = this;
+        Model.superclass.constructor.apply(self, arguments);
+        /**
+         * should bubble to its collections
+         */
+        self.publish("*Change", {
+            bubbles:1
+        });
+        /**
+         * @Array mvc/collection collections this model belonged to
+         */
+        self.collections = {};
+    }
+
+    S.extend(Model, Base, {
+
+        addToCollection:function(c) {
+            this.collections[S.stamp(c)] = c;
+            this.addTarget(c);
+        },
+
+        removeFromCollection:function(c) {
+            delete this.collections[S.stamp(c)];
+            this.removeTarget(c);
+        },
+
+        getId:function() {
+            return this.get(this.get("idAttribute"));
+        },
+
+        setId:function(id) {
+            return this.set(this.get("idAttribute"), id);
+        },
+
+        /**
+         * @override
+         */
+        __set:function() {
+            this.__isModified = 1;
+            return Model.superclass.__set.apply(this, arguments);
+        },
+
+        /**
+         * whether it is newly created
+         */
+        isNew:function() {
+            return !this.getId();
+        },
+
+        /**
+         * whether has been modified since last save
+         */
+        isModified:function() {
+            return !!(this.isNew() || this.__isModified);
+        },
+
+        /**
+         * destroy this model
+         * @param opts
+         */
+        destroy:function(opts) {
+            var self = this;
+            opts = opts || {};
+            var success = opts.success;
+            opts.success = function(resp) {
+                var lists = self.collections;
+                if (resp) {
+                    self.set(resp, opts);
+                }
+                for (var l in lists) {
+                    lists[l].remove(self, opts);
+                    self.removeFromCollection(lists[l]);
+                }
+                self.fire("destroy");
+                success && success.apply(this, arguments);
+            };
+            if (!self.isNew() && opts['delete']) {
+                self.get("sync").call(self, self, 'delete', opts);
+            } else {
+                opts.success();
+                if (opts.complete) {
+                    opts.complete();
+                }
+            }
+
+            return self;
+        },
+
+        /**
+         * call sycn to load
+         * @param opts
+         */
+        load:function(opts) {
+            var self = this;
+            opts = opts || {};
+            var success = opts.success;
+            opts.success = function(resp) {
+                if (resp) {
+                    var v = self.get("parse").call(self, resp);
+                    if (v) {
+                        self.set(v, opts);
+                    }
+                }
+                self.__isModified = 0;
+                success && success.apply(this, arguments);
+            };
+            self.get("sync").call(self, self, 'read', opts);
+            return self;
+        },
+
+        save:function(opts) {
+            var self = this;
+            opts = opts || {};
+            var success = opts.success;
+            opts.success = function(resp) {
+                if (resp) {
+                    var v = self.get("parse").call(self, resp);
+                    if (v) {
+                        self.set(v, opts);
+                    }
+                }
+                self.__isModified = 0;
+                success && success.apply(this, arguments);
+            };
+            self.get("sync").call(self, self, self.isNew() ? 'create' : 'update', opts);
+            return self;
+        },
+
+        toJSON:function() {
+            var ret = this.getAttrVals();
+            S.each(blacklist, function(b) {
+                delete ret[b];
+            });
+            return ret;
+        }
+
+    }, {
+        ATTRS:{
+            idAttribute:{
+                value:'id'
+            },
+            clientId:{
+                valueFn:function() {
+                    return S.guid("mvc-client");
+                }
+            },
+            url:{
+                value:url
+            },
+            urlRoot:{
+                value:""
+            },
+            sync:{
+                value:sync
+            },
+            parse:{
+                /**
+                 * parse json from server to get attr/value pairs
+                 * @param resp
+                 */
+                value:function(resp) {
+                    return resp;
+                }
+            }
+        }
+    });
+
+    function getUrl(o) {
+        var u;
+        if (o && (u = o.get("url"))) {
+            if (S.isString(u)) {
+                return u;
+            }
+            return u.call(o);
+        }
+        return u;
+    }
+
+
+    function sync() {
+        mvc.sync.apply(this, arguments);
+    }
+
+    function url() {
+        var c,
+            cv,
+            collections = this.collections;
+        for (c in collections) {
+            if (collections.hasOwnProperty(c)) {
+                cv = collections[c];
+                break;
+            }
+        }
+        var base = getUrl(cv) || this.get("urlRoot");
+
+        if (this.isNew()) {
+            return base;
+        }
+
+        base = base + (base.charAt(base.length - 1) == '/' ? '' : '/');
+        return base + encodeURIComponent(this.getId()) + "/";
+    }
+
+    return Model;
+
+}, {
+    requires:['base','./base']
+});/**
+ * simple router to get path parameter and query parameter from hash(old ie) or url(html5)
+ * @author yiminghe@gmail.com
+ */
+KISSY.add('mvc/router', function(S, Event, Base) {
+    var queryReg = /\?(.*)/,
+        each = S.each,
+        // take a breath to avoid duplicate hashchange
+        BREATH_INTERVAL = 100,
+        grammar = /(:([\w\d]+))|(\\\*([\w\d]+))/g,
+        // all registered route instance
+        allRoutes = [],
+        win = window,
+        location = win.location,
+        history = win.history ,
+        supportNativeHistory = !!(history && history['pushState']),
+        __routerMap = "__routerMap";
+
+    function findFirstCaptureGroupIndex(regStr) {
+        var r,i;
+        for (i = 0;
+             i < regStr.length;
+             i++) {
+            r = regStr.charAt(i);
+            // skip escaped reg meta char
+            if (r == "\\") {
+                i++;
+            } else if (r == "(") {
+                return i;
+            }
+        }
+        throw new Error("impossible to not to get capture group in kissy mvc route");
+    }
+
+    function getHash() {
+        // 不能 location.hash
+        // http://xx.com/#yy?z=1
+        // ie6 => location.hash = #yy
+        // 其他浏览器 => location.hash = #yy?z=1
+        return location.href.replace(/^[^#]*#?!?(.*)$/, '$1');
+    }
+
+    /**
+     * get url fragment and dispatch
+     */
+    function getFragment() {
+        if (Router.nativeHistory && supportNativeHistory) {
+            return location.pathname.substr(Router.urlRoot.length) + location.search;
+        } else {
+            return getHash();
+        }
+    }
+
+    /**
+     * slash ------------- start
+     */
+
+    /**
+     * whether string end with slash
+     * @param str
+     */
+    function endWithSlash(str) {
+        return S.endsWith(str, "/");
+    }
+
+    function startWithSlash(str) {
+        return S.startsWith(str, "/");
+    }
+
+    function removeEndSlash(str) {
+        if (endWithSlash(str)) {
+            str = str.substring(0, str.length - 1);
+        }
+        return str;
+    }
+
+    function removeStartSlash(str) {
+        if (startWithSlash(str)) {
+            str = str.substring(1);
+        }
+        return str;
+    }
+
+    function addEndSlash(str) {
+        return removeEndSlash(str) + "/";
+    }
+
+    function addStartSlash(str) {
+        return "/" + removeStartSlash(str);
+    }
+
+    function equalsIgnoreSlash(str1, str2) {
+        str1 = removeEndSlash(str1);
+        str2 = removeEndSlash(str2);
+        return str1 == str2;
+    }
+
+    /**
+     * slash ------------------  end
+     */
+
+    /**
+     * get full path from fragment for html history
+     * @param fragment
+     */
+    function getFullPath(fragment) {
+        return location.protocol + "//" + location.host +
+            removeEndSlash(Router.urlRoot) + addStartSlash(fragment)
+    }
+
+    /**
+     * get query object from query string
+     * @param path
+     */
+    function getQuery(path) {
+        var m,
+            ret = {};
+        if (m = path.match(queryReg)) {
+            return S.unparam(m[1]);
+        }
+        return ret;
+    }
+
+    /**
+     * match url with route intelligently (always get optimal result)
+     */
+    function dispatch() {
+        var path = getFragment(),
+            fullPath = path,
+            query,
+            arg,
+            finalRoute = 0,
+            finalMatchLength = -1,
+            finalRegStr = "",
+            finalFirstCaptureGroupIndex = -1,
+            finalCallback = 0,
+            finalRouteName = "",
+            finalParam = 0;
+
+        path = fullPath.replace(queryReg, "");
+        // user input : /xx/yy/zz
+        each(allRoutes, function(route) {
+            var routeRegs = route[__routerMap],
+                // match exactly
+                exactlyMatch = 0;
+            each(routeRegs, function(desc) {
+                    var reg = desc.reg,
+                        regStr = desc.regStr,
+                        paramNames = desc.paramNames,
+                        firstCaptureGroupIndex = -1,
+                        m,
+                        name = desc.name,
+                        callback = desc.callback;
+                    if (m = path.match(reg)) {
+                        // match all result item shift out
+                        m.shift();
+
+                        function genParam() {
+                            var params = {};
+                            each(m, function(sm, i) {
+                                params[paramNames[i]] = sm;
+                            });
+                            return params;
+                        }
+
+                        function upToFinal() {
+                            finalRegStr = regStr;
+                            finalFirstCaptureGroupIndex = firstCaptureGroupIndex;
+                            finalCallback = callback;
+                            finalParam = genParam();
+                            finalRoute = route;
+                            finalRouteName = name;
+                            finalMatchLength = m.length;
+                        }
+
+                        // route: /xx/yy/zz
+                        if (!m.length) {
+
+                            upToFinal();
+                            exactlyMatch = 1;
+                            return false;
+
+                        } else {
+
+                            firstCaptureGroupIndex = findFirstCaptureGroupIndex(regStr);
+
+                            // final route : /*
+                            // now route : /xx/*
+                            if (firstCaptureGroupIndex > finalFirstCaptureGroupIndex) {
+                                upToFinal();
+                            }
+
+                            // final route : /xx/:id/:id
+                            // now route :  /xx/:id/zz
+                            else if (
+                                firstCaptureGroupIndex == finalFirstCaptureGroupIndex &&
+                                    finalMatchLength >= m.length
+                                ) {
+                                if (m.length < finalMatchLength) {
+                                    upToFinal()
+                                } else if (regStr.length > finalRegStr.length) {
+                                    upToFinal();
+                                }
+                            }
+
+                            // first route has priority
+                            else if (!finalRoute) {
+                                upToFinal();
+                            }
+                        }
+
+                    }
+                }
+            );
+
+            if (exactlyMatch) {
+                return false;
+            }
+        });
+
+
+        if (finalParam) {
+            query = getQuery(fullPath);
+            finalCallback.apply(finalRoute, [finalParam,query]);
+            arg = {
+                name:name,
+                paths:finalParam,
+                query:query
+            };
+            finalRoute.fire('route:' + name, arg);
+            finalRoute.fire('route', arg);
+        }
+    }
+
+    /**
+     * transform route declaration to router reg
+     * @param str
+     *         /search/:q
+     *         /user/*path
+     */
+    function transformRouterReg(str, callback) {
+        var name = str,
+            paramNames = [];
+        // escape keyword from regexp
+        str = S.escapeRegExp(str);
+
+        str = str.replace(grammar, function(m, g1, g2, g3, g4) {
+            paramNames.push(g2 || g4);
+            // :name
+            if (g2) {
+                return "([^/]+)";
+            }
+            // *name
+            else if (g4) {
+                return "(.*)";
+            }
+        });
+
+        return {
+            name:name,
+            paramNames:paramNames,
+            reg:new RegExp("^" + str + "$"),
+            regStr:str,
+            callback:callback
+        }
+    }
+
+    /**
+     * normalize function by self
+     * @param self
+     * @param callback
+     */
+    function normFn(self, callback) {
+        if (S.isFunction(callback)) {
+            return callback;
+        } else {
+            return self[callback];
+        }
+    }
+
+    function _afterRoutesChange(e) {
+        var self = this;
+        self[__routerMap] = {};
+        self.addRoutes(e.newVal);
+    }
+
+    function Router() {
+        var self = this;
+        Router.superclass.constructor.apply(self, arguments);
+        self.on("afterRoutesChange", _afterRoutesChange, self);
+        _afterRoutesChange.call(self, {newVal:self.get("routes")});
+        allRoutes.push(self);
+    }
+
+    Router.ATTRS = {
+        /**
+         * @example
+         *   {
+         *     path:callback
+         *   }
+         */
+        routes:{}
+    };
+
+    S.extend(Router, Base, {
+        /**
+         *
+         * @param routes
+         *         {
+         *           "/search/:param":"callback"
+         *         }
+         */
+        addRoutes:function(routes) {
+            var self = this;
+            each(routes, function(callback, name) {
+                self[__routerMap][name] = transformRouterReg(name, normFn(self, callback));
+            });
+        }
+    }, {
+        navigate:function(path, opts) {
+            if (getFragment() !== path) {
+                if (Router.nativeHistory && supportNativeHistory) {
+                    history['pushState']({}, "", getFullPath(path));
+                    // pushState does not fire popstate event (unlike hashchange)
+                    // so popstate is not statechange
+                    // fire manually
+                    dispatch();
+                } else {
+                    location.hash = "!" + path;
+                }
+            } else if (opts && opts.triggerRoute) {
+                dispatch();
+            }
+        },
+        start:function(opts) {
+            opts = opts || {};
+
+            opts.urlRoot = opts.urlRoot || "";
+
+            var urlRoot,
+                nativeHistory = opts.nativeHistory,
+                locPath = location.pathname,
+                hash = getFragment(),
+                hashIsValid = location.hash.match(/#!.+/);
+
+            urlRoot = Router.urlRoot = opts.urlRoot;
+            Router.nativeHistory = nativeHistory;
+
+            if (nativeHistory) {
+
+                if (supportNativeHistory) {
+                    // http://x.com/#!/x/y
+                    // =>
+                    // http://x.com/x/y
+                    // =>
+                    // process without refresh page and add history entry
+                    if (hashIsValid) {
+                        if (equalsIgnoreSlash(locPath, urlRoot)) {
+                            // put hash to path
+                            history['replaceState']({}, "", getFullPath(hash));
+                            opts.triggerRoute = 1;
+                        } else {
+                            S.error("location path must be same with urlRoot!");
+                        }
+                    }
+                }
+                // http://x.com/x/y
+                // =>
+                // http://x.com/#!/x/y
+                // =>
+                // refresh page without add history entry
+                else if (!equalsIgnoreSlash(locPath, urlRoot)) {
+                    location.replace(addEndSlash(urlRoot) + "#!" + hash);
+                    return;
+                }
+
+            }
+
+            // prevent hashChange trigger on start
+            setTimeout(function() {
+                if (nativeHistory && supportNativeHistory) {
+                    Event.on(win, 'popstate', dispatch);
+                } else {
+                    Event.on(win, "hashchange", dispatch);
+                    opts.triggerRoute = 1;
+                }
+
+                // check initial hash on start
+                // in case server does not render initial state correctly
+                // when monitor hashchange ,client must be responsible for dispatching and rendering.
+                if (opts.triggerRoute) {
+                    dispatch();
+                }
+                opts.success && opts.success();
+
+            }, BREATH_INTERVAL);
+        }
+    });
+
+    return Router;
+
+}, {
+    requires:['event','base']
+});
+
+/**
+ * refer :
+ * http://www.w3.org/TR/html5/history.html
+ * http://documentcloud.github.com/backbone/
+ **//**
+ * default sync for model
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("mvc/sync", function(S, io) {
+    var methodMap = {
+        'create': 'POST',
+        'update': 'POST', //'PUT'
+        'delete': 'POST', //'DELETE'
+        'read'  : 'GET'
+    };
+
+    function sync(self, method, options) {
+        var type = methodMap[method],
+            ioParam = S.merge({
+                type:type,
+                dataType:'json'
+            }, options);
+
+        var data = ioParam.data = ioParam.data || {};
+        data['_method'] = method;
+
+        if (!ioParam.url) {
+            ioParam.url = S.isString(self.get("url")) ?
+                self.get("url") :
+                self.get("url").call(self);
+        }
+
+        if (method == 'create' || method == 'update') {
+            data.model = self.toJSON();
+        }
+
+        return io(ioParam);
+    }
+
+    return sync;
+}, {
+    requires:['ajax']
+});/**
+ * view for kissy mvc : event delegation,el generator
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("mvc/view", function(S, Node, Base) {
+
+    var $ = Node.all;
+
+    function normFn(self, f) {
+        if (S.isString(f)) {
+            return self[f];
+        }
+        return f;
+    }
+
+    function View() {
+        View.superclass.constructor.apply(this, arguments);
+        var events;
+        if (events = this.get("events")) {
+            this._afterEventsChange({
+                newVal:events
+            });
+        }
+    }
+
+    View.ATTRS = {
+        el:{
+            value:"<div />",
+            getter:function(s) {
+                if (S.isString(s)) {
+                    s = $(s);
+                    this.__set("el", s);
+                }
+                return s;
+            }
+        },
+
+        /**
+         * events:{
+         *   selector:{
+         *     eventType:callback
+         *   }
+         * }
+         */
+        events:{
+
+        }
+    };
+
+
+    S.extend(View, Base, {
+
+        _afterEventsChange:function(e) {
+            var prevVal = e.prevVal;
+            if (prevVal) {
+                this._removeEvents(prevVal);
+            }
+            this._addEvents(e.newVal);
+        },
+
+        _removeEvents:function(events) {
+            var el = this.get("el");
+            for (var selector in events) {
+                var event = events[selector];
+                for (var type in event) {
+                    var callback = normFn(this, event[type]);
+                    el.undelegate(type, selector, callback, this);
+                }
+            }
+        },
+
+        _addEvents:function(events) {
+            var el = this.get("el");
+            for (var selector in events) {
+                var event = events[selector];
+                for (var type in event) {
+                    var callback = normFn(this, event[type]);
+                    el.delegate(type, selector, callback, this);
+                }
+            }
+        },
+        /**
+         * user need to override
+         */
+        render:function() {
+            return this;
+        },
+
+        destroy:function() {
+            this.get("el").remove();
+        }
+
+    });
+
+    return View;
+
+}, {
+    requires:['node','base']
+});/**
+ * KISSY's MVC Framework for Page Application (Backbone Style)
+ * @author yiminghe@gmail.com
+ */
+KISSY.add("mvc", function(S, MVC, Model, Collection, View, Router) {
+    return S.mix(MVC, {
+        Model:Model,
+        View:View,
+        Collection:Collection,
+        Router:Router
+    });
+}, {
+    requires:["mvc/base","mvc/model","mvc/collection","mvc/view","mvc/router"]
+});

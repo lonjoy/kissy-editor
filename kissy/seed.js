@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2011, KISSY UI Library v1.20dev
 MIT Licensed
-build time: Nov 15 17:48
+build time: Nov 23 12:07
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -89,7 +89,7 @@ build time: Nov 15 17:48
          */
         version: '1.20dev',
 
-        buildTime:'20111115174805',
+        buildTime:'20111123120737',
 
         /**
          * Returns a new object containing all of the properties of
@@ -338,7 +338,7 @@ build time: Nov 15 17:48
         CLONE_MARKER = '__~ks_cloned',
         COMPARE_MARKER = '__~ks_compared',
         STAMP_MARKER = '__~ks_stamped',
-        RE_TRIM = /^\s+|\s+$/g,
+        RE_TRIM = /^[\s\xa0]+|[\s\xa0]+$/g,
         encode = encodeURIComponent,
         decode = decodeURIComponent,
         SEP = '&',
@@ -1617,7 +1617,7 @@ build time: Nov 15 17:48
 
 })(KISSY, KISSY.__loaderUtils);/**
  * add module definition
- * @author  lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  yiminghe@gmail.com,lifesinger@gmail.com
  */
 (function(S, loader, utils, data) {
     if ("require" in this) {
@@ -1766,7 +1766,12 @@ build time: Nov 15 17:48
         }
     });
 
-})(KISSY, KISSY.__loader, KISSY.__loaderUtils, KISSY.__loaderData);/**
+})(KISSY, KISSY.__loader, KISSY.__loaderUtils, KISSY.__loaderData);
+
+/**
+ * @refer
+ *  - https://github.com/amdjs/amdjs-api/wiki/AMD
+ **//**
  * build full path from relative path and base path
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
@@ -2038,7 +2043,7 @@ build time: Nov 15 17:48
 
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils, KISSY.__loaderData);/**
  * @module loader
- * @author lifesinger@gmail.com, lijing00333@163.com, yiminghe@gmail.com
+ * @author lifesinger@gmail.com,yiminghe@gmail.com,lijing00333@163.com
  * @description: constant member and common method holder
  */
 (function(S, loader, data) {
@@ -2206,7 +2211,7 @@ build time: Nov 15 17:48
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**
  * register module ,associate module name with module factory(definition)
- * @author  lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  yiminghe@gmail.com,lifesinger@gmail.com
  */
 (function(S, loader,data) {
     if ("require" in this) {
@@ -2240,7 +2245,7 @@ build time: Nov 15 17:48
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderData);/**
  * use and attach mod
- * @author  lifesinger@gmail.com,yiminghe@gmail.com
+ * @author  yiminghe@gmail.com,lifesinger@gmail.com
  */
 (function(S, loader, utils, data) {
 
