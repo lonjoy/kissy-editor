@@ -186,7 +186,7 @@
 
 KISSY.ready(function(S) {
     // just for test
-    var base = location.href.replace(/^(.*kissy-editor\/).*$/i, '$1');
+    var base = location.href.replace(/^(.*kissy-editor[^/]*\/).*$/i, '$1');
     S.Config.base = base;
 
     S.use('editor', function() {
