@@ -25,8 +25,6 @@ build file for kissy editor
     <property name="charset" value="UTF-8"/>
     <property name="git.origin" value="origin"/>
     <property name="git.remote" value="remote"/>
-    <property name="git.gh-pages" value="gh-pages"/>
-    <property name="git.master" value="master"/>
     <property name="git.wait" value="10"/>
     <property name="git.url" value="http://www.github.com"/>
 
@@ -152,20 +150,11 @@ build file for kissy editor
                     </not>
                     <ac:then>
                         <exec executable="cmd" failonerror="true">
-                            <arg line="/c git push ${git.origin} ${git.master}:${git.master}"/>
+                            <arg line="/c git push ${git.origin} 1.1x:1.1x"/>
                         </exec>
 
                         <exec executable="cmd" failonerror="true">
-                            <arg line="/c git push ${git.remote} ${git.master}:${git.master}"/>
-                        </exec>
-
-                        <!--push master to gh-pages also-->
-                        <exec executable="cmd" failonerror="true">
-                            <arg line="/c git push ${git.origin} ${git.master}:${git.gh-pages}"/>
-                        </exec>
-
-                        <exec executable="cmd" failonerror="true">
-                            <arg line="/c git push ${git.remote} ${git.master}:${git.gh-pages}"/>
+                            <arg line="/c git push ${git.remote} 1.1x:1.1x"/>
                         </exec>
 
                     </ac:then>
