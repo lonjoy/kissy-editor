@@ -1,3 +1,7 @@
+/**
+ * modified from ckeditor
+ * @author <yiminghe@gmail.com>
+ */
 /*
 Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
@@ -290,17 +294,4 @@ KISSY.Editor.add("htmlparser-htmlwriter", function(
     });
 
     KE.HtmlParser.HtmlWriter = HtmlWriter;
-    KE.HtmlParser["HtmlWriter"] = HtmlWriter;
-    var HtmlWriterP = HtmlWriter.prototype;
-    KE.Utils.extern(HtmlWriterP, {
-        "openTag":HtmlWriterP.openTag,
-        "openTagClose":HtmlWriterP.openTagClose,
-        "attribute":HtmlWriterP.attribute,
-        "closeTag":HtmlWriterP.closeTag,
-        "text":HtmlWriterP.text,
-        "comment":HtmlWriterP.comment,
-        "lineBreak":HtmlWriterP.lineBreak,
-        "indentation":HtmlWriterP.indentation,
-        "setRules":HtmlWriterP.setRules
-    });
 });

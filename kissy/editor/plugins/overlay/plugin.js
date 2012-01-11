@@ -65,7 +65,7 @@ KISSY.Editor.add("overlay/focus", function() {
              * then IE would still leave the caret inside the editing area.
              */
             //ie9 图片resize框，仍然会突出
-            if (UA.ie && editor) {
+            if (UA['ie'] && editor) {
 
                 //聚焦到当前窗口
                 //使得编辑器失去焦点，促使ie保存当前选择区域（位置）
@@ -110,10 +110,10 @@ KISSY.Editor.add("overlay/focus", function() {
  * custom overlay  for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.Editor.add("overlay", function() {
+KISSY.Editor.add("overlay", function () {
 
     var S = KISSY,
-        UIBase = S['UIBase'],
+        UIBase = S.require("uibase"),
         KE = S.Editor;
 
 
@@ -126,9 +126,9 @@ KISSY.Editor.add("overlay", function() {
     /**
      * 2010-11-18 重构，使用 S.Ext 以及 Base 组件周期
      */
-    var Overlay4E = UIBase.create(S.Overlay, [KE['UIBase'].Focus], {
+    var Overlay4E = UIBase.create((S.require("overlay")), [KE['UIBase'].Focus], {
 
-        syncUI:function() {
+        syncUI:function () {
             //S.log("_syncUIOverlay4E");
             var self = this;
             //编辑器 overlay 中的全部点击都不会使得失去焦点
@@ -141,8 +141,8 @@ KISSY.Editor.add("overlay", function() {
         }
     });
 
-    var Dialog4E = UIBase.create(S.Dialog, [KE['UIBase'].Focus], {
-        show:function() {
+    var Dialog4E = UIBase.create(S.require("overlay").Dialog, [KE['UIBase'].Focus], {
+        show:function () {
             //在 show 之前调用
             this.center();
             var y = this.get("y");
@@ -167,12 +167,12 @@ KISSY.Editor.add("overlay", function() {
 
     var globalMask;
 
-    KE.Overlay.loading = function() {
+    KE.Overlay.loading = function () {
         if (!globalMask) {
             globalMask = new KE.Overlay({
                 x:0,
                 focus4e:false,
-                width:S.UA.ie == 6 ? S.DOM.docWidth() : "100%",
+                width:S.UA['ie'] == 6 ? S.DOM.docWidth() : "100%",
                 y:0,
                 //指定全局 loading zIndex 值
                 "zIndex":KE.baseZIndex(KE.zIndexManager.LOADING),
@@ -184,7 +184,7 @@ KISSY.Editor.add("overlay", function() {
         globalMask.loading();
     };
 
-    KE.Overlay.unloading = function() {
+    KE.Overlay.unloading = function () {
         globalMask && globalMask.hide();
     };
 }, {

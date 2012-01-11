@@ -7,9 +7,9 @@ KISSY.Editor.add("resize", function(editor) {
         Node = S.Node;
 
 
-    S.use("dd", function() {
-        var Draggable = S['Draggable'];
-        var statusDiv = editor.statusDiv,
+    S.use("dd", function(S,DD) {
+        var Draggable = S['Draggable']||DD['Draggable'],
+            statusDiv = editor.statusDiv,
             textarea = editor.textarea,
             resizer = new Node("<div class='ke-resizer'>"),
             cfg = editor.cfg["pluginConfig"]["resize"] || {};
@@ -36,12 +36,14 @@ KISSY.Editor.add("resize", function(editor) {
         d.on("dragstart", function() {
             height = heightEl.height();
             width = widthEl.width();
+            // may get wrong height : 100% => viewport height
             t_height = textarea.height();
             t_width = textarea.width();
         });
         d.on("drag", function(ev) {
-            var diffX = ev.left - this['startNodePos'].left,
-                diffY = ev.top - this['startNodePos'].top;
+            var self = this,
+                diffX = ev.left - self['startNodePos'].left,
+                diffY = ev.top - self['startNodePos'].top;
             if (S.inArray("y", cfg)) {
                 heightEl.height(height + diffY);
                 textarea.height(t_height + diffY);

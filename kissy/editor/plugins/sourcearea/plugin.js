@@ -12,8 +12,8 @@ KISSY.Editor.add("sourcearea", function(editor) {
 
 
         var SOURCE_MODE = KE.SOURCE_MODE ,
-            WYSIWYG_MODE = KE.WYSIWYG_MODE;
-        var context = editor.addButton("sourcearea", {
+            WYSIWYG_MODE = KE.WYSIWYG_MODE,
+            context = editor.addButton("sourcearea", {
             title:"源码",
             contentCls:"ke-toolbar-source",
             loading:true
@@ -58,7 +58,7 @@ KISSY.Editor.add("sourcearea", function(editor) {
                     ev.keyCode == 87) {
                     ev.halt();
                     var next = textarea.attr("wrap") == "off" ? "soft" : "off";
-                    if (!UA.ie) {
+                    if (!UA['ie']) {
                         textarea.detach();
                         var newTextarea = textarea._4e_clone();
                         editor.textarea = newTextarea;

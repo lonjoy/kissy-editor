@@ -2,7 +2,7 @@
  * definition of editor class for kissy editor
  * @author <yiminghe@gmail.com>
  */
-KISSY.Editor.add("definition", function(KE) {
+KISSY.Editor.add("definition", function (KE) {
     var
         TRUE = true,
         FALSE = false,
@@ -14,7 +14,7 @@ KISSY.Editor.add("definition", function(KE) {
          * @const
          */
             UA = S.UA,
-        IS_IE = UA.ie,
+        IS_IE = UA['ie'],
         /**
          * @const
          */
@@ -140,7 +140,7 @@ KISSY.Editor.add("definition", function(KE) {
             // for other browsers, the 'src' attribute should be left empty to
             // trigger iframe's 'load' event.
             (IS_IE ? (' src="' + 'javascript:void(function(){' + encodeURIComponent(srcScript) + '}())"') : '') +
-            //' tabIndex="' + ( UA.webkit ? -1 : "$(tabIndex)" ) + '" ' +
+            //' tabIndex="' + ( UA['webkit'] ? -1 : "$(tabIndex)" ) + '" ' +
             ' allowTransparency="true" ' +
             '></iframe></div>' +
             "<div class='" + ke_editor_status.substring(1) + "'></div>" +
@@ -149,7 +149,7 @@ KISSY.Editor.add("definition", function(KE) {
     //所有link,flash,music的悬浮小提示
     //KE.Tips = {};
 
-    var SOURCE_MODE,WYSIWYG_MODE;
+    var SOURCE_MODE, WYSIWYG_MODE;
     SOURCE_MODE = KE.SOURCE_MODE = 0;
     WYSIWYG_MODE = KE.WYSIWYG_MODE = 1;
     KE["SOURCE_MODE"] = SOURCE_MODE;
@@ -157,11 +157,11 @@ KISSY.Editor.add("definition", function(KE) {
 
     S.augment(KE, {
         /**
-         * @this {KISSY.Editor}
-         * @param textarea {KISSY.Node}
+         *
+         * @param textarea
          */
-        init:function(textarea) {
-            var self = this;
+        init:function (textarea) {
+            var self = this, editorWrap;
             /**
              * 内部存储声明
              */
@@ -169,28 +169,29 @@ KISSY.Editor.add("definition", function(KE) {
             self.__dialogs = {};
             self.__plugins = {};
 
-            if (IS_IE)DOM.addClass(DOC.body, "ke-ie" + IS_IE);
-            if (UA.trident)DOM.addClass(DOC.body, "ke-trident" + UA.trident);
-            else if (UA.gecko) DOM.addClass(DOC.body, "ke-gecko");
-            else if (UA.webkit) DOM.addClass(DOC.body, "ke-webkit");
-            var editorWrap = new Node(editorHtml);
-
+            if (IS_IE) {
+                DOM.addClass(DOC.body, "ke-ie" + IS_IE);
+            }
+            if (UA['trident']) {
+                DOM.addClass(DOC.body, "ke-trident" + UA.trident);
+            }
+            else if (UA['gecko']) {
+                DOM.addClass(DOC.body, "ke-gecko");
+            }
+            else if (UA['webkit']) {
+                DOM.addClass(DOC.body, "ke-webkit");
+            }
+            editorWrap = new Node(editorHtml);
 
             self.editorWrap = editorWrap;
             self._UUID = INSTANCE_ID++;
             //实例集中管理
             focusManager.register(self);
             self.wrap = editorWrap.one(ke_textarea_wrap);
-            self["wrap"] = self.wrap;
             self.iframe = self.wrap.one("iframe");
-            self["iframe"] = self.iframe;
             self.toolBarDiv = editorWrap.one(ke_editor_tools);
-            self["toolBarDiv"] = self.toolBarDiv;
             self.textarea = textarea;
-            self["textarea"] = self.textarea;
             self.statusDiv = editorWrap.one(ke_editor_status);
-            self["statusDiv"] = self.statusDiv;
-
 
             //标准浏览器编辑器内焦点不失去,firefox?
             //标准浏览器实际上不需要！range在iframe内保存着呢，选择高亮变灰而已
@@ -204,7 +205,7 @@ KISSY.Editor.add("definition", function(KE) {
              self.toolBarDiv._4e_unselectable();
              } else {
              self.toolBarDiv.on("mousedown", function(ev) {
-             if (UA.webkit) {
+             if (UA['webkit']) {
              //chrome select 弹不出来
              var n = DOM._4e_name(ev.target);
              if (n == "select" || n == "option")return TRUE;
@@ -221,7 +222,8 @@ KISSY.Editor.add("definition", function(KE) {
              */
 
 
-            var tw = textarea._4e_style(WIDTH),th = textarea._4e_style(HEIGHT);
+            var tw = textarea._4e_style(WIDTH),
+                th = textarea._4e_style(HEIGHT);
             if (tw) {
                 editorWrap.css(WIDTH, tw);
                 textarea.css(WIDTH, "100%");
@@ -238,15 +240,15 @@ KISSY.Editor.add("definition", function(KE) {
             var iframe = self.iframe;
 
             if (textarea._4e_hasAttribute("tabindex")) {
-                iframe[0].tabIndex = UA.webkit ? -1 : textarea[0].tabIndex;
+                iframe[0].tabIndex = UA['webkit'] ? -1 : textarea[0].tabIndex;
             }
 
-            self.on("dataReady", function() {
+            self.on("dataReady", function () {
                 self._ready = TRUE;
                 KE.fire("instanceCreated", {editor:self});
             });
             // With FF, it's better to load the data on iframe.load. (#3894,#4058)
-            if (UA.gecko) {
+            if (UA['gecko']) {
                 iframe.on('load', self._setUpIFrame, self);
             } else {
                 //webkit(chrome) load等不来！
@@ -256,8 +258,10 @@ KISSY.Editor.add("definition", function(KE) {
                 self._attachForm();
         },
 
-        destroy:function() {
-            if (this.__destroyed) return;
+        destroy:function () {
+            if (this.__destroyed) {
+                return;
+            }
             var self = this,
                 editorWrap = self.editorWrap,
                 textarea = self.textarea,
@@ -296,28 +300,27 @@ KISSY.Editor.add("definition", function(KE) {
             self.__destroyed = true;
         },
         /**
-         *  @this {KISSY.Editor}
+         *
          */
-        _attachForm:function() {
+        _attachForm:function () {
             var self = this,
                 textarea = self.textarea,
                 form = new Node(textarea[0].form);
             form.on("submit", self.sync, self);
-            self.on("destroy", function() {
+            self.on("destroy", function () {
                 form.detach("submit", self.sync, self);
             });
-        }
-        ,
+        },
         /**
-         * @this {KISSY.Editor}
+         *
          * @param name {string}
          * @param callback {function(Object)}
          */
-        useDialog:function(name, callback) {
+        useDialog:function (name, callback) {
             var self = this,
                 Overlay = KE.Overlay;
             Overlay && Overlay.loading();
-            self.use(name, function() {
+            self.use(name, function () {
                 var dialog = self.getDialog(name);
                 /**
                  * 可能窗口在等待其他模块载入，不能立即获取
@@ -331,10 +334,10 @@ KISSY.Editor.add("definition", function(KE) {
             });
         },
 
-        showDialog:function(name, args, fn) {
+        showDialog:function (name, args, fn) {
             var self = this;
             args = args || [];
-            self.useDialog(name, function(dialog) {
+            self.useDialog(name, function (dialog) {
                 dialog.show.apply(dialog, args);
                 fn && fn(dialog);
                 self.fire("dialogShow", {
@@ -345,71 +348,66 @@ KISSY.Editor.add("definition", function(KE) {
             });
         },
         /**
-         *@this {KISSY.Editor}
+         *
          * @param name {string}
          * @param obj {Object}
          */
-        addDialog:function(name, obj) {
+        addDialog:function (name, obj) {
             this.__dialogs[name] = obj;
-        }
-        ,
+        },
         /**
-         *@this {KISSY.Editor}
+         *
          * @param name {string}
          */
-        getDialog:function(name) {
+        getDialog:function (name) {
             return this.__dialogs[name];
         },
-        destroyDialog:function(name) {
+        destroyDialog:function (name) {
             var d = this.__dialogs[name];
             d && d.destroy();
             this.__dialogs[name] = null;
         },
         /**
-         *@this {KISSY.Editor}
+         *
          * @param name {string}
          * @param obj {Object}
          */
-        addCommand:function(name, obj) {
+        addCommand:function (name, obj) {
             this.__commands[name] = obj;
-        }
-        ,
+        },
         /**
-         *@this {KISSY.Editor}
+         *
          * @param name {string}
          */
-        hasCommand:function(name) {
+        hasCommand:function (name) {
             return this.__commands[name];
-        }
-        ,
+        },
         /**
-         *@this {KISSY.Editor}
+         *
          * @param name {string}
          */
-        execCommand:function(name) {
+        execCommand:function (name) {
             var self = this,
                 cmd = self.__commands[name],
                 args = S.makeArray(arguments);
             args.shift();
             args.unshift(self);
             return cmd.exec.apply(cmd, args);
-        }
-        ,
+        },
         /**
-         * @this {KISSY.Editor}
+         *
          * @return {number}
          */
-        getMode:function() {
+        getMode:function () {
             return this.textarea.css("display") == "none" ?
                 WYSIWYG_MODE :
                 SOURCE_MODE;
-        }
-        ,
+        },
         /**
-         *@this {KISSY.Editor}
-         * @param format {boolean}
+         *
+         * @param [format] {boolean}
          */
-        getData:function(format) {
+        getData:function (format) {
             var self = this,
                 html;
             if (self.getMode() == WYSIWYG_MODE) {
@@ -435,14 +433,13 @@ KISSY.Editor.add("definition", function(KE) {
              */
             if (/^<p>((&nbsp;)|\s)*<\/p>$/.test(html)) html = "";
             return html;
-        }
-        ,
+        },
 
         /**
-         *@this {KISSY.Editor}
+         *
          * @param data {string}
          */
-        setData:function(data) {
+        setData:function (data) {
 
             var self = this,
                 afterData = data;
@@ -460,58 +457,46 @@ KISSY.Editor.add("definition", function(KE) {
                 //代码模式下不需过滤
                 self.textarea.val(data);
             }
-        }
-        ,
+        },
         /**
-         * @this {KISSY.Editor}
+         *
          */
-        sync:function() {
+        sync:function () {
             this.textarea.val(this.getData());
         },
 
         /**
          * 撤销重做时，不需要格式化代码，直接取自身
-         * @this {KISSY.Editor}
          */
-
-        _getRawData:function() {
+        _getRawData:function () {
             return this.document.body.innerHTML;
         },
 
 
         /**
          * 撤销重做时，不需要格式化代码，直接取自身
-         * @this {KISSY.Editor}
+         *
          * @param data {string}
          */
-        _setRawData:function(data) {
+        _setRawData:function (data) {
             this.document.body.innerHTML = data;
-        }
-        ,
-        /**
-         * @this {KISSY.Editor}
-         */
-        _prepareIFrameHtml:function(id) {
+        },
+
+        _prepareIFrameHtml:function (id) {
             var cfg = this.cfg;
             return prepareIFrameHtml(id, cfg.customStyle, cfg.customLink);
-        }
-        ,
-        /**
-         * @this {KISSY.Editor}
-         */
-        getSelection:function() {
+        },
+
+        getSelection:function () {
             return KE.Selection.getSelection(this.document);
-        }
-        ,
-        /**
-         * @this {KISSY.Editor}
-         */
-        focus:function() {
+        },
+
+        focus:function () {
             var self = this,
                 doc = self.document,
                 win = DOM._4e_getWin(doc);
             // firefox7 need this
-            if (!UA.ie) {
+            if (!UA['ie']) {
                 // note : 2011-11-17 report by 石霸
                 // ie 的 parent 不能 focus ，否则会使得 iframe 内的编辑器光标回到开头
                 win && win.parent && win.parent.focus();
@@ -523,10 +508,8 @@ KISSY.Editor.add("definition", function(KE) {
             doc && doc.body.focus();
             self.notifySelectionChange();
         },
-        /**
-         * @this {KISSY.Editor}
-         */
-        blur:function() {
+
+        blur:function () {
             var self = this,
                 win = DOM._4e_getWin(self.document);
             win.blur();
@@ -534,10 +517,9 @@ KISSY.Editor.add("definition", function(KE) {
         },
 
         /**
-         *@this {KISSY.Editor}
          * @param cssText {string}
          */
-        addCustomStyle:function(cssText) {
+        addCustomStyle:function (cssText) {
             var self = this,
                 cfg = self.cfg,
                 doc = self.document;
@@ -553,7 +535,8 @@ KISSY.Editor.add("definition", function(KE) {
                 elem.appendChild(doc.createTextNode(cssText));
             }
         },
-        addCustomLink:function(link) {
+
+        addCustomLink:function (link) {
             var self = this,
                 cfg = self.cfg,
                 doc = self.document;
@@ -565,7 +548,7 @@ KISSY.Editor.add("definition", function(KE) {
             elem.href = link;
         },
 
-        removeCustomLink:function(link) {
+        removeCustomLink:function (link) {
             var self = this,
                 cfg = self.cfg,
                 doc = self.document;
@@ -583,16 +566,16 @@ KISSY.Editor.add("definition", function(KE) {
             }
         },
         /**
-         * @this {KISSY.Editor}
+         *
          */
-        _setUpIFrame:function() {
+        _setUpIFrame:function () {
             var self = this,
                 iframe = self.iframe,
                 //KES = KE.SELECTION,
                 //textarea = self.textarea[0],
                 //cfg = self.cfg,
                 data = self._prepareIFrameHtml(self._UUID),
-                win = iframe[0].contentWindow,doc;
+                win = iframe[0].contentWindow, doc;
 
             try {
                 // In IE, with custom document.domain, it may happen that
@@ -603,7 +586,7 @@ KISSY.Editor.add("definition", function(KE) {
                 //http://waelchatila.com/2007/10/31/1193851500000.html
                 //http://nagoon97.wordpress.com/tag/designmode/
                 doc = win.document;
-            } catch(e) {
+            } catch (e) {
                 // Trick to solve this issue, forcing the iframe to get ready
                 // by simply setting its "src" property.
                 //noinspection SillyAssignmentJS
@@ -626,25 +609,21 @@ KISSY.Editor.add("definition", function(KE) {
                 doc.close();
             }
         },
-        /**
-         *@this {KISSY.Editor}
-         * @param func {function()}
-         */
-        ready:function(func) {
+        ready:function (func) {
             var self = this;
             if (self._ready)func();
             else {
                 self.on("dataReady", func);
             }
         },
-        addPlugin:function(name, func, cfg) {
+        addPlugin:function (name, func, cfg) {
             var self = this;
             self.__plugins = self.__plugins;
             cfg = cfg || {};
             cfg.func = func;
             self.__plugins[name] = cfg;
         },
-        usePlugin:function(name) {
+        usePlugin:function (name) {
             var plugin = this.__plugins[name];
             //只 use 一次
             if (!plugin) return;
@@ -657,15 +636,15 @@ KISSY.Editor.add("definition", function(KE) {
             plugin.status = 1;
         },
         /**
-         * @this {KISSY.Editor}
+         *
          */
-        _monitor:function() {
+        _monitor:function () {
             var self = this;
             if (self._monitorId) {
                 clearTimeout(self._monitorId);
             }
 
-            self._monitorId = setTimeout(function() {
+            self._monitorId = setTimeout(function () {
                 var selection = self.getSelection();
                 if (selection && !selection.isInvalid) {
                     var startElement = selection.getStartElement(),
@@ -673,17 +652,16 @@ KISSY.Editor.add("definition", function(KE) {
                     if (!self.previousPath || !self.previousPath.compare(currentPath)) {
                         self.previousPath = currentPath;
 
-                        self.fire("selectionChange", { selection : selection, path : currentPath, element : startElement });
+                        self.fire("selectionChange", { selection:selection, path:currentPath, element:startElement });
                     }
                 }
             }, 100);
-        }
-        ,
+        },
         /**
          * 强制通知插件更新状态，防止插件修改编辑器内容，自己反而得不到通知
-         * @this {KISSY.Editor}
+         *
          */
-        notifySelectionChange:function() {
+        notifySelectionChange:function () {
             var self = this;
             self.previousPath = NULL;
             //S.log("notifySelectionChange");
@@ -691,11 +669,12 @@ KISSY.Editor.add("definition", function(KE) {
         },
 
         /**
-         *@this {KISSY.Editor}
-         * @param element {KISSY.Node}
+         *
+         * @param element
          * @param init {function()}
          */
-        insertElement:function(element, init, callback) {
+        insertElement:function (element, init, callback) {
+
             var self = this;
 
             if (self.getMode() !== WYSIWYG_MODE) {
@@ -719,8 +698,8 @@ KISSY.Editor.add("definition", function(KE) {
             if (!ranges
                 ||
                 ranges.length == 0) {
-                var args = arguments,fn = args.callee;
-                setTimeout(function() {
+                var args = arguments, fn = args.callee;
+                setTimeout(function () {
                     fn.apply(self, args);
                 }, 30);
                 return;
@@ -750,8 +729,9 @@ KISSY.Editor.add("definition", function(KE) {
                             range.collapse(TRUE);
                             current._4e_remove();
                         }
-                        else
+                        else {
                             range.splitBlock();
+                        }
                     }
                 }
 
@@ -764,7 +744,7 @@ KISSY.Editor.add("definition", function(KE) {
             }
             if (!lastElement) return;
 
-            var next = lastElement._4e_nextSourceNode(TRUE),p,
+            var next = lastElement._4e_nextSourceNode(TRUE), p,
                 doc = self.document;
             dtd = KE.XHTML_DTD;
 
@@ -804,11 +784,11 @@ KISSY.Editor.add("definition", function(KE) {
         },
 
         /**
-         *@this {KISSY.Editor}
+         *
          * @param data {string}
          * @param dataFilter 是否采用特定的 dataFilter
          */
-        insertHtml:function(data, dataFilter) {
+        insertHtml:function (data, dataFilter) {
             var self = this;
             if (self.getMode() !== WYSIWYG_MODE) {
                 return;
@@ -832,7 +812,7 @@ KISSY.Editor.add("definition", function(KE) {
                 }
                 try {
                     $sel.createRange().pasteHTML(data);
-                } catch(e) {
+                } catch (e) {
                     S.log("insertHtml error in ie");
                 }
             } else {
@@ -842,13 +822,13 @@ KISSY.Editor.add("definition", function(KE) {
                 // firefox 初始编辑器无焦点报异常
                 try {
                     editorDoc.execCommand('inserthtml', FALSE, data);
-                } catch(e) {
-                    setTimeout(function() {
+                } catch (e) {
+                    setTimeout(function () {
                         // still not ok in ff!
                         // 手动选择 body 的第一个节点
                         if (self.getSelection().getRanges().length == 0) {
                             var r = new KE.Range(editorDoc);
-                            var node = DOM._4e_first(editorDoc.body, function(el) {
+                            var node = DOM._4e_first(editorDoc.body, function (el) {
                                 return el[0].nodeType == 1 && el._4e_name() != "br";
                             });
                             if (!node) {
@@ -864,19 +844,19 @@ KISSY.Editor.add("definition", function(KE) {
             }
             // bug by zjw2004112@163.com :
             // 有的浏览器 ： chrome , ie67 貌似不会自动滚动到粘贴后的位置
-            setTimeout(function() {
+            setTimeout(function () {
                 self.getSelection().scrollIntoView();
             }, saveInterval);
             self._saveLater(saveInterval);
         },
 
-        _saveLater:function(saveInterval) {
+        _saveLater:function (saveInterval) {
             var self = this;
             if (self.__saveTimer) {
                 clearTimeout(self.__saveTimer);
                 self.__saveTimer = null;
             }
-            self.__saveTimer = setTimeout(function() {
+            self.__saveTimer = setTimeout(function () {
                 self.fire("save");
             }, saveInterval || 0);
         }
@@ -884,10 +864,10 @@ KISSY.Editor.add("definition", function(KE) {
     /**
      * 初始化iframe内容以及浏览器间兼容性处理，
      * 必须等待iframe内的脚本向父窗口通知
-     * @this {KISSY.Editor}
+     *
      * @param id {string}
      */
-    KE["_initIFrame"] = function(id) {
+    KE["_initIFrame"] = function (id) {
 
         var self = focusManager.getInstance(id),
             iframe = self.iframe,
@@ -932,12 +912,12 @@ KISSY.Editor.add("definition", function(KE) {
         } else {
             // Avoid opening design mode in a frame window thread,
             // which will cause host page scrolling.(#4397)
-            setTimeout(function() {
+            setTimeout(function () {
                 // Prefer 'contentEditable' instead of 'designMode'. (#3593)
-                if (UA.gecko || UA.opera) {
+                if (UA['gecko'] || UA['opera']) {
                     body['contentEditable'] = TRUE;
                 }
-                else if (UA.webkit)
+                else if (UA['webkit'])
                     body.parentNode['contentEditable'] = TRUE;
                 else
                     doc['designMode'] = 'on';
@@ -950,15 +930,15 @@ KISSY.Editor.add("definition", function(KE) {
 
 
         // Webkit: avoid from editing form control elements content.
-        if (UA.webkit) {
-            Event.on(doc, "click", function(ev) {
+        if (UA['webkit']) {
+            Event.on(doc, "click", function (ev) {
                 var control = new Node(ev.target);
                 if (S.inArray(control._4e_name(), ['input', 'select'])) {
                     ev.preventDefault();
                 }
             });
             // Prevent from editig textfield/textarea value.
-            Event.on(doc, "mouseup", function(ev) {
+            Event.on(doc, "mouseup", function (ev) {
                 var control = new Node(ev.target);
                 if (S.inArray(control._4e_name(), ['input', 'textarea'])) {
                     ev.preventDefault();
@@ -968,7 +948,7 @@ KISSY.Editor.add("definition", function(KE) {
 
         function blinkCursor(retry) {
             tryThese(
-                function() {
+                function () {
                     doc['designMode'] = 'on';
                     //异步引起时序问题，尽可能小间隔
                     setTimeout(function () {
@@ -982,7 +962,7 @@ KISSY.Editor.add("definition", function(KE) {
                         }
                     }, 50);
                 },
-                function() {
+                function () {
                     // The above call is known to fail when parent DOM
                     // tree layout changes may break design mode. (#5782)
                     // Refresh the 'contentEditable' is a cue to this.
@@ -997,7 +977,7 @@ KISSY.Editor.add("definition", function(KE) {
         }
 
         // Create an invisible element to grab focus.
-        if (UA.gecko || IS_IE || UA.opera) {
+        if (UA['gecko'] || IS_IE || UA['opera']) {
             var focusGrabber;
             focusGrabber = new Node(
                 // Use 'span' instead of anything else to fly under the screen-reader radar. (#5049)
@@ -1006,14 +986,14 @@ KISSY.Editor.add("definition", function(KE) {
                     'style="position:absolute; left:-10000"' +
                     ' role="presentation"' +
                     '></span>').insertAfter(textarea);
-            focusGrabber.on('focus', function() {
+            focusGrabber.on('focus', function () {
                 self.focus();
             });
-            self.activateGecko = function() {
-                if (UA.gecko && self.iframeFocus)
+            self.activateGecko = function () {
+                if (UA['gecko'] && self.iframeFocus)
                     focusGrabber[0].focus();
             };
-            self.on('destroy', function() {
+            self.on('destroy', function () {
                 focusGrabber.detach();
                 focusGrabber.remove();
             });
@@ -1023,52 +1003,51 @@ KISSY.Editor.add("definition", function(KE) {
         // clicking outside actual content, manually apply the focus. (#1659)
 
         if (
-        //ie6,7 点击滚动条失效
-        //IS_IE
-        //&& doc.compatMode == 'CSS1Compat'
-        //wierd ,sometimes ie9 break
-        //||
-            doc['documentMode']
-                || UA.gecko
-                || UA.opera) {
+        // ie6,7 点击滚动条失效
+        // IS_IE
+        // && doc.compatMode == 'CSS1Compat'
+        // wierd ,sometimes ie9 break
+        // ||
+        // 2012-01-11 ie 处理装移到 selection.js :
+        // IE has an issue where you can't select/move the caret by clicking outside the body if the document is in standards mode
+        // doc['documentMode']
+            UA['gecko']
+                || UA['opera']) {
             var htmlElement = doc.documentElement;
-            Event.on(htmlElement, 'mousedown', function(evt) {
+            Event.on(htmlElement, 'mousedown', function (evt) {
                 // Setting focus directly on editor doesn't work, we
                 // have to use here a temporary element to 'redirect'
                 // the focus.
-                //firefox 不能直接设置，需要先失去焦点
-                //return;
-                //左键激活
-                var t = new Node(evt.target);
-
-                if (t[0] == htmlElement) {
+                // firefox 不能直接设置，需要先失去焦点
+                // return;
+                // 左键激活
+                var t = evt.target;
+                if (t == htmlElement) {
                     //S.log("click");
                     //self.focus();
                     //return;
-                    if (UA.gecko)
+                    if (UA['gecko'])
                         blinkCursor(FALSE);
                     //setTimeout(function() {
                     //这种：html mousedown -> body beforedeactivate
                     //    self.focus();
                     //}, 30);
-
                     //这种：body beforedeactivate -> html mousedown
                     focusGrabber[0].focus();
                 }
             });
         }
 
-
-        Event.on(win, 'focus', function() {
+        Event.on(win, 'focus', function () {
 
             /**
              * yiminghe特别注意：firefox光标丢失bug
              * blink后光标出现在最后，这就需要实现保存range
              * focus后再恢复range
              */
-            if (UA.gecko)
+            if (UA['gecko'])
                 blinkCursor(FALSE);
-            else if (UA.opera)
+            else if (UA['opera'])
                 body.focus();
 
             // focus 后强制刷新自己状态
@@ -1076,11 +1055,11 @@ KISSY.Editor.add("definition", function(KE) {
         });
 
 
-        if (UA.gecko) {
+        if (UA['gecko']) {
             /**
              * firefox 焦点丢失后，再点编辑器区域焦点会移不过来，要点两下
              */
-            Event.on(self.document, "mousedown", function() {
+            Event.on(self.document, "mousedown", function () {
                 if (!self.iframeFocus) {
 
                     blinkCursor(FALSE);
@@ -1095,10 +1074,10 @@ KISSY.Editor.add("definition", function(KE) {
             /**
              * 选择img，出现缩放框后不能直接删除
              */
-            Event.on(doc, 'keydown', function(evt) {
+            Event.on(doc, 'keydown', function (evt) {
                 var keyCode = evt.keyCode;
                 // Backspace OR Delete.
-                if (keyCode in { 8 : 1, 46 : 1 }) {
+                if (keyCode in { 8:1, 46:1 }) {
                     //debugger
                     var sel = self.getSelection(),
                         control = sel.getSelectedElement();
@@ -1119,10 +1098,10 @@ KISSY.Editor.add("definition", function(KE) {
 
             // PageUp/PageDown scrolling is broken in document
             // with standard doctype, manually fix it. (#4736)
-            //ie8 主窗口滚动？？
+            // ie8 主窗口滚动？？
             if (doc.compatMode == 'CSS1Compat') {
-                var pageUpDownKeys = { 33 : 1, 34 : 1 };
-                Event.on(doc, 'keydown', function(evt) {
+                var pageUpDownKeys = { 33:1, 34:1 };
+                Event.on(doc, 'keydown', function (evt) {
                     if (evt.keyCode in pageUpDownKeys) {
                         setTimeout(function () {
                             self.getSelection().scrollIntoView();
@@ -1134,7 +1113,7 @@ KISSY.Editor.add("definition", function(KE) {
 
         // Adds the document body as a context menu target.
 
-        setTimeout(function() {
+        setTimeout(function () {
             /*
              * IE BUG: IE might have rendered the iframe with invisible contents.
              * (#3623). Push some inconsequential CSS style changes to force IE to
@@ -1144,7 +1123,7 @@ KISSY.Editor.add("definition", function(KE) {
              * fix the problem. :(
              */
             if (IS_IE) {
-                setTimeout(function() {
+                setTimeout(function () {
                     if (doc) {
                         body.runtimeStyle['marginBottom'] = '0px';
                         body.runtimeStyle['marginBottom'] = '';
@@ -1154,7 +1133,7 @@ KISSY.Editor.add("definition", function(KE) {
         }, 0);
 
 
-        setTimeout(function() {
+        setTimeout(function () {
             self.fire("dataReady");
             /*
              some break for firefox ，不能立即设置
@@ -1167,11 +1146,11 @@ KISSY.Editor.add("definition", function(KE) {
                     doc.execCommand('enableObjectResizing', FALSE, !disableObjectResizing);
                     doc.execCommand('enableInlineTableEditing', FALSE, !disableInlineTableEditing);
                 }
-                catch(e) {
-                    //只能ie能用？，目前只有firefox,ie支持图片缩放
+                catch (e) {
+                    // 只能ie能用？，目前只有 firefox,ie 支持图片缩放
                     // For browsers which don't support the above methods,
                     // we can use the the resize event or resizestart for IE (#4208)
-                    Event.on(body, IS_IE ? 'resizestart' : 'resize', function(evt) {
+                    Event.on(body, IS_IE ? 'resizestart' : 'resize', function (evt) {
                         var t = new Node(evt.target);
                         if (
                             disableObjectResizing ||
@@ -1188,9 +1167,9 @@ KISSY.Editor.add("definition", function(KE) {
 
 
         // Gecko/Webkit need some help when selecting control type elements. (#3448)
-        //if (!( IS_IE || UA.opera)) {
-        if (UA.webkit) {
-            Event.on(doc, "mousedown", function(ev) {
+        //if (!( IS_IE || UA['opera'])) {
+        if (UA['webkit']) {
+            Event.on(doc, "mousedown", function (ev) {
                 var control = new Node(ev.target);
                 if (S.inArray(control._4e_name(), ['img', 'hr', 'input', 'textarea', 'select'])) {
                     self.getSelection().selectElement(control);
@@ -1199,8 +1178,8 @@ KISSY.Editor.add("definition", function(KE) {
         }
 
 
-        if (UA.gecko) {
-            Event.on(doc, "dragstart", function(ev) {
+        if (UA['gecko']) {
+            Event.on(doc, "dragstart", function (ev) {
                 var control = new Node(ev.target);
                 if (control._4e_name() === 'img' &&
                     /ke_/.test(control[0].className)
@@ -1219,7 +1198,7 @@ KISSY.Editor.add("definition", function(KE) {
     // Fixing Firefox 'Back-Forward Cache' break design mode. (#4514)
     //不知道为什么
     /*
-     if (UA.gecko) {
+     if (UA['gecko']) {
      ( function () {
      var body = document.body;
      if (!body)
@@ -1237,11 +1216,11 @@ KISSY.Editor.add("definition", function(KE) {
     /**
      * patch for browser mode = ie7 ,document mode=ie8/9 : 条件注释导致mhtml 引入但是不能处理
      */
-    if (document['documentMode'] > 7) {
-        (function() {
+    if (DOC['documentMode'] > 7) {
+        (function () {
             var links = S.all("link");
             for (var i = 0; i < links.length; i++) {
-                var link = new Node(links[i]),href = link.attr("href");
+                var link = new Node(links[i]), href = link.attr("href");
                 if (href.indexOf("editor-pkg-min-mhtml.css") != -1) {
                     link.attr("href", href.replace(/editor-pkg-min-mhtml\.css/g,
                         "editor-pkg-min-datauri.css"));
@@ -1251,28 +1230,7 @@ KISSY.Editor.add("definition", function(KE) {
     }
 
 
-    var KEP = KE.prototype;
-    Utils.extern(KEP, {
-        "removeCustomLink":KEP.removeCustomLink,
-        "addCustomLink":KEP.addCustomLink,
-        "setData":KEP.setData,
-        "getData":KEP.getData,
-        "insertElement":KEP.insertElement,
-        "insertHtml":KEP.insertHtml,
-        "ready":KEP.ready,
-        "addCustomStyle":KEP.addCustomStyle,
-        "addCommand":KEP.addCommand,
-        "hasCommand":KEP.hasCommand,
-        "execCommand":KEP.execCommand,
-        "useDialog":KEP.useDialog,
-        "addDialog":KEP.addDialog,
-        "getDialog":KEP.getDialog,
-        "getMode":KEP.getMode,
-        "sync":KEP.sync,
-        "getSelection":KEP.getSelection,
-        "focus":KEP.focus,
-        "blur":KEP.blur,
-        "notifySelectionChange":KEP.notifySelectionChange
-    });
-
+    if (1 > 2) {
+        S.removeCustomLink().addCustomLink();
+    }
 });

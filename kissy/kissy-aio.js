@@ -1,13 +1,16 @@
 ﻿/*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 23 12:07
+build time: Jan 5 12:13
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
  * @author lifesinger@gmail.com,yiminghe@gmail.com
  */
-(function(S, undefined) {
+(function (S, undefined) {
+    /**
+     * @namespace KISSY
+     */
 
     var host = this,
         meta = {
@@ -16,7 +19,7 @@ build time: Nov 23 12:07
              * @param deep {boolean} whether recursive mix if encounter object
              * @return {Object} the augmented object
              */
-            mix: function(r, s, ov, wl, deep) {
+            mix:function (r, s, ov, wl, deep) {
                 if (!s || !r) {
                     return r;
                 }
@@ -41,9 +44,9 @@ build time: Nov 23 12:07
             }
         },
 
-        _mix = function(p, r, s, ov, deep) {
+        _mix = function (p, r, s, ov, deep) {
             if (ov || !(p in r)) {
-                var target = r[p],src = s[p];
+                var target = r[p], src = s[p];
                 // prevent never-end loop
                 if (target === src) {
                     return;
@@ -78,18 +81,18 @@ build time: Nov 23 12:07
     S = host[S] = meta.mix(seed, meta);
 
     S.mix(S, {
-
+        configs:{},
         // S.app() with these members.
-        __APP_MEMBERS: ['namespace'],
-        __APP_INIT_METHODS: ['__init'],
+        __APP_MEMBERS:['namespace'],
+        __APP_INIT_METHODS:['__init'],
 
         /**
          * The version of the library.
          * @type {String}
          */
-        version: '1.20dev',
+        version:'1.20',
 
-        buildTime:'20111123120737',
+        buildTime:'20120105121255',
 
         /**
          * Returns a new object containing all of the properties of
@@ -98,7 +101,7 @@ build time: Nov 23 12:07
          * single object will create a shallow copy of it.
          * @return {Object} the new merged object
          */
-        merge: function() {
+        merge:function () {
             var o = {}, i, l = arguments.length;
             for (i = 0; i < l; i++) {
                 S.mix(o, arguments[i]);
@@ -110,7 +113,7 @@ build time: Nov 23 12:07
          * Applies prototype properties from the supplier to the receiver.
          * @return {Object} the augmented object
          */
-        augment: function(/*r, s1, s2, ..., ov, wl*/) {
+        augment:function (/*r, s1, s2, ..., ov, wl*/) {
             var args = S.makeArray(arguments),
                 len = args.length - 2,
                 r = args[0],
@@ -142,19 +145,19 @@ build time: Nov 23 12:07
          * @param r {Function} the object to modify
          * @param s {Function} the object to inherit
          * @param px {Object} prototype properties to add/override
-         * @param sx {Object} static properties to add/override
+         * @param {Object} [sx] static properties to add/override
          * @return r {Object}
          */
-        extend: function(r, s, px, sx) {
+        extend:function (r, s, px, sx) {
             if (!s || !r) {
                 return r;
             }
 
             var create = Object.create ?
-                function(proto, c) {
+                function (proto, c) {
                     return Object.create(proto, {
-                        constructor: {
-                            value: c
+                        constructor:{
+                            value:c
                         }
                     });
                 } :
@@ -198,7 +201,7 @@ build time: Nov 23 12:07
         /**
          * Initializes KISSY
          */
-        __init: function() {
+        __init:function () {
             this.Config = this.Config || {};
             this.Env = this.Env || {};
 
@@ -218,7 +221,7 @@ build time: Nov 23 12:07
          * </code>
          * @return {Object}  A reference to the last namespace object created
          */
-        namespace: function() {
+        namespace:function () {
             var args = S.makeArray(arguments),
                 l = args.length,
                 o = null, i, j, p,
@@ -244,7 +247,7 @@ build time: Nov 23 12:07
          * </code>
          * @return {Object}  A reference to the app global object
          */
-        app: function(name, sx) {
+        app:function (name, sx) {
             var isStr = S.isString(name),
                 O = isStr ? host[name] || {} : name,
                 i = 0,
@@ -262,22 +265,27 @@ build time: Nov 23 12:07
         },
 
 
-        config:function(c) {
+        config:function (c) {
+            var configs, cfg, r;
             for (var p in c) {
-                if (this["_" + p]) {
-                    this["_" + p](c[p]);
+                if (c.hasOwnProperty(p)) {
+                    if ((configs = this['configs']) &&
+                        (cfg = configs[p])) {
+                        r = cfg(c[p]);
+                    }
                 }
             }
+            return r;
         },
 
         /**
          * Prints debug info.
          * @param msg {String} the message to log.
-         * @param cat {String} the log category for the message. Default
+         * @param {String} [cat] the log category for the message. Default
          *        categories are "info", "warn", "error", "time" etc.
-         * @param src {String} the source of the the message (opt)
+         * @param {String} [src] the source of the the message (opt)
          */
-        log: function(msg, cat, src) {
+        log:function (msg, cat, src) {
             if (S.Config.debug) {
                 if (src) {
                     msg = src + ': ' + msg;
@@ -291,7 +299,7 @@ build time: Nov 23 12:07
         /**
          * Throws error message.
          */
-        error: function(msg) {
+        error:function (msg) {
             if (S.Config.debug) {
                 throw msg;
             }
@@ -299,10 +307,10 @@ build time: Nov 23 12:07
 
         /*
          * Generate a global unique id.
-         * @param pre {String} optional guid prefix
+         * @param {String} [pre] guid prefix
          * @return {String} the guid
          */
-        guid: function(pre) {
+        guid:function (pre) {
             return (pre || EMPTY) + guid++;
         }
     });
@@ -316,7 +324,7 @@ build time: Nov 23 12:07
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  * @description this code can run in any ecmascript compliant environment
  */
-(function(S, undefined) {
+(function (S, undefined) {
 
     var host = S.__HOST,
         TRUE = true,
@@ -347,12 +355,12 @@ build time: Nov 23 12:07
         class2type = {},
         // http://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat_Sheet
         htmlEntities = {
-            '&amp;': '&',
-            '&gt;': '>',
-            '&lt;': '<',
+            '&amp;':'&',
+            '&gt;':'>',
+            '&lt;':'<',
             '&#x60;':'`',
             '&#x2F;':'/',
-            '&quot;': '"',
+            '&quot;':'"',
             '&#x27;':"'"
         },
         reverseEntities = {},
@@ -360,9 +368,11 @@ build time: Nov 23 12:07
         unEscapeReg,
         // - # $ ^ * ( ) + [ ] { } | \ , . ?
         escapeRegExp = /[\-#$\^*()+\[\]{}|\\,.?\s]/g;
-    (function() {
+    (function () {
         for (var k in htmlEntities) {
-            reverseEntities[htmlEntities[k]] = k;
+            if (htmlEntities.hasOwnProperty(k)) {
+                reverseEntities[htmlEntities[k]] = k;
+            }
         }
     })();
 
@@ -371,7 +381,7 @@ build time: Nov 23 12:07
             return escapeReg
         }
         var str = EMPTY;
-        S.each(htmlEntities, function(entity) {
+        S.each(htmlEntities, function (entity) {
             str += entity + '|';
         });
         str = str.slice(0, -1);
@@ -383,7 +393,7 @@ build time: Nov 23 12:07
             return unEscapeReg
         }
         var str = EMPTY;
-        S.each(reverseEntities, function(entity) {
+        S.each(reverseEntities, function (entity) {
             str += entity + '|';
         });
         str += '&#(\\d{1,5});';
@@ -403,7 +413,7 @@ build time: Nov 23 12:07
          * stamp a object by guid
          * @return guid associated with this object
          */
-        stamp:function(o, readOnly, marker) {
+        stamp:function (o, readOnly, marker) {
             if (!o) {
                 return o
             }
@@ -415,20 +425,20 @@ build time: Nov 23 12:07
                 try {
                     guid = o[marker] = S.guid(marker);
                 }
-                catch(e) {
+                catch (e) {
                     guid = undefined;
                 }
             }
             return guid;
         },
 
-        noop:function() {
+        noop:function () {
         },
 
         /**
          * Determine the internal JavaScript [[Class]] of an object.
          */
-        type: function(o) {
+        type:function (o) {
             return nullOrUndefined(o) ?
                 String(o) :
                 class2type[toString.call(o)] || 'object';
@@ -436,18 +446,18 @@ build time: Nov 23 12:07
 
         isNullOrUndefined:nullOrUndefined,
 
-        isNull: function(o) {
+        isNull:function (o) {
             return o === null;
         },
 
-        isUndefined: function(o) {
+        isUndefined:function (o) {
             return o === undefined;
         },
 
         /**
          * Checks to see if an object is empty.
          */
-        isEmptyObject: function(o) {
+        isEmptyObject:function (o) {
             for (var p in o) {
                 if (p !== undefined) {
                     return FALSE;
@@ -461,7 +471,7 @@ build time: Nov 23 12:07
          * or "new Object()" or "new FunctionClass()").
          * Ref: http://lifesinger.org/blog/2010/12/thinking-of-isplainobject/
          */
-        isPlainObject: function(o) {
+        isPlainObject:function (o) {
             /**
              * note by yiminghe
              * isPlainObject(node=document.getElementById("xx")) -> false
@@ -473,7 +483,6 @@ build time: Nov 23 12:07
         },
 
 
-
         /**
          * 两个目标是否内容相同
          *
@@ -482,7 +491,7 @@ build time: Nov 23 12:07
          * @param [mismatchKeys] internal use
          * @param [mismatchValues] internal use
          */
-        equals : function(a, b, /*internal use*/mismatchKeys, /*internal use*/mismatchValues) {
+        equals:function (a, b, /*internal use*/mismatchKeys, /*internal use*/mismatchValues) {
             // inspired by jasmine
             mismatchKeys = mismatchKeys || [];
             mismatchValues = mismatchValues || [];
@@ -517,14 +526,14 @@ build time: Nov 23 12:07
          * @param {Function} filter filter function
          * @refer http://www.w3.org/TR/html5/common-dom-interfaces.html#safe-passing-of-structured-data
          */
-        clone: function(input, filter) {
+        clone:function (input, filter) {
             // Let memory be an association list of pairs of objects,
             // initially empty. This is used to handle duplicate references.
             // In each pair of objects, one is called the source object
             // and the other the destination object.
             var memory = {},
                 ret = cloneInternal(input, filter, memory);
-            S.each(memory, function(v) {
+            S.each(memory, function (v) {
                 // 清理在源对象上做的标记
                 v = v.input;
                 if (v[CLONE_MARKER]) {
@@ -536,18 +545,18 @@ build time: Nov 23 12:07
                     }
                 }
             });
-            memory = undefined;
+            memory = null;
             return ret;
         },
 
         /**
          * Removes the whitespace from the beginning and end of a string.
          */
-        trim: trim ?
-            function(str) {
+        trim:trim ?
+            function (str) {
                 return nullOrUndefined(str) ? EMPTY : trim.call(str);
             } :
-            function(str) {
+            function (str) {
                 return nullOrUndefined(str) ? EMPTY : str.toString().replace(RE_TRIM, EMPTY);
             },
 
@@ -555,13 +564,13 @@ build time: Nov 23 12:07
          * Substitutes keywords in a string using an object/array.
          * Removes undefined keywords and ignores escaped keywords.
          */
-        substitute: function(str, o, regexp) {
+        substitute:function (str, o, regexp) {
             if (!S.isString(str)
                 || !S.isPlainObject(o)) {
                 return str;
             }
 
-            return str.replace(regexp || /\\?\{([^{}]+)\}/g, function(match, name) {
+            return str.replace(regexp || /\\?\{([^{}]+)\}/g, function (match, name) {
                 if (match.charAt(0) === '\\') {
                     return match.slice(1);
                 }
@@ -574,9 +583,9 @@ build time: Nov 23 12:07
          * @param object {Object} the object to iterate
          * @param fn {Function} the function to execute on each item. The function
          *        receives three arguments: the value, the index, the full array.
-         * @param context {Object} (opt)
+         * @param {Object} [context]
          */
-        each: function(object, fn, context) {
+        each:function (object, fn, context) {
             if (object) {
                 var key,
                     val,
@@ -588,6 +597,7 @@ build time: Nov 23 12:07
 
                 if (isObj) {
                     for (key in object) {
+                        // can not use hasOwnProperty
                         if (fn.call(context, object[key], key, object) === FALSE) {
                             break;
                         }
@@ -604,11 +614,11 @@ build time: Nov 23 12:07
         /**
          * Search for a specified value within an array.
          */
-        indexOf: indexOf ?
-            function(item, arr) {
+        indexOf:indexOf ?
+            function (item, arr) {
                 return indexOf.call(arr, item);
             } :
-            function(item, arr) {
+            function (item, arr) {
                 for (var i = 0, len = arr.length; i < len; ++i) {
                     if (arr[i] === item) {
                         return i;
@@ -622,11 +632,11 @@ build time: Nov 23 12:07
          * that contains the specified value, -1 if the
          * value isn't found.
          */
-        lastIndexOf: (lastIndexOf) ?
-            function(item, arr) {
+        lastIndexOf:(lastIndexOf) ?
+            function (item, arr) {
                 return lastIndexOf.call(arr, item);
             } :
-            function(item, arr) {
+            function (item, arr) {
                 for (var i = arr.length - 1; i >= 0; i--) {
                     if (arr[i] === item) {
                         break;
@@ -643,7 +653,7 @@ build time: Nov 23 12:07
          *        if override is false, S.unique([a, b, a]) => [a, b]
          * @return {Array} a copy of the array with duplicate entries removed
          */
-        unique: function(a, override) {
+        unique:function (a, override) {
             var b = a.slice();
             if (override) {
                 b.reverse();
@@ -669,7 +679,7 @@ build time: Nov 23 12:07
         /**
          * Search for a specified value index within an array.
          */
-        inArray: function(item, arr) {
+        inArray:function (item, arr) {
             return S.indexOf(item, arr) > -1;
         },
 
@@ -684,13 +694,13 @@ build time: Nov 23 12:07
          *         returned true. If no items matched an empty array is
          *         returned.
          */
-        filter: filter ?
-            function(arr, fn, context) {
+        filter:filter ?
+            function (arr, fn, context) {
                 return filter.call(arr, fn, context || this);
             } :
-            function(arr, fn, context) {
+            function (arr, fn, context) {
                 var ret = [];
-                S.each(arr, function(item, i, arr) {
+                S.each(arr, function (item, i, arr) {
                     if (fn.call(context || this, item, i, arr)) {
                         ret.push(item);
                     }
@@ -699,10 +709,10 @@ build time: Nov 23 12:07
             },
         // https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/map
         map:map ?
-            function(arr, fn, context) {
+            function (arr, fn, context) {
                 return map.call(arr, fn, context || this);
             } :
-            function(arr, fn, context) {
+            function (arr, fn, context) {
                 var len = arr.length,
                     res = new Array(len);
                 for (var i = 0; i < len; i++) {
@@ -724,7 +734,7 @@ build time: Nov 23 12:07
          NaN ?
          reduce ? function(arr, callback, initialValue) {
          return arr.reduce(callback, initialValue);
-         } : */function(arr, callback, initialValue) {
+         } : */function (arr, callback, initialValue) {
             var len = arr.length;
             if (typeof callback !== "function") {
                 throw new TypeError("callback is not function!");
@@ -767,10 +777,10 @@ build time: Nov 23 12:07
         },
 
         every:every ?
-            function(arr, fn, context) {
+            function (arr, fn, context) {
                 return every.call(arr, fn, context || this);
             } :
-            function(arr, fn, context) {
+            function (arr, fn, context) {
                 var len = arr && arr.length || 0;
                 for (var i = 0; i < len; i++) {
                     if (i in arr && !fn.call(context, arr[i], i, arr)) {
@@ -781,10 +791,10 @@ build time: Nov 23 12:07
             },
 
         some:some ?
-            function(arr, fn, context) {
+            function (arr, fn, context) {
                 return some.call(arr, fn, context || this);
             } :
-            function(arr, fn, context) {
+            function (arr, fn, context) {
                 var len = arr && arr.length || 0;
                 for (var i = 0; i < len; i++) {
                     if (i in arr && fn.call(context, arr[i], i, arr)) {
@@ -799,7 +809,7 @@ build time: Nov 23 12:07
          * it is not same with native bind
          * @refer https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Function/bind
          */
-        bind:function(fn, obj) {
+        bind:function (fn, obj) {
             var slice = [].slice,
                 args = slice.call(arguments, 2),
                 fNOP = function () {
@@ -819,14 +829,14 @@ build time: Nov 23 12:07
          * http://j-query.blogspot.com/2011/02/timing-ecmascript-5-datenow-function.html
          * http://kangax.github.com/es5-compat-table/
          */
-        now: Date.now || function() {
+        now:Date.now || function () {
             return +new Date();
         },
         /**
          * frequently used in taobao cookie about nick
          */
-        fromUnicode:function(str) {
-            return str.replace(/\\u([a-f\d]{4})/ig, function(m, u) {
+        fromUnicode:function (str) {
+            return str.replace(/\\u([a-f\d]{4})/ig, function (m, u) {
                 return  String.fromCharCode(parseInt(u, HEX_BASE));
             });
         },
@@ -836,13 +846,13 @@ build time: Nov 23 12:07
          *          http://wonko.com/post/html-escaping
          * @param str {string} text2html show
          */
-        escapeHTML:function(str) {
-            return str.replace(getEscapeReg(), function(m) {
+        escapeHTML:function (str) {
+            return str.replace(getEscapeReg(), function (m) {
                 return reverseEntities[m];
             });
         },
 
-        escapeRegExp:function(str) {
+        escapeRegExp:function (str) {
             return str.replace(escapeRegExp, '\\$&');
         },
 
@@ -850,8 +860,8 @@ build time: Nov 23 12:07
          * unescape html to string
          * @param str {string} html2text
          */
-        unEscapeHTML:function(str) {
-            return str.replace(getUnEscapeReg(), function(m, n) {
+        unEscapeHTML:function (str) {
+            return str.replace(getUnEscapeReg(), function (m, n) {
                 return htmlEntities[m] || String.fromCharCode(+n);
             });
         },
@@ -860,7 +870,7 @@ build time: Nov 23 12:07
          * @param o {object|Array} array like object or array
          * @return {Array}
          */
-        makeArray: function(o) {
+        makeArray:function (o) {
             if (nullOrUndefined(o)) {
                 return [];
             }
@@ -873,7 +883,7 @@ build time: Nov 23 12:07
                 return [o];
             }
             var ret = [];
-            for (var i = 0,l = o.length; i < l; i++) {
+            for (var i = 0, l = o.length; i < l; i++) {
                 ret[i] = o[i];
             }
             return ret;
@@ -889,7 +899,7 @@ build time: Nov 23 12:07
          * {foo: true, bar: 2}    // -> 'foo=true&bar=2'
          * </code>
          */
-        param: function(o, sep, eq, arr) {
+        param:function (o, sep, eq, arr) {
             if (!S.isPlainObject(o)) {
                 return EMPTY;
             }
@@ -900,24 +910,26 @@ build time: Nov 23 12:07
             }
             var buf = [], key, val;
             for (key in o) {
-                val = o[key];
-                key = encode(key);
+                if (o.hasOwnProperty(key)) {
+                    val = o[key];
+                    key = encode(key);
 
-                // val is valid non-array value
-                if (isValidParamValue(val)) {
-                    buf.push(key, eq, encode(val + EMPTY), sep);
-                }
-                // val is not empty array
-                else if (S.isArray(val) && val.length) {
-                    for (var i = 0, len = val.length; i < len; ++i) {
-                        if (isValidParamValue(val[i])) {
-                            buf.push(key,
-                                (arr ? encode("[]") : EMPTY),
-                                eq, encode(val[i] + EMPTY), sep);
+                    // val is valid non-array value
+                    if (isValidParamValue(val)) {
+                        buf.push(key, eq, encode(val + EMPTY), sep);
+                    }
+                    // val is not empty array
+                    else if (S.isArray(val) && val.length) {
+                        for (var i = 0, len = val.length; i < len; ++i) {
+                            if (isValidParamValue(val[i])) {
+                                buf.push(key,
+                                    (arr ? encode("[]") : EMPTY),
+                                    eq, encode(val[i] + EMPTY), sep);
+                            }
                         }
                     }
+                    // ignore other cases, including empty array, Function, RegExp, Date etc.
                 }
-                // ignore other cases, including empty array, Function, RegExp, Date etc.
             }
             buf.pop();
             return buf.join(EMPTY);
@@ -932,7 +944,7 @@ build time: Nov 23 12:07
          * 'id=45&raw'        // -> {id: '45', raw: ''}
          * </code>
          */
-        unparam: function(str, sep, eq) {
+        unparam:function (str, sep, eq) {
             if (typeof str !== 'string'
                 || (str = S.trim(str)).length === 0) {
                 return {};
@@ -949,7 +961,7 @@ build time: Nov 23 12:07
                 key = decode(pair[0]);
                 try {
                     val = decode(pair[1] || EMPTY);
-                } catch(e) {
+                } catch (e) {
                     S.log(e + "decodeURIComponent error : " + pair[1], "error");
                     val = pair[1] || EMPTY;
                 }
@@ -960,7 +972,7 @@ build time: Nov 23 12:07
                     if (S.isArray(ret[key])) {
                         ret[key].push(val);
                     } else {
-                        ret[key] = [ret[key],val];
+                        ret[key] = [ret[key], val];
                     }
                 } else {
                     ret[key] = val;
@@ -978,14 +990,14 @@ build time: Nov 23 12:07
          * @param periodic {Boolean} if true, executes continuously at supplied interval
          *        until canceled.
          * @param context {Object} the context object.
-         * @param data [Array] that is provided to the function. This accepts either a single
+         * @param [data] that is provided to the function. This accepts either a single
          *        item or an array. If an array is provided, the function is executed with
          *        one parameter for each array item. If you need to pass a single array
          *        parameter, it needs to be wrapped in an array [myarray].
          * @return {Object} a timer object. Call the cancel() method on this object to stop
          *         the timer.
          */
-        later: function(fn, when, periodic, context, data) {
+        later:function (fn, when, periodic, context, data) {
             when = when || 0;
             var m = fn,
                 d = S.makeArray(data),
@@ -1000,16 +1012,16 @@ build time: Nov 23 12:07
                 S.error('method undefined');
             }
 
-            f = function() {
+            f = function () {
                 m.apply(context, d);
             };
 
             r = (periodic) ? setInterval(f, when) : setTimeout(f, when);
 
             return {
-                id: r,
-                interval: periodic,
-                cancel: function() {
+                id:r,
+                interval:periodic,
+                cancel:function () {
                     if (this.interval) {
                         clearInterval(r);
                     } else {
@@ -1019,11 +1031,11 @@ build time: Nov 23 12:07
             };
         },
 
-        startsWith:function(str, prefix) {
+        startsWith:function (str, prefix) {
             return str.lastIndexOf(prefix, 0) === 0;
         },
 
-        endsWith:function(str, suffix) {
+        endsWith:function (str, suffix) {
             var ind = str.length - suffix.length;
             return ind >= 0 && str.indexOf(suffix, ind) == ind;
         },
@@ -1037,18 +1049,18 @@ build time: Nov 23 12:07
          *              Passing a -1 will disable the throttle. Defaults to 150.
          * @return {function} Returns a wrapped function that calls fn throttled.
          */
-        throttle:function(fn, ms, context) {
+        throttle:function (fn, ms, context) {
             ms = ms || 150;
 
             if (ms === -1) {
-                return (function() {
+                return (function () {
                     fn.apply(context || this, arguments);
                 });
             }
 
             var last = S.now();
 
-            return (function() {
+            return (function () {
                 var now = S.now();
                 if (now - last > ms) {
                     last = now;
@@ -1060,14 +1072,14 @@ build time: Nov 23 12:07
         /**
          * buffers a call between  a fixed time
          * @param {function} fn
-         * @param {object} context
+         * @param {object} [context]
          * @param {Number} ms
          */
-        buffer:function(fn, ms, context) {
+        buffer:function (fn, ms, context) {
             ms = ms || 150;
 
             if (ms === -1) {
-                return (function() {
+                return (function () {
                     fn.apply(context || this, arguments);
                 });
             }
@@ -1078,7 +1090,7 @@ build time: Nov 23 12:07
                 bufferTimer = S.later(fn, ms, FALSE, context || this);
             }
 
-            f.stop = function() {
+            f.stop = function () {
                 if (bufferTimer) {
                     bufferTimer.cancel();
                     bufferTimer = 0;
@@ -1103,12 +1115,12 @@ build time: Nov 23 12:07
     });
 
     S.each('Boolean Number String Function Array Date RegExp Object'.split(' '),
-        function(name, lc) {
+        function (name, lc) {
             // populate the class2type map
             class2type['[object ' + name + ']'] = (lc = name.toLowerCase());
 
             // add isBoolean/isNumber/...
-            S['is' + name] = function(o) {
+            S['is' + name] = function (o) {
                 return S.type(o) == lc;
             }
         });
@@ -1137,7 +1149,7 @@ build time: Nov 23 12:07
         } else if (typeof input === "object") {
             // 引用类型要先记录
             var constructor = input.constructor;
-            if (S.inArray(constructor, [Boolean,String,Number,Date,RegExp])) {
+            if (S.inArray(constructor, [Boolean, String, Number, Date, RegExp])) {
                 destination = new constructor(input.valueOf());
             }
             // ImageData , File, Blob , FileList .. etc
@@ -1151,7 +1163,7 @@ build time: Nov 23 12:07
             // 做标记
             input[CLONE_MARKER] = (stamp = S.guid());
             // 存储源对象以及克隆后的对象
-            memory[stamp] = {destination:destination,input:input};
+            memory[stamp] = {destination:destination, input:input};
         }
         // If input is an Array object or an Object object,
         // then, for each enumerable property in input,
@@ -1167,10 +1179,11 @@ build time: Nov 23 12:07
             }
         } else if (isPlainObject) {
             for (k in input) {
-                if (k !== CLONE_MARKER &&
-                    input.hasOwnProperty(k) &&
-                    (!f || (f.call(input, input[k], k, input) !== FALSE))) {
-                    destination[k] = cloneInternal(input[k], f, memory);
+                if (input.hasOwnProperty(k)) {
+                    if (k !== CLONE_MARKER &&
+                        (!f || (f.call(input, input[k], k, input) !== FALSE))) {
+                        destination[k] = cloneInternal(input[k], f, memory);
+                    }
                 }
             }
         }
@@ -1185,27 +1198,33 @@ build time: Nov 23 12:07
         }
         a[COMPARE_MARKER] = b;
         b[COMPARE_MARKER] = a;
-        var hasKey = function(obj, keyName) {
+        var hasKey = function (obj, keyName) {
             return (obj !== null && obj !== undefined) && obj[keyName] !== undefined;
         };
         for (var property in b) {
-            if (!hasKey(a, property) && hasKey(b, property)) {
-                mismatchKeys.push("expected has key '" + property + "', but missing from actual.");
+            if (b.hasOwnProperty(property)) {
+                if (!hasKey(a, property) && hasKey(b, property)) {
+                    mismatchKeys.push("expected has key '" + property + "', but missing from actual.");
+                }
             }
         }
         for (property in a) {
-            if (!hasKey(b, property) && hasKey(a, property)) {
-                mismatchKeys.push("expected missing key '" + property + "', but present in actual.");
+            if (a.hasOwnProperty(property)) {
+                if (!hasKey(b, property) && hasKey(a, property)) {
+                    mismatchKeys.push("expected missing key '" + property + "', but present in actual.");
+                }
             }
         }
         for (property in b) {
-            if (property == COMPARE_MARKER) {
-                continue;
-            }
-            if (!S.equals(a[property], b[property], mismatchKeys, mismatchValues)) {
-                mismatchValues.push("'" + property + "' was '" + (b[property] ? (b[property].toString()) : b[property])
-                    + "' in expected, but was '" +
-                    (a[property] ? (a[property].toString()) : a[property]) + "' in actual.");
+            if (b.hasOwnProperty(property)) {
+                if (property == COMPARE_MARKER) {
+                    continue;
+                }
+                if (!S.equals(a[property], b[property], mismatchKeys, mismatchValues)) {
+                    mismatchValues.push("'" + property + "' was '" + (b[property] ? (b[property].toString()) : b[property])
+                        + "' in expected, but was '" +
+                        (a[property] ? (a[property].toString()) : a[property]) + "' in actual.");
+                }
             }
         }
         if (S.isArray(a) && S.isArray(b) && a.length != b.length) {
@@ -1229,6 +1248,84 @@ build time: Nov 23 12:07
     S.__loaderUtils={};
     S.__loaderData={};
 })(KISSY);/**
+ * map mechanism
+ * @author yiminghe@gmail.com
+ */
+(function (S, loader) {
+    if ("require" in this) {
+        return;
+    }
+    /**
+     * modify current module path
+     * @param rules
+     * @example
+     *      [
+     *          [/(.+-)min(.js(\?t=\d+)?)$/,"$1$2"],
+     *          [/(.+-)min(.js(\?t=\d+)?)$/,function(_,m1,m2){
+     *              return m1+m2;
+     *          }]
+     *      ]
+     */
+    S.configs.map = function (rules) {
+        S.Config.mappedRules = (S.Config.mappedRules || []).concat(rules);
+    };
+
+    S.mix(loader, {
+        __getMappedPath:function (path) {
+            var __mappedRules = S.Config.mappedRules || [];
+            for (var i = 0; i < __mappedRules.length; i++) {
+                var m, rule = __mappedRules[i];
+                if (m = path.match(rule[0])) {
+                    return path.replace(rule[0], rule[1]);
+                }
+            }
+            return path;
+        }
+    });
+
+})(KISSY, KISSY.__loader);/**
+ * combine mechanism
+ * @author yiminghe@gmail.com
+ */
+(function (S, loader) {
+    if ("require" in this) {
+        return;
+    }
+
+    var combines;
+
+    /**
+     * compress 'from module' to 'to module'
+     * {
+     *   core:['dom','ua','event','node','json','ajax','anim','base','cookie']
+     * }
+     */
+    combines = S.configs.combines = function (from, to) {
+        var cs;
+        if (S.isObject(from)) {
+            S.each(from, function (v, k) {
+                S.each(v, function (v2) {
+                    combines(v2, k);
+                });
+            });
+            return;
+        }
+        cs = S.Config.combines = S.Config.combines || {};
+        if (to) {
+            cs[from] = to;
+        } else {
+            return cs[from] || from;
+        }
+    };
+
+    S.mix(loader, {
+        __getCombinedMod:function (modName) {
+            var cs;
+            cs = S.Config.combines = S.Config.combines || {};
+            return cs[modName] || modName;
+        }
+    });
+})(KISSY, KISSY.__loader);/**
  * status constants
  * @author yiminghe@gmail.com
  */
@@ -1775,12 +1872,12 @@ build time: Nov 23 12:07
  * build full path from relative path and base path
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
-(function(S, loader, utils, data) {
+(function (S, loader, utils, data) {
     if ("require" in this) {
         return;
     }
     S.mix(loader, {
-        __buildPath: function(mod, base) {
+        __buildPath:function (mod, base) {
             var self = this,
                 Config = self.Config;
 
@@ -1809,6 +1906,11 @@ build time: Nov 23 12:07
                     && mod.tag) {
                     mod[fullpath] += "?t=" + mod.tag;
                 }
+
+                if (mod[fullpath]) {
+                    mod[fullpath] = self.__getMappedPath(mod[fullpath]);
+                }
+
             }
         }
     });
@@ -1854,14 +1956,14 @@ build time: Nov 23 12:07
  * for ie ,find current executive script ,then infer module name
  * @author yiminghe@gmail.com
  */
-(function(S, loader, utils) {
+(function (S, loader, utils) {
     if ("require" in this) {
         return;
     }
     S.mix(loader, {
         //ie 特有，找到当前正在交互的脚本，根据脚本名确定模块名
         // 如果找不到，返回发送前那个脚本
-        __findModuleNameByInteractive:function() {
+        __findModuleNameByInteractive:function () {
             var self = this,
                 scripts = document.getElementsByTagName("script"),
                 re,
@@ -1897,13 +1999,15 @@ build time: Nov 23 12:07
                 === 0) {
                 return utils.removePostfix(src.substring(self.Config.base.length));
             }
-            var packages = self.__packages;
+            var packages = self.Config.packages;
             //外部模块去除包路径，得到模块名
             for (var p in packages) {
-                var p_path = packages[p].path;
-                if (packages.hasOwnProperty(p)
-                    && src.lastIndexOf(p_path, 0) === 0) {
-                    return utils.removePostfix(src.substring(p_path.length));
+                if (packages.hasOwnProperty(p)) {
+                    var p_path = packages[p].path;
+                    if (packages.hasOwnProperty(p) &&
+                        src.lastIndexOf(p_path, 0) === 0) {
+                        return utils.removePostfix(src.substring(p_path.length));
+                    }
                 }
             }
             S.log("interactive script does not have package config ：" + src, "error");
@@ -2129,49 +2233,45 @@ build time: Nov 23 12:07
  * package mechanism
  * @author yiminghe@gmail.com
  */
-(function(S, loader, utils) {
+(function (S, loader, utils) {
     if ("require" in this) {
         return;
     }
-
+    /**
+     * 包声明
+     * biz -> .
+     * 表示遇到 biz/x
+     * 在当前网页路径找 biz/x.js
+     */
+    S.configs.packages = function (cfgs) {
+        var ps;
+        ps = S.Config.packages = S.Config.packages || {};
+        S.each(cfgs, function (cfg) {
+            ps[cfg.name] = cfg;
+            //注意正则化
+            cfg.path = cfg.path && utils.normalBasePath(cfg.path);
+            cfg.tag = cfg.tag && encodeURIComponent(cfg.tag);
+        });
+    };
     S.mix(loader, {
-
-        /**
-         * 包声明
-         * biz -> .
-         * 表示遇到 biz/x
-         * 在当前网页路径找 biz/x.js
-         */
-        _packages:function(cfgs) {
-            var self = this,
-                ps;
-            ps = self.__packages = self.__packages || {};
-            S.each(cfgs, function(cfg) {
-                ps[cfg.name] = cfg;
-                //注意正则化
-                cfg.path = cfg.path && utils.normalBasePath(cfg.path);
-                cfg.tag = cfg.tag && encodeURIComponent(cfg.tag);
-            });
-        },
-
-        __getPackagePath:function(mod) {
+        __getPackagePath:function (mod) {
             //缓存包路径，未申明的包的模块都到核心模块中找
             if (mod.packagepath) {
                 return mod.packagepath;
             }
             var self = this,
                 //一个模块合并到了另一个模块文件中去
-                modName = self._combine(mod.name),
-                packages = self.__packages || {},
+                modName = S.__getCombinedMod(mod.name),
+                packages = self.Config.packages || {},
                 pName = "",
                 p_def;
 
             for (var p in packages) {
-                if (packages.hasOwnProperty(p)
-                    && S.startsWith(modName, p)
-                    && p.length > pName
-                    ) {
-                    pName = p;
+                if (packages.hasOwnProperty(p)) {
+                    if (S.startsWith(modName, p) &&
+                        p.length > pName) {
+                        pName = p;
+                    }
                 }
             }
             p_def = packages[pName];
@@ -2183,30 +2283,6 @@ build time: Nov 23 12:07
                 mod.tag = encodeURIComponent(S.Config.tag || S.buildTime);
             }
             return mod.packagepath = (p_def && p_def.path) || self.Config.base;
-        },
-        /**
-         * compress 'from module' to 'to module'
-         * {
-         *   core:['dom','ua','event','node','json','ajax','anim','base','cookie']
-         * }
-         */
-        _combine:function(from, to) {
-            var self = this,
-                cs;
-            if (S.isObject(from)) {
-                S.each(from, function(v, k) {
-                    S.each(v, function(v2) {
-                        self._combine(v2, k);
-                    });
-                });
-                return;
-            }
-            cs = self.__combines = self.__combines || {};
-            if (to) {
-                cs[from] = to;
-            } else {
-                return cs[from] || from;
-            }
         }
     });
 })(KISSY, KISSY.__loader, KISSY.__loaderUtils);/**
@@ -2247,7 +2323,7 @@ build time: Nov 23 12:07
  * use and attach mod
  * @author  yiminghe@gmail.com,lifesinger@gmail.com
  */
-(function(S, loader, utils, data) {
+(function (S, loader, utils, data) {
 
     if ("require" in this) {
         return;
@@ -2264,7 +2340,7 @@ build time: Nov 23 12:07
          * S.use('mod1,mod2', callback, config);
          * </code>
          */
-        use: function(modNames, callback, cfg) {
+        use:function (modNames, callback, cfg) {
             modNames = modNames.replace(/\s+/g, "").split(',');
             utils.indexMapping(modNames);
             cfg = cfg || {};
@@ -2280,9 +2356,9 @@ build time: Nov 23 12:07
             }
 
             // 有尚未 attached 的模块
-            S.each(modNames, function(modName) {
+            S.each(modNames, function (modName) {
                 // 从 name 开始调用，防止不存在模块
-                self.__attachModByName(modName, function() {
+                self.__attachModByName(modName, function () {
                     if (!fired &&
                         self.__isAttached(modNames)) {
                         fired = true;
@@ -2295,11 +2371,11 @@ build time: Nov 23 12:07
             return self;
         },
 
-        __getModules:function(modNames) {
+        __getModules:function (modNames) {
             var self = this,
                 mods = [self];
 
-            S.each(modNames, function(modName) {
+            S.each(modNames, function (modName) {
                 if (!utils.isCss(modName)) {
                     mods.push(self.require(modName));
                 }
@@ -2311,7 +2387,7 @@ build time: Nov 23 12:07
          * get module's value defined by define function
          * @param {string} moduleName
          */
-        require:function(moduleName) {
+        require:function (moduleName) {
             var self = this,
                 mods = self.Env.mods,
                 mod = mods[moduleName],
@@ -2323,7 +2399,7 @@ build time: Nov 23 12:07
         },
 
         // 加载指定模块名模块，如果不存在定义默认定义为内部模块
-        __attachModByName: function(modName, callback, cfg) {
+        __attachModByName:function (modName, callback, cfg) {
             var self = this,
                 mods = self.Env.mods;
 
@@ -2334,28 +2410,29 @@ build time: Nov 23 12:07
                 // 不指定 .js 默认为 js
                 // 指定为 css 载入 .css
                 var componentJsName = self.Config['componentJsName'] ||
-                    function(m) {
-                        var suffix = "js",match;
+                    function (m) {
+                        var suffix = "js", match;
                         if (match = m.match(/(.+)\.(js|css)$/i)) {
                             suffix = match[2];
                             m = match[1];
                         }
                         return m + '-min.' + suffix;
-                    },  path = S.isFunction(componentJsName) ?
-                    //一个模块合并到了了另一个模块文件中去
-                    componentJsName(self._combine(modName))
-                    : componentJsName;
+                    },
+                    path = componentJsName(S.__getCombinedMod(modName));
                 mod = {
                     path:path,
-                    charset: 'utf-8'
+                    charset:'utf-8'
                 };
                 //添加模块定义
                 mods[modName] = mod;
             }
+
             mod.name = modName;
+
             if (mod && mod.status === ATTACHED) {
                 return;
             }
+
             // 先从 global 里取
             if (cfg.global) {
                 self.__mixMod(modName, cfg.global);
@@ -2367,55 +2444,103 @@ build time: Nov 23 12:07
         /**
          * Attach a module and all required modules.
          */
-        __attach: function(mod, callback, cfg) {
+        __attach:function (mod, callback, cfg) {
             var self = this,
+                r,
+                rMod,
+                i,
+                attached = 0,
                 mods = self.Env.mods,
-                //复制一份当前的依赖项出来，防止add后修改！
+                //复制一份当前的依赖项出来，防止 add 后修改！
                 requires = (mod['requires'] || []).concat();
+
             mod['requires'] = requires;
 
+            /**
+             * check cyclic dependency between mods
+             */
+            function cyclicCheck() {
+                var __allRequires,
+                    myName = mod.name,
+                    r, r2, rmod,
+                    r__allRequires,
+                    requires = mod.requires;
+                // one mod's all requires mods to run its callback
+                __allRequires = mod.__allRequires = mod.__allRequires || {};
+                for (var i = 0; i < requires.length; i++) {
+                    r = requires[i];
+                    rmod = mods[r];
+                    __allRequires[r] = 1;
+                    if (rmod && (r__allRequires = rmod.__allRequires)) {
+                        for (r2 in r__allRequires) {
+                            if (r__allRequires.hasOwnProperty(r2)) {
+                                __allRequires[r2] = 1;
+                            }
+                        }
+                    }
+                }
+                if (__allRequires[myName]) {
+                    var t = [];
+                    for (r in __allRequires) {
+                        if (__allRequires.hasOwnProperty(r)) {
+                            t.push(r);
+                        }
+                    }
+                    S.error("find cyclic dependency by mod " + myName + " between mods : " + t.join(","));
+                }
+            }
+
+            if (S.Config.debug) {
+                cyclicCheck();
+            }
+
             // attach all required modules
-            S.each(requires, function(r, i, requires) {
-                r = requires[i] = utils.normalDepModuleName(mod.name, r);
-                var rMod = mods[r];
+            for (i = 0; i < requires.length; i++) {
+                r = requires[i] = utils.normalDepModuleName(mod.name, requires[i]);
+                rMod = mods[r];
                 if (rMod && rMod.status === ATTACHED) {
                     //no need
                 } else {
                     self.__attachModByName(r, fn, cfg);
                 }
-            });
-
+            }
 
             // load and attach this module
             self.__buildPath(mod, self.__getPackagePath(mod));
 
-            self.__load(mod, function() {
+            self.__load(mod, function () {
 
                 // add 可能改了 config，这里重新取下
                 mod['requires'] = mod['requires'] || [];
 
-                var newRequires = mod['requires'];
+                var newRequires = mod['requires'],
+                    needToLoad = [];
 
                 //本模块下载成功后串行下载 require
-                S.each(newRequires, function(r, i, newRequires) {
-                    r = newRequires[i] = utils.normalDepModuleName(mod.name, r);
+                for (i = 0; i < newRequires.length; i++) {
+                    r = newRequires[i] = utils.normalDepModuleName(mod.name, newRequires[i]);
                     var rMod = mods[r],
                         inA = S.inArray(r, requires);
                     //已经处理过了或将要处理
-                    if (rMod && rMod.status === ATTACHED
+                    if (rMod &&
+                        rMod.status === ATTACHED
                         //已经正在处理了
                         || inA) {
                         //no need
                     } else {
                         //新增的依赖项
-                        self.__attachModByName(r, fn, cfg);
+                        needToLoad.push(r);
                     }
-                });
+                }
 
-                fn();
+                if (needToLoad.length) {
+                    for (i = 0; i < needToLoad.length; i++) {
+                        self.__attachModByName(needToLoad[i], fn, cfg);
+                    }
+                } else {
+                    fn();
+                }
             }, cfg);
-
-            var attached = false;
 
             function fn() {
                 if (!attached &&
@@ -2425,19 +2550,19 @@ build time: Nov 23 12:07
                         self.__attachMod(mod);
                     }
                     if (mod.status === ATTACHED) {
-                        attached = true;
+                        attached = 1;
                         callback();
                     }
                 }
             }
         },
 
-        __attachMod: function(mod) {
+        __attachMod:function (mod) {
             var self = this,
                 fns = mod.fns;
 
             if (fns) {
-                S.each(fns, function(fn) {
+                S.each(fns, function (fn) {
                     var value;
                     if (S.isFunction(fn)) {
                         value = fn.apply(self, self.__getModules(mod['requires']));
@@ -2455,7 +2580,7 @@ build time: Nov 23 12:07
  *  mix loader into S and infer KISSy baseUrl if not set
  *  @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
-(function(S, loader, utils) {
+(function (S, loader, utils) {
     if ("require" in this) {
         return;
     }
@@ -2498,7 +2623,7 @@ build time: Nov 23 12:07
             }
             // combo after first
             else {
-                S.each(parts, function(part) {
+                S.each(parts, function (part) {
                     if (part.match(baseTestReg)) {
                         base += part.replace(baseReg, '$1');
                         return false;
@@ -2509,11 +2634,10 @@ build time: Nov 23 12:07
         return base;
     }
 
-
     /**
      * Initializes loader.
      */
-    S.__initLoader = function() {
+    S.__initLoader = function () {
         var self = this;
         self.Env.mods = self.Env.mods || {}; // all added mods
     };
@@ -2521,7 +2645,7 @@ build time: Nov 23 12:07
     S.Env._loadQueue = {}; // information for loading and loaded mods
     S.__initLoader();
 
-    (function() {
+    (function () {
         // get base from current script file path
         var scripts = document.getElementsByTagName('script'),
             currentScript = scripts[scripts.length - 1],
@@ -2531,8 +2655,20 @@ build time: Nov 23 12:07
         S.Config.timeout = 10;
     })();
 
+    S.mix(S.configs, {
+        base:function (base) {
+            S.Config.base = utils.normalBasePath(base);
+        },
+        timeout:function (v) {
+            S.Config.timeout = v;
+        },
+        debug:function (v) {
+            S.Config.debug = v;
+        }
+    });
+
     // for S.app working properly
-    S.each(loader, function(v, k) {
+    S.each(loader, function (v, k) {
         S.__APP_MEMBERS.push(k);
     });
 
@@ -2650,12 +2786,12 @@ build time: Nov 23 12:07
             }
 
             var retryCount = 1,
-
+                node,
                 timer = S.later(function() {
-                    if (doc.getElementById(id) && (fn() || 1) || ++retryCount > POLL_RETRYS) {
+                    if ((node = doc.getElementById(id)) && (fn(node) || 1) ||
+                        ++retryCount > POLL_RETRYS) {
                         timer.cancel();
                     }
-
                 }, POLL_INTERVAL, true);
         }
     });
@@ -2777,76 +2913,77 @@ build time: Nov 23 12:07
  * @description: 为了和 1.1.7 及以前版本保持兼容，务实与创新，兼容与革新 ！
  * @author yiminghe@gmail.com
  */
-(function(S) {
+(function (S) {
     S.config({
-        combine:{
-            core:['dom','ua','event','node','json','ajax','anim','base','cookie']
+        'combines':{
+            'core':['dom', 'ua', 'event', 'node', 'json', 'ajax', 'anim', 'base', 'cookie']
         }
     });
 })(KISSY);
 /**
  combined files : 
 
-D:\code\kissy_git\kissy\src\ua\base.js
-D:\code\kissy_git\kissy\src\ua\extra.js
-D:\code\kissy_git\kissy\src\ua.js
-D:\code\kissy_git\kissy\src\dom\base.js
-D:\code\kissy_git\kissy\src\dom\attr.js
-D:\code\kissy_git\kissy\src\dom\class.js
-D:\code\kissy_git\kissy\src\dom\create.js
-D:\code\kissy_git\kissy\src\dom\data.js
-D:\code\kissy_git\kissy\src\dom\insertion.js
-D:\code\kissy_git\kissy\src\dom\offset.js
-D:\code\kissy_git\kissy\src\dom\style.js
-D:\code\kissy_git\kissy\src\dom\selector.js
-D:\code\kissy_git\kissy\src\dom\style-ie.js
-D:\code\kissy_git\kissy\src\dom\traversal.js
-D:\code\kissy_git\kissy\src\dom.js
-D:\code\kissy_git\kissy\src\event\keycodes.js
-D:\code\kissy_git\kissy\src\event\object.js
-D:\code\kissy_git\kissy\src\event\base.js
-D:\code\kissy_git\kissy\src\event\target.js
-D:\code\kissy_git\kissy\src\event\focusin.js
-D:\code\kissy_git\kissy\src\event\hashchange.js
-D:\code\kissy_git\kissy\src\event\valuechange.js
-D:\code\kissy_git\kissy\src\event\delegate.js
-D:\code\kissy_git\kissy\src\event\mouseenter.js
-D:\code\kissy_git\kissy\src\event\submit.js
-D:\code\kissy_git\kissy\src\event\change.js
-D:\code\kissy_git\kissy\src\event\mousewheel.js
-D:\code\kissy_git\kissy\src\event.js
-D:\code\kissy_git\kissy\src\node\base.js
-D:\code\kissy_git\kissy\src\node\attach.js
-D:\code\kissy_git\kissy\src\node\override.js
-D:\code\kissy_git\kissy\src\anim\easing.js
-D:\code\kissy_git\kissy\src\anim\manager.js
-D:\code\kissy_git\kissy\src\anim\fx.js
-D:\code\kissy_git\kissy\src\anim\queue.js
-D:\code\kissy_git\kissy\src\anim\base.js
-D:\code\kissy_git\kissy\src\anim\color.js
-D:\code\kissy_git\kissy\src\anim.js
-D:\code\kissy_git\kissy\src\node\anim.js
-D:\code\kissy_git\kissy\src\node.js
-D:\code\kissy_git\kissy\src\json\json2.js
-D:\code\kissy_git\kissy\src\json.js
-D:\code\kissy_git\kissy\src\ajax\form-serializer.js
-D:\code\kissy_git\kissy\src\ajax\xhrobject.js
-D:\code\kissy_git\kissy\src\ajax\base.js
-D:\code\kissy_git\kissy\src\ajax\xhrbase.js
-D:\code\kissy_git\kissy\src\ajax\subdomain.js
-D:\code\kissy_git\kissy\src\ajax\xdr.js
-D:\code\kissy_git\kissy\src\ajax\xhr.js
-D:\code\kissy_git\kissy\src\ajax\script.js
-D:\code\kissy_git\kissy\src\ajax\jsonp.js
-D:\code\kissy_git\kissy\src\ajax\form.js
-D:\code\kissy_git\kissy\src\ajax\iframe-upload.js
-D:\code\kissy_git\kissy\src\ajax.js
-D:\code\kissy_git\kissy\src\base\attribute.js
-D:\code\kissy_git\kissy\src\base\base.js
-D:\code\kissy_git\kissy\src\base.js
-D:\code\kissy_git\kissy\src\cookie\base.js
-D:\code\kissy_git\kissy\src\cookie.js
-D:\code\kissy_git\kissy\src\core.js
+D:\code\kissy_git\kissy1.2\src\ua\base.js
+D:\code\kissy_git\kissy1.2\src\ua\extra.js
+D:\code\kissy_git\kissy1.2\src\ua.js
+D:\code\kissy_git\kissy1.2\src\dom\base.js
+D:\code\kissy_git\kissy1.2\src\dom\attr.js
+D:\code\kissy_git\kissy1.2\src\dom\class.js
+D:\code\kissy_git\kissy1.2\src\dom\create.js
+D:\code\kissy_git\kissy1.2\src\dom\data.js
+D:\code\kissy_git\kissy1.2\src\dom\insertion.js
+D:\code\kissy_git\kissy1.2\src\dom\offset.js
+D:\code\kissy_git\kissy1.2\src\dom\style.js
+D:\code\kissy_git\kissy1.2\src\dom\selector.js
+D:\code\kissy_git\kissy1.2\src\dom\style-ie.js
+D:\code\kissy_git\kissy1.2\src\dom\traversal.js
+D:\code\kissy_git\kissy1.2\src\dom.js
+D:\code\kissy_git\kissy1.2\src\event\keycodes.js
+D:\code\kissy_git\kissy1.2\src\event\object.js
+D:\code\kissy_git\kissy1.2\src\event\utils.js
+D:\code\kissy_git\kissy1.2\src\event\base.js
+D:\code\kissy_git\kissy1.2\src\event\target.js
+D:\code\kissy_git\kissy1.2\src\event\focusin.js
+D:\code\kissy_git\kissy1.2\src\event\hashchange.js
+D:\code\kissy_git\kissy1.2\src\event\valuechange.js
+D:\code\kissy_git\kissy1.2\src\event\delegate.js
+D:\code\kissy_git\kissy1.2\src\event\mouseenter.js
+D:\code\kissy_git\kissy1.2\src\event\submit.js
+D:\code\kissy_git\kissy1.2\src\event\change.js
+D:\code\kissy_git\kissy1.2\src\event\mousewheel.js
+D:\code\kissy_git\kissy1.2\src\event.js
+D:\code\kissy_git\kissy1.2\src\node\base.js
+D:\code\kissy_git\kissy1.2\src\node\attach.js
+D:\code\kissy_git\kissy1.2\src\node\override.js
+D:\code\kissy_git\kissy1.2\src\anim\easing.js
+D:\code\kissy_git\kissy1.2\src\anim\manager.js
+D:\code\kissy_git\kissy1.2\src\anim\fx.js
+D:\code\kissy_git\kissy1.2\src\anim\queue.js
+D:\code\kissy_git\kissy1.2\src\anim\base.js
+D:\code\kissy_git\kissy1.2\src\anim\color.js
+D:\code\kissy_git\kissy1.2\src\anim.js
+D:\code\kissy_git\kissy1.2\src\node\anim.js
+D:\code\kissy_git\kissy1.2\src\node.js
+D:\code\kissy_git\kissy1.2\src\json\json2.js
+D:\code\kissy_git\kissy1.2\src\json.js
+D:\code\kissy_git\kissy1.2\src\ajax\form-serializer.js
+D:\code\kissy_git\kissy1.2\src\ajax\xhrobject.js
+D:\code\kissy_git\kissy1.2\src\ajax\base.js
+D:\code\kissy_git\kissy1.2\src\ajax\xhrbase.js
+D:\code\kissy_git\kissy1.2\src\ajax\subdomain.js
+D:\code\kissy_git\kissy1.2\src\ajax\xdr.js
+D:\code\kissy_git\kissy1.2\src\ajax\xhr.js
+D:\code\kissy_git\kissy1.2\src\ajax\script.js
+D:\code\kissy_git\kissy1.2\src\ajax\jsonp.js
+D:\code\kissy_git\kissy1.2\src\ajax\form.js
+D:\code\kissy_git\kissy1.2\src\ajax\iframe-upload.js
+D:\code\kissy_git\kissy1.2\src\ajax.js
+D:\code\kissy_git\kissy1.2\src\base\attribute.js
+D:\code\kissy_git\kissy1.2\src\base\base.js
+D:\code\kissy_git\kissy1.2\src\base.js
+D:\code\kissy_git\kissy1.2\src\cookie\base.js
+D:\code\kissy_git\kissy1.2\src\cookie.js
+D:\code\kissy_git\kissy1.2\src\core.js
 **/
 
 /**
@@ -3104,17 +3241,17 @@ KISSY.add('dom/base', function(S, UA, undefined) {
          * @type Number
          */
         ELEMENT_NODE : 1,
-        ATTRIBUTE_NODE : 2,
+        "ATTRIBUTE_NODE" : 2,
         TEXT_NODE:3,
-        CDATA_SECTION_NODE : 4,
-        ENTITY_REFERENCE_NODE: 5,
-        ENTITY_NODE : 6,
-        PROCESSING_INSTRUCTION_NODE :7,
+        "CDATA_SECTION_NODE" : 4,
+        "ENTITY_REFERENCE_NODE": 5,
+        "ENTITY_NODE" : 6,
+        "PROCESSING_INSTRUCTION_NODE" :7,
         COMMENT_NODE : 8,
         DOCUMENT_NODE : 9,
-        DOCUMENT_TYPE_NODE : 10,
+        "DOCUMENT_TYPE_NODE" : 10,
         DOCUMENT_FRAGMENT_NODE : 11,
-        NOTATION_NODE : 12
+        "NOTATION_NODE" : 12
     };
     var DOM = {
 
@@ -4428,14 +4565,14 @@ KISSY.add('dom/create', function(S, DOM, UA, undefined) {
  */
 
 /**
- * @module  dom-data
+ * @fileOverview   dom-data
  * @author  lifesinger@gmail.com,yiminghe@gmail.com
  */
-KISSY.add('dom/data', function(S, DOM, undefined) {
+KISSY.add('dom/data', function (S, DOM, undefined) {
 
     var win = window,
         EXPANDO = '_ks_data_' + S.now(), // 让每一份 kissy 的 expando 都不同
-        dataCache = { },       // 存储 node 节点的 data
+        dataCache = { }, // 存储 node 节点的 data
         winDataCache = { };    // 避免污染全局
 
 
@@ -4448,7 +4585,7 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
     noData['embed'] = 1;
 
     var commonOps = {
-        hasData:function(cache, name) {
+        hasData:function (cache, name) {
             if (cache) {
                 if (name !== undefined) {
                     if (name in cache) {
@@ -4463,7 +4600,7 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
     };
 
     var objectOps = {
-        hasData:function(ob, name) {
+        hasData:function (ob, name) {
             // 只判断当前窗口，iframe 窗口内数据直接放入全局变量
             if (ob == win) {
                 return objectOps.hasData(winDataCache, name);
@@ -4473,7 +4610,7 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
             return commonOps.hasData(thisCache, name);
         },
 
-        data:function(ob, name, value) {
+        data:function (ob, name, value) {
             if (ob == win) {
                 return objectOps.data(winDataCache, name, value);
             }
@@ -4490,33 +4627,30 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
                 }
             }
         },
-        removeData:function(ob, name) {
+        removeData:function (ob, name) {
             if (ob == win) {
                 return objectOps.removeData(winDataCache, name);
             }
             var cache = ob[EXPANDO];
-            if (!cache) {
-                return;
-            }
             if (name !== undefined) {
                 delete cache[name];
                 if (S.isEmptyObject(cache)) {
-                    objectOps.removeData(ob, undefined);
+                    objectOps.removeData(ob);
                 }
             } else {
                 try {
                     // ob maybe window in iframe
                     // ie will throw error
                     delete ob[EXPANDO];
-                } catch(e) {
-                    ob[EXPANDO] = null;
+                } catch (e) {
+                    ob[EXPANDO] = undefined;
                 }
             }
         }
     };
 
     var domOps = {
-        hasData:function(elem, name) {
+        hasData:function (elem, name) {
             var key = elem[EXPANDO];
             if (!key) {
                 return false;
@@ -4525,16 +4659,21 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
             return commonOps.hasData(thisCache, name);
         },
 
-        data:function(elem, name, value) {
+        data:function (elem, name, value) {
             if (noData[elem.nodeName.toLowerCase()]) {
-                return;
+                return undefined;
             }
-            var key = elem[EXPANDO];
+            var key = elem[EXPANDO], cache;
             if (!key) {
+                // 根本不用附加属性
+                if (name !== undefined &&
+                    value === undefined) {
+                    return undefined;
+                }
                 // 节点上关联键值也可以
                 key = elem[EXPANDO] = S.guid();
             }
-            var cache = dataCache[key];
+            cache = dataCache[key];
             if (value !== undefined) {
                 // 需要新建
                 cache = dataCache[key] = dataCache[key] || {};
@@ -4550,25 +4689,23 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
             }
         },
 
-        removeData:function(elem, name) {
-            var key = elem[EXPANDO];
+        removeData:function (elem, name) {
+            var key = elem[EXPANDO], cache;
             if (!key) {
                 return;
             }
-            var cache = dataCache[key];
-            if (!cache) {
-                return;
-            }
+            cache = dataCache[key];
             if (name !== undefined) {
                 delete cache[name];
                 if (S.isEmptyObject(cache)) {
-                    domOps.removeData(elem, undefined);
+                    domOps.removeData(elem);
                 }
             } else {
                 delete dataCache[key];
                 try {
                     delete elem[EXPANDO];
-                } catch(e) {
+                } catch (e) {
+                    elem[EXPANDO] = undefined;
                     //S.log("delete expando error : ");
                     //S.log(e);
                 }
@@ -4580,75 +4717,91 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
     };
 
 
-    S.mix(DOM, {
-
-        __EXPANDO:EXPANDO,
-
+    S.mix(DOM,
         /**
-         * whether any node has data
+         * @lends DOM
          */
-        hasData:function(selector, name) {
-            var ret = false,elems = DOM.query(selector);
-            for (var i = 0; i < elems.length; i++) {
-                var elem = elems[i];
-                if (checkIsNode(elem)) {
-                    ret = domOps.hasData(elem, name);
-                } else {
-                    ret = objectOps.hasData(elem, name);
-                }
-                if (ret) {
-                    return ret;
-                }
-            }
-            return ret;
-        },
+        {
 
-        /**
-         * Store arbitrary data associated with the matched elements.
-         */
-        data: function(selector, name, data) {
-            // suports hash
-            if (S.isPlainObject(name)) {
-                for (var k in name) {
-                    DOM.data(selector, k, name[k]);
-                }
-                return;
-            }
+            __EXPANDO:EXPANDO,
 
-            // getter
-            if (data === undefined) {
-                var elem = DOM.get(selector);
-                if (checkIsNode(elem)) {
-                    return domOps.data(elem, name, data);
-                } else if (elem) {
-                    return objectOps.data(elem, name, data);
-                }
-            }
-            // setter
-            else {
-                DOM.query(selector).each(function(elem) {
+            /**
+             * whether any node has data
+             * @param {HTMLElement[]|String} selector 选择器或节点数组
+             * @param {String} name 数据键名
+             * @returns {boolean} 节点是否有关联数据键名的值
+             */
+            hasData:function (selector, name) {
+                var ret = false, elems = DOM.query(selector);
+                for (var i = 0; i < elems.length; i++) {
+                    var elem = elems[i];
                     if (checkIsNode(elem)) {
-                        domOps.data(elem, name, data);
+                        ret = domOps.hasData(elem, name);
                     } else {
-                        objectOps.data(elem, name, data);
+                        ret = objectOps.hasData(elem, name);
+                    }
+                    if (ret) {
+                        return ret;
+                    }
+                }
+                return ret;
+            },
+
+            /**
+             * Store arbitrary data associated with the matched elements.
+             * @param {HTMLElement[]|String} selector 选择器或节点数组
+             * @param {String} [name] 数据键名
+             * @param {String} [data] 数据键值
+             * @returns 当不设置 data，设置 name 那么返回： 节点是否有关联数据键名的值
+             *          当不设置 data， name 那么返回： 节点的存储空间对象
+             *          当设置 data， name 那么进行设置操作，返回 undefined
+             */
+            data:function (selector, name, data) {
+                // suports hash
+                if (S.isPlainObject(name)) {
+                    for (var k in name) {
+                        DOM.data(selector, k, name[k]);
+                    }
+                    return undefined;
+                }
+
+                // getter
+                if (data === undefined) {
+                    var elem = DOM.get(selector);
+                    if (checkIsNode(elem)) {
+                        return domOps.data(elem, name, data);
+                    } else if (elem) {
+                        return objectOps.data(elem, name, data);
+                    }
+                }
+                // setter
+                else {
+                    DOM.query(selector).each(function (elem) {
+                        if (checkIsNode(elem)) {
+                            domOps.data(elem, name, data);
+                        } else {
+                            objectOps.data(elem, name, data);
+                        }
+                    });
+                }
+                return undefined;
+            },
+
+            /**
+             * Remove a previously-stored piece of data.
+             * @param {HTMLElement[]|String} selector 选择器或节点数组
+             * @param {String} [name] 数据键名，不设置时删除关联节点的所有键值对
+             */
+            removeData:function (selector, name) {
+                DOM.query(selector).each(function (elem) {
+                    if (checkIsNode(elem)) {
+                        domOps.removeData(elem, name);
+                    } else {
+                        objectOps.removeData(elem, name);
                     }
                 });
             }
-        },
-
-        /**
-         * Remove a previously-stored piece of data.
-         */
-        removeData: function(selector, name) {
-            DOM.query(selector).each(function(elem) {
-                if (checkIsNode(elem)) {
-                    domOps.removeData(elem, name);
-                } else {
-                    objectOps.removeData(elem, name);
-                }
-            });
-        }
-    });
+        });
 
     function checkIsNode(elem) {
         // note : 普通对象不要定义 nodeType 这种特殊属性!
@@ -4662,7 +4815,7 @@ KISSY.add('dom/data', function(S, DOM, undefined) {
 });
 /**
  * 承玉：2011-05-31
- *  - 分层 ，节点和普通对象分开粗合理
+ *  - 分层 ，节点和普通对象分开处理
  **/
 
 /**
@@ -7238,14 +7391,74 @@ KISSY.add('event/object', function(S, undefined) {
  */
 
 /**
- * @module  event
- * @author  yiminghe@gmail.com,lifesinger@gmail.com
+ * utils for event
+ * @author yiminghe@gmail.com
  */
-KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
+KISSY.add("event/utils", function(S, DOM) {
+
+    /**
+     * whether two event listens are the same
+     * @param h1 已有的 handler 描述
+     * @param h2 用户提供的 handler 描述
+     */
+    function isIdenticalHandler(h1, h2, el) {
+        var scope1 = h1.scope || el,
+            ret = 1,
+            d1,
+            d2,
+            scope2 = h2.scope || el;
+        if (h1.fn !== h2.fn
+            || scope1 !== scope2) {
+            ret = 0;
+        } else if ((d1 = h1.data) !== (d2 = h2.data)) {
+            // undelgate 不能 remove 普通 on 的 handler
+            // remove 不能 remove delegate 的 handler
+            if (!d1 && d2
+                || d1 && !d2
+                ) {
+                ret = 0;
+            } else if (d1 && d2) {
+                if (!d1.equals || !d2.equals) {
+                    S.error("no equals in data");
+                } else if (!d1.equals(d2,el)) {
+                    ret = 0;
+                }
+            }
+        }
+        return ret;
+    }
+
+
+    function isValidTarget(target) {
+        // 3 - is text node
+        // 8 - is comment node
+        return target &&
+            target.nodeType !== DOM.TEXT_NODE &&
+            target.nodeType !== DOM.COMMENT_NODE;
+    }
+
+
+    function batchForType(obj, methodName, targets, types) {
+        // on(target, 'click focus', fn)
+        if (types && types.indexOf(" ") > 0) {
+            var args = S.makeArray(arguments);
+            S.each(types.split(/\s+/), function(type) {
+                var args2 = [].concat(args);
+                args2.splice(0, 4, targets, type);
+                obj[methodName].apply(obj, args2);
+            });
+            return true;
+        }
+        return 0;
+    }
+
+
+    function splitAndRun(type, fn) {
+        S.each(type.split(/\s+/), fn);
+    }
+
 
     var doc = document,
-        nodeName = DOM._nodeName,
-        makeArray = S.makeArray,
         simpleAdd = doc.addEventListener ?
             function(el, type, fn, capture) {
                 if (el.addEventListener) {
@@ -7267,9 +7480,38 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                 if (el.detachEvent) {
                     el.detachEvent('on' + type, fn);
                 }
-            },
-        SPACE = " ",
+            };
+
+
+    return {
+        splitAndRun:splitAndRun,
+        batchForType:batchForType,
+        isValidTarget:isValidTarget,
+        isIdenticalHandler:isIdenticalHandler,
+        simpleAdd:simpleAdd,
+        simpleRemove:simpleRemove
+    };
+
+}, {
+    requires:['dom']
+});
+
+/**
+ * scalable event framework for kissy (refer DOM3 Events)
+ * @author  yiminghe@gmail.com,lifesinger@gmail.com
+ */
+KISSY.add('event/base', function(S, DOM, EventObject, Utils, undefined) {
+
+    var isValidTarget = Utils.isValidTarget,
+        isIdenticalHandler = Utils.isIdenticalHandler,
+        batchForType = Utils.batchForType,
+        simpleRemove = Utils.simpleRemove,
+        simpleAdd = Utils.simpleAdd,
+        splitAndRun = Utils.splitAndRun,
+        nodeName = DOM._nodeName,
+        makeArray = S.makeArray,
         each = S.each,
+        trim = S.trim,
         // 记录手工 fire(domElement,type) 时的 type
         // 再在浏览器通知的系统 eventHandler 中检查
         // 如果相同，那么证明已经 fire 过了，不要再次触发了
@@ -7295,6 +7537,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                 events = eventDesc.events;
             each(events, function(handlers, type) {
                 each(handlers, function(handler) {
+                    // scope undefined 时不能写死在 handlers 中，否则不能保证 clone 时的 this
                     Event.on(dest, type, handler.fn, handler.scope, handler.data);
                 });
             });
@@ -7334,7 +7577,7 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
             if (!eventDesc) {
                 Event._data(target, eventDesc = {});
             }
-            //事件 listeners
+            //事件 listeners , similar to eventListeners in DOM3 Events
             var events = eventDesc.events = eventDesc.events || {},
                 handlers = events[type] = events[type] || [],
                 handleObj = {
@@ -7351,9 +7594,9 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                     if (event && event.type == Event_Triggered) {
                         return;
                     }
-                    var target = eventHandler.target;
+                    var currentTarget = eventHandler.target;
                     if (!event || !event.fixed) {
-                        event = new EventObject(target, event);
+                        event = new EventObject(currentTarget, event);
                     }
                     var type = event.type;
                     if (S.isPlainObject(data)) {
@@ -7363,30 +7606,47 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
                     if (type) {
                         event.type = type;
                     }
-                    return Event._handle(target, event);
+                    return _handle(currentTarget, event);
                 };
+                // as for native dom event , this represents currentTarget !
                 eventHandler.target = target;
             }
+
+            for (var i = handlers.length - 1; i >= 0; --i) {
+                /**
+                 * If multiple identical EventListeners are registered on the same EventTarget
+                 * with the same parameters the duplicate instances are discarded.
+                 * They do not cause the EventListener to be called twice
+                 * and since they are discarded
+                 * they do not need to be removed with the removeEventListener method.
+                 */
+                if (isIdenticalHandler(handlers[i], handleObj, target)) {
+                    return;
+                }
+            }
+
             if (isNativeTarget) {
                 addDomEvent(target, type, eventHandler, handlers, handleObj);
                 //nullify to prevent memory leak in ie ?
                 target = null;
             }
+
             // 增加 listener
             handlers.push(handleObj);
         },
 
         /**
-         * Adds an event listener.
+         * Adds an event listener.similar to addEventListener in DOM3 Events
          * @param targets KISSY selector
          * @param type {String} The type of event to append.
-         * @param fn {Function} The event handler.
+         * @param fn {Function} The event handler/listener.
          * @param scope {Object} (optional) The scope (this reference) in which the handler function is executed.
          */
         add: function(targets, type, fn, scope /* optional */, data/*internal usage*/) {
+            type = trim(type);
             // data : 附加在回调后面的数据，delegate 检查使用
             // remove 时 data 相等(指向同一对象或者定义了 equals 比较函数)
-            if (batchForType('add', targets, type, fn, scope, data)) {
+            if (batchForType(Event, 'add', targets, type, fn, scope, data)) {
                 return targets;
             }
 
@@ -7395,17 +7655,6 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
             });
 
             return targets;
-        },
-
-        __getListeners:function(target, type) {
-            var events = Event.__getEvents(target) || {};
-            return events[type] || [];
-        },
-
-        __getEvents:function(target) {
-            // 获取事件描述
-            var eventDesc = Event._data(target);
-            return eventDesc && eventDesc.events;
         },
 
         // single target, single type, fixed native
@@ -7432,49 +7681,33 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
             }
 
             // remove all types of event
-            if (type === undefined) {
+            if (!type) {
                 for (type in events) {
-                    Event.remove.call(Event, target, type);
+                    Event.__remove(isNativeTarget, target, type);
                 }
                 return;
             }
-
-            scope = scope || target;
 
             if ((handlers = events[type])) {
                 len = handlers.length;
                 // 移除 fn
                 if (fn && len) {
+                    var currentHandler = {
+                        data:data,
+                        fn:fn,
+                        scope:scope
+                    },handler;
+
                     for (i = 0,j = 0,t = []; i < len; ++i) {
-                        var reserve = false,
-                            handler = handlers[i],
-                            handlerScope = handler.scope || target;
-                        if (fn !== handler.fn
-                            || scope !== handlerScope) {
+                        handler = handlers[i];
+                        // 注意顺序，用户提供的 handler 在第二个参数
+                        if (!isIdenticalHandler(handler, currentHandler, target)) {
                             t[j++] = handler;
-                            reserve = true;
-                        } else if (data !== data2) {
-                            var data2 = handler.data;
-                            // undelgate 不能 remove 普通 on 的 handler
-                            // remove 不能 remove delegate 的 handler
-                            if (!data && data2
-                                || data2 && !data
-                                ) {
-                                t[j++] = handler;
-                                reserve = true;
-                            } else if (data && data2) {
-                                if (!data.equals || !data2.equals) {
-                                    S.error("no equals in data");
-                                } else if (!data2.equals(data)) {
-                                    t[j++] = handler;
-                                    reserve = true;
-                                }
-                            }
-                        }
-                        if (!reserve && special.remove) {
+                        } else if (special.remove) {
                             special.remove.call(target, handler);
                         }
                     }
+
                     events[type] = t;
                     len = t.length;
                 }
@@ -7502,10 +7735,15 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         },
 
         /**
-         * Detach an event or set of events from an element.
+         * Detach an event or set of events from an element. similar to removeEventListener in DOM3 Events
+         * @param targets KISSY selector
+         * @param type {String} The type of event to append.
+         * @param fn {Function} The event handler/listener.
+         * @param scope {Object} (optional) The scope (this reference) in which the handler function is executed.
          */
         remove: function(targets, type /* optional */, fn /* optional */, scope /* optional */, data/*internal usage*/) {
-            if (batchForType('remove', targets, type, fn, scope)) {
+            type = trim(type);
+            if (batchForType(Event, 'remove', targets, type, fn, scope)) {
                 return targets;
             }
             DOM.query(targets).each(function(target) {
@@ -7514,88 +7752,95 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
             return targets;
         },
 
-        _handle: function(target, event) {
-            /* As some listeners may remove themselves from the
-             event, the original array length is dynamic. So,
-             let's make a copy of all listeners, so we are
-             sure we'll call all of them.*/
-            var listeners = Event.__getListeners(target, event.type).slice(0),
-                ret,
-                gRet,
-                i = 0,
-                len = listeners.length,
-                listener;
-
-            for (; i < len; ++i) {
-                listener = listeners[i];
-                // 传入附件参数data，目前用于委托
-                ret = listener.fn.call(listener.scope || target,
-                    event, listener.data);
-
-                // 和 jQuery 逻辑保持一致
-                if (ret !== undefined) {
-                    // 有一个 false，最终结果就是 false
-                    // 否则等于最后一个返回值
-                    if (gRet !== false) {
-                        gRet = ret;
-                    }
-                    // return false 等价 preventDefault + stopProgation
-                    if (ret === false) {
-                        event.halt();
-                    }
-                }
-
-                if (event.isImmediatePropagationStopped) {
-                    break;
-                }
-            }
-
-            return gRet;
-        },
+        _handle:_handle,
 
         /**
-         * fire event , simulate bubble in browser
-         * @return undefined
+         * fire event , simulate bubble in browser. similar to dispatchEvent in DOM3 Events
+         * @return boolean The return value of fire/dispatchEvent indicates
+         *                 whether any of the listeners which handled the event called preventDefault.
+         *                 If preventDefault was called the value is false, else the value is true.
          */
         fire: function(targets, eventType, eventData, onlyHandlers) {
-            if (!batchForType("fire", targets, eventType, eventData, onlyHandlers)) {
-                // custom event firing moved to target.js
-                eventData = eventData || {};
-                // protect event type
-                eventData.type = eventType;
-                DOM.query(targets).each(function(target) {
-                    fireDOMEvent(target, eventType, eventData, onlyHandlers);
+            var ret = true;
+            eventType = trim(eventType);
+            if (eventType.indexOf(" ") > -1) {
+                splitAndRun(eventType, function(t) {
+                    ret = Event.fire(targets, t, eventData, onlyHandlers) && ret;
                 });
+                return ret;
             }
-        },
-
-        __batchForType:batchForType,
-        __simpleAdd:simpleAdd,
-        __simpleRemove:simpleRemove
+            // custom event firing moved to target.js
+            eventData = eventData || {};
+            // protect event type
+            eventData.type = eventType;
+            DOM.query(targets).each(function(target) {
+                ret = fireDOMEvent(target, eventType, eventData, onlyHandlers) && ret;
+            });
+            return ret;
+        }
     };
+
+    // for compatibility
+    Event['__getListeners'] = getListeners
 
     // shorthand
     Event.on = Event.add;
     Event.detach = Event.remove;
 
-    function batchForType(methodName, targets, types) {
-        // on(target, 'click focus', fn)
-        if ((types = S.trim(types)) && types.indexOf(SPACE) > 0) {
-            var args = makeArray(arguments);
-            each(types.split(/\s+/), function(type) {
-                var args2 = [].concat(args);
-                args2.splice(0, 3, targets, type);
-                Event[methodName].apply(Event, args2);
-            });
-            return true;
-        }
-        return 0;
+    function getListeners(target, type) {
+        var events = getEvents(target) || {};
+        return events[type] || [];
     }
 
-    function isValidTarget(target) {
-        // 3 - is text node
-        // 8 - is comment node
-        return target && target.nodeType !== 3 && target.nodeType !== 8;
+    function _handle(target, event) {
+        /* As some listeners may remove themselves from the
+         event, the original array length is dynamic. So,
+         let's make a copy of all listeners, so we are
+         sure we'll call all of them.*/
+        /**
+         * DOM3 Events: EventListenerList objects in the DOM are live. ??
+         */
+        var listeners = getListeners(target, event.type).slice(0),
+            ret,
+            gRet,
+            i = 0,
+            len = listeners.length,
+            listener;
+
+        for (; i < len; ++i) {
+            listener = listeners[i];
+            // 传入附件参数data，目前用于委托
+            // scope undefined 时不能写死在 listener 中，否则不能保证 clone 时的 this
+            ret = listener.fn.call(listener.scope || target,
+                event, listener.data);
+
+            // 和 jQuery 逻辑保持一致
+            if (ret !== undefined) {
+                // 有一个 false，最终结果就是 false
+                // 否则等于最后一个返回值
+                if (gRet !== false) {
+                    gRet = ret;
+                }
+                // return false 等价 preventDefault + stopProgation
+                if (ret === false) {
+                    event.halt();
+                }
+            }
+
+            if (event.isImmediatePropagationStopped) {
+                break;
+            }
+        }
+
+        // fire 时判断如果 preventDefault，则返回 false 否则返回 true
+        // 这里返回值意义不同
+        return gRet;
+    }
+
+    function getEvents(target) {
+        // 获取事件描述
+        var eventDesc = Event._data(target);
+        return eventDesc && eventDesc.events;
     }
 
     /**
@@ -7604,7 +7849,8 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
     function addDomEvent(target, type, eventHandler, handlers, handleObj) {
         var special = EVENT_SPECIAL[type] || {};
         // 第一次注册该事件，dom 节点才需要注册 dom 事件
-        if (!handlers.length && (!special.setup || special.setup.call(target) === false)) {
+        if (!handlers.length &&
+            (!special.setup || special.setup.call(target) === false)) {
             simpleAdd(target, type, eventHandler)
         }
         if (special.add) {
@@ -7614,14 +7860,29 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 
 
     /**
-     * fire dom event from bottom to up
+     * fire dom event from bottom to up , emulate dispatchEvent in DOM3 Events
+     * @return boolean The return value of dispatchEvent indicates
+     *                 whether any of the listeners which handled the event called preventDefault.
+     *                 If preventDefault was called the value is false, else the value is true.
      */
     function fireDOMEvent(target, eventType, eventData, onlyHandlers) {
         if (!isValidTarget(target)) {
-            return;
+            return false;
         }
-        var event = new EventObject(target, undefined, eventType);
-        S.mix(event, eventData);
+
+        var event,
+            ret = true;
+        if (eventData instanceof EventObject) {
+            event = eventData;
+        } else {
+            event = new EventObject(target, undefined, eventType);
+            S.mix(event, eventData);
+        }
+        /*
+         The target of the event is the EventTarget on which dispatchEvent is called.
+         */
+        // TODO: protect target , but incompatible
+        // event.target=target;
         // protect type
         event.type = eventType;
         // 只运行自己的绑定函数，不冒泡也不触发默认行为
@@ -7634,9 +7895,10 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         //bubble up dom tree
         do{
             event.currentTarget = cur;
-            Event._handle(cur, event);
+            _handle(cur, event);
             // Trigger an inline bound script
-            if (cur[ ontype ] && cur[ ontype ].call(cur) === false) {
+            if (cur[ ontype ] &&
+                cur[ ontype ].call(cur) === false) {
                 event.preventDefault();
             }
             // Bubble up to document, then to window
@@ -7646,7 +7908,8 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
         } while (cur && !event.isPropagationStopped);
 
         if (!event.isDefaultPrevented) {
-            if (!(eventType === "click" && nodeName(target, "a"))) {
+            if (!(eventType === "click" &&
+                nodeName(target, "a"))) {
                 var old;
                 try {
                     if (ontype && target[ eventType ]) {
@@ -7675,29 +7938,38 @@ KISSY.add('event/base', function(S, DOM, EventObject, undefined) {
 
                 Event_Triggered = TRIGGERED_NONE;
             }
+        } else {
+            ret = false;
         }
+        return ret;
     }
 
     return Event;
 }, {
-    requires:["dom","event/object"]
+    requires:["dom","./object","./utils"]
 });
 
 /**
- * 承玉：2011-06-07
+ * 2011-11-24
+ *  - 自定义事件和 dom 事件操作彻底分离
+ *  - TODO: group event from DOM3 Event
+ *
+ * 2011-06-07
+ *  - refer : http://www.w3.org/TR/2001/WD-DOM-Level-3-Events-20010823/events.html
+ *  - 重构
  *  - eventHandler 一个元素一个而不是一个元素一个事件一个，节省内存
  *  - 减少闭包使用，prevent ie 内存泄露？
  *  - 增加 fire ，模拟冒泡处理 dom 事件
- *  - TODO: 自定义事件和 dom 事件操作彻底分离?
- *
  */
 
 /**
  * @module  EventTarget
  * @author  yiminghe@gmail.com
  */
-KISSY.add('event/target', function(S, Event, EventObject) {
+KISSY.add('event/target', function(S, Event, EventObject, Utils, undefined) {
     var KS_PUBLISH = "__~ks_publish",
+        trim = S.trim,
+        splitAndRun = Utils.splitAndRun,
         KS_BUBBLE_TARGETS = "__~ks_bubble_targets",
         ALL_EVENT = "*";
 
@@ -7734,15 +8006,12 @@ KISSY.add('event/target', function(S, Event, EventObject) {
     function attach(method) {
         return function(type, fn, scope) {
             var self = this;
+            type = trim(type);
             splitAndRun(type, function(t) {
                 Event["__" + method](false, self, t, fn, scope);
             });
             return self; // chain
         };
-    }
-
-    function splitAndRun(type, fn) {
-        S.each(S.trim(type).split(/\s+/), fn);
     }
 
     /**
@@ -7766,8 +8035,8 @@ KISSY.add('event/target', function(S, Event, EventObject) {
                 ret,
                 r2,
                 customEvent;
-            if ((type = S.trim(type)) &&
-                type.indexOf(" ") > 0) {
+            type = trim(type);
+            if (type.indexOf(" ") > 0) {
                 splitAndRun(type, function(t) {
                     r2 = self.fire(t, eventData);
                     if (r2 === false) {
@@ -7782,7 +8051,7 @@ KISSY.add('event/target', function(S, Event, EventObject) {
                 isBubblable(self, type)) {
                 r2 = self.bubble(type, customEvent);
                 // false 优先返回
-                if (r2 === false) {
+                if (ret !== false) {
                     ret = r2;
                 }
             }
@@ -7799,7 +8068,10 @@ KISSY.add('event/target', function(S, Event, EventObject) {
         publish: function(type, cfg) {
             var self = this,
                 publish = getEventPublishObj(self);
-            publish[type] = cfg;
+            type = trim(type);
+            if (type) {
+                publish[type] = cfg;
+            }
         },
 
         /**
@@ -7861,11 +8133,11 @@ KISSY.add('event/target', function(S, Event, EventObject) {
      实际上只需要 dom/data ，但是不要跨模块引用另一模块的子模块，
      否则会导致build打包文件 dom 和 dom-data 重复载入
      */
-    requires:["./base",'./object']
+    requires:["./base",'./object','./utils']
 });
 /**
- *  2011-10-17
- *    yiminghe: implement bubble for custom event
+ *  yiminghe:2011-10-17
+ *   - implement bubble for custom event
  **/
 
 /**
@@ -7974,7 +8246,7 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
 
             hashChange = ie && ie < 8 ? function(hash) {
                 // S.log("set iframe html :" + hash);
-                //debugger
+
                 var html = S.substitute(IFRAME_TEMPLATE, {
                     hash: hash,
                     // 一定要加哦
@@ -8071,7 +8343,7 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
                      */
                     function onIframeLoad() {
                         // S.log('iframe start load..');
-                        // debugger
+                       
                         // 2011.11.02 note: 不能用 innerHtml 会自动转义！！
                         // #/x?z=1&y=2 => #/x?z=1&amp;y=2
                         var c = S.trim(getIframeDoc(iframe).body.innerText),
@@ -8231,8 +8503,8 @@ KISSY.add('event/valuechange', function(S, Event, DOM) {
  * kissy delegate for event module
  * @author yiminghe@gmail.com
  */
-KISSY.add("event/delegate", function(S, DOM, Event) {
-    var batchForType = Event.__batchForType,
+KISSY.add("event/delegate", function(S, DOM, Event, Utils) {
+    var batchForType = Utils.batchForType,
         delegateMap = {
             "focus":{
                 type:"focusin"
@@ -8252,7 +8524,7 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
 
     S.mix(Event, {
         delegate:function(targets, type, selector, fn, scope) {
-            if (batchForType('delegate', targets, type, selector, fn, scope)) {
+            if (batchForType(Event, 'delegate', targets, type, selector, fn, scope)) {
                 return targets;
             }
             DOM.query(targets).each(function(target) {
@@ -8273,7 +8545,7 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
         },
 
         undelegate:function(targets, type, selector, fn, scope) {
-            if (batchForType('undelegate', targets, type, selector, fn, scope)) {
+            if (batchForType(Event, 'undelegate', targets, type, selector, fn, scope)) {
                 return targets;
             }
             DOM.query(targets).each(function(target) {
@@ -8296,13 +8568,19 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
     });
 
     // 比较函数，两个 delegate 描述对象比较
-    function equals(d) {
+    // 注意顺序： 已有data 和 用户提供的 data 比较
+    function equals(d, el) {
+        // 用户不提供 fn selector 那么肯定成功
         if (d.fn === undefined && d.selector === undefined) {
             return true;
-        } else if (d.fn === undefined) {
+        }
+        // 用户不提供 fn 则只比较 selector
+        else if (d.fn === undefined) {
             return this.selector == d.selector;
         } else {
-            return this.fn == d.fn && this.selector == d.selector && this.scope == d.scope;
+            var scope = this.scope || el,
+                dScope = d.scope || el;
+            return this.fn == d.fn && this.selector == d.selector && scope == dScope;
         }
     }
 
@@ -8363,7 +8641,7 @@ KISSY.add("event/delegate", function(S, DOM, Event) {
 
     return Event;
 }, {
-    requires:["dom","./base"]
+    requires:["dom","./base","./utils"]
 });
 
 /**
@@ -8638,15 +8916,16 @@ KISSY.add("event/change", function(S, UA, Event, DOM) {
  * normalize mousewheel in gecko
  * @author yiminghe@gmail.com
  */
-KISSY.add("event/mousewheel", function(S, Event, UA) {
+KISSY.add("event/mousewheel", function(S, Event, UA, Utils, EventObject) {
 
     var MOUSE_WHEEL = UA.gecko ? 'DOMMouseScroll' : 'mousewheel',
+        simpleRemove = Utils.simpleRemove,
+        simpleAdd = Utils.simpleAdd,
         mousewheelHandler = "mousewheelHandler";
 
     function handler(e) {
-        var eventDesc = Event._data(this),
-            eventHandler = eventDesc.handler,
-            deltaX,
+        var deltaX,
+            currentTarget = this,
             deltaY,
             delta,
             detail = e.detail;
@@ -8683,12 +8962,18 @@ KISSY.add("event/mousewheel", function(S, Event, UA) {
             deltaY = delta;
         }
 
-        return eventHandler(e, {
+        // can not invoke eventDesc.handler , it will protect type
+        // but here in firefox , we want to change type really
+        e = new EventObject(currentTarget, e);
+
+        S.mix(e, {
             deltaY:deltaY,
             delta:delta,
             deltaX:deltaX,
             type:'mousewheel'
         });
+
+        return  Event._handle(currentTarget, e);
     }
 
     Event.special['mousewheel'] = {
@@ -8698,20 +8983,20 @@ KISSY.add("event/mousewheel", function(S, Event, UA) {
                 eventDesc = Event._data(el);
             // solve this in ie
             mousewheelHandler = eventDesc[mousewheelHandler] = S.bind(handler, el);
-            Event.__simpleAdd(this, MOUSE_WHEEL, mousewheelHandler);
+            simpleAdd(this, MOUSE_WHEEL, mousewheelHandler);
         },
         tearDown:function() {
             var el = this,
                 mousewheelHandler,
                 eventDesc = Event._data(el);
             mousewheelHandler = eventDesc[mousewheelHandler];
-            Event.__simpleRemove(this, MOUSE_WHEEL, mousewheelHandler);
+            simpleRemove(this, MOUSE_WHEEL, mousewheelHandler);
             delete eventDesc[mousewheelHandler];
         }
     };
 
 }, {
-    requires:['./base','ua','./object']
+    requires:['./base','ua','./utils','./object']
 });
 
 /**
@@ -9019,6 +9304,7 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
         DOM_INCLUDES_NORM_NODE_LIST = [
             "filter",
             "first",
+            "last",
             "parent",
             "closest",
             "next",
@@ -9101,9 +9387,11 @@ KISSY.add('node/attach', function(S, DOM, Event, NodeList, undefined) {
 
     S.each(EVENT_INCLUDES, function(k) {
         NLP[k] = function() {
-            var args = makeArray(arguments);
-            args.unshift(this);
-            return Event[k].apply(Event, args);
+            var self=this,
+                args = makeArray(arguments);
+            args.unshift(self);
+            Event[k].apply(Event, args);
+            return self;
         }
     });
 
@@ -9916,6 +10204,7 @@ KISSY.add('anim/base', function(S, DOM, Event, Easing, UA, AM, Fx, Q) {
 
             // hide/show/toggle : special treat!
             if (S.inArray(val, specialVals)) {
+                // backup original value
                 _backupProps[prop] = DOM.style(elem, prop);
                 if (val == "toggle") {
                     val = hidden ? "show" : "hide";
@@ -9926,9 +10215,11 @@ KISSY.add('anim/base', function(S, DOM, Event, Easing, UA, AM, Fx, Q) {
                     // 执行完后隐藏
                     _backupProps.display = 'none';
                 } else {
-                    DOM.show(elem);
                     from = 0;
                     to = fx.cur();
+                    // prevent flash of content
+                    DOM.css(elem, prop, from);
+                    DOM.show(elem);
                 }
                 val = to;
             } else {
@@ -9972,9 +10263,9 @@ KISSY.add('anim/base', function(S, DOM, Event, Easing, UA, AM, Fx, Q) {
             // change the overflow attribute when overflowX and
             // overflowY are set to the same value
             S.mix(_backupProps, {
-                overflow:DOM.css(elem, "overflow"),
-                "overflow-x":DOM.css(elem, "overflowX"),
-                "overflow-y":DOM.css(elem, "overflowY")
+                overflow:DOM.style(elem, "overflow"),
+                "overflow-x":DOM.style(elem, "overflowX"),
+                "overflow-y":DOM.style(elem, "overflowY")
             });
             DOM.css(elem, "overflow", "hidden");
             // inline element should has layout/inline-block
@@ -11320,9 +11611,10 @@ KISSY.add("ajax/base", function(S, JSON, Event, XhrObject) {
                  cache: null,
                  mimeType:null,
                  xdr:{
-                 subDomain:{
-                 proxy:'http://xx.t.com/proxy.html'
-                 }
+                     subDomain:{
+                        proxy:'http://xx.t.com/proxy.html'
+                     },
+                     src:''
                  },
                  headers: {},
                  xhrFields:{},
@@ -11711,15 +12003,12 @@ KISSY.add("ajax/xhrbase", function(S, io) {
  */
 KISSY.add("ajax/subdomain", function(S, XhrBase, Event, DOM) {
 
-    var rurl = /^([\w\+\.\-]+:)(?:\/\/([^\/?#:]*)(?::(\d+))?)?/;
-
-    var PROXY_PAGE = "/sub_domain_proxy.html";
-
-    var doc = document;
-
-    var iframeMap = {
-        // hostname:{iframe: , ready:}
-    };
+    var rurl = /^([\w\+\.\-]+:)(?:\/\/([^\/?#:]*)(?::(\d+))?)?/,
+        PROXY_PAGE = "/sub_domain_proxy.html",
+        doc = document,
+        iframeMap = {
+            // hostname:{iframe: , ready:}
+        };
 
     function SubDomain(xhrObj) {
         var self = this,
@@ -11769,19 +12058,19 @@ KISSY.add("ajax/subdomain", function(S, XhrBase, Event, DOM) {
                 iframe = iframeDesc.iframe;
             }
 
-            Event.on(iframe, "load", self._onLoad, self);
+            Event.on(iframe, "load", _onLoad, self);
 
-        },
-
-        _onLoad:function() {
-            var self = this,
-                hostname = self.__hostname,
-                iframeDesc = iframeMap[hostname];
-            iframeDesc.ready = 1;
-            Event.detach(iframeDesc.iframe, "load", self._onLoad, self);
-            self.send();
         }
     });
+
+    function _onLoad() {
+        var self = this,
+            hostname = self.__hostname,
+            iframeDesc = iframeMap[hostname];
+        iframeDesc.ready = 1;
+        Event.detach(iframeDesc.iframe, "load", _onLoad, self);
+        self.send();
+    }
 
     return SubDomain;
 
@@ -12693,274 +12982,271 @@ KISSY.add('base/attribute', function(S, undef) {
     function Attribute() {
     }
 
-    S.augment(Attribute,
+    S.augment(Attribute, {
+
         /**
-         * @lends Attribute.prototype
+         * @return un-cloned attr config collections
          */
-        {
+        getAttrs: function() {
+            return getAttrs(this);
+        },
 
-            /**
-             * @return un-cloned attr config collections
-             */
-            getAttrs: function() {
-                return getAttrs(this);
-            },
+        /**
+         * @return un-cloned attr value collections
+         */
+        getAttrVals:function() {
+            var self = this,
+                o = {},
+                a,
+                attrs = getAttrs(self);
+            for (a in attrs) {
+                o[a] = self.get(a);
+            }
+            return o;
+        },
 
-            /**
-             * @return un-cloned attr value collections
-             */
-            getAttrVals:function() {
-                var self = this,
-                    o = {},
-                    a,
-                    attrs = getAttrs(self);
-                for (a in attrs) {
-                    o[a] = self.get(a);
+        /**
+         * Adds an attribute with the provided configuration to the host object.
+         * @param {String} name attrName
+         * @param {Object} attrConfig The config supports the following properties:
+         * {
+         *     value: 'the default value', // 最好不要使用自定义类生成的对象，这时使用 valueFn
+         *     valueFn: function //
+         *     setter: function
+         *     getter: function
+         * }
+         * @param {boolean} override whether override existing attribute config ,default true
+         */
+        addAttr: function(name, attrConfig, override) {
+            var self = this,
+                attrs = getAttrs(self),
+                cfg = S.clone(attrConfig);
+            if (!attrs[name]) {
+                attrs[name] = cfg;
+            } else {
+                S.mix(attrs[name], cfg, override);
+            }
+            return self;
+        },
+
+        /**
+         * Configures a group of attributes, and sets initial values.
+         * @param {Object} attrConfigs  An object with attribute name/configuration pairs.
+         * @param {Object} initialValues user defined initial values
+         */
+        addAttrs: function(attrConfigs, initialValues) {
+            var self = this;
+            S.each(attrConfigs, function(attrConfig, name) {
+                self.addAttr(name, attrConfig);
+            });
+            if (initialValues) {
+                self.set(initialValues);
+            }
+            return self;
+        },
+
+        /**
+         * Checks if the given attribute has been added to the host.
+         */
+        hasAttr: function(name) {
+            return name && getAttrs(this).hasOwnProperty(name);
+        },
+
+        /**
+         * Removes an attribute from the host object.
+         */
+        removeAttr: function(name) {
+            var self = this;
+
+            if (self.hasAttr(name)) {
+                delete getAttrs(self)[name];
+                delete getAttrVals(self)[name];
+            }
+
+            return self;
+        },
+
+        /**
+         * Sets the value of an attribute.
+         */
+        set: function(name, value, opts) {
+            var ret,self = this;
+            if (S.isPlainObject(name)) {
+                var all = name;
+                name = 0;
+                ret = true;
+                opts = value;
+                var attrs = [];
+                for (name in all) {
+                    ret = setInternal(self, name, all[name], opts, attrs);
+                    if (ret === false) {
+                        break;
+                    }
                 }
-                return o;
-            },
-
-            /**
-             * Adds an attribute with the provided configuration to the host object.
-             * @param {String} name attrName
-             * @param {Object} attrConfig The config supports the following properties:
-             * {
-             *     value: 'the default value', // 最好不要使用自定义类生成的对象，这时使用 valueFn
-             *     valueFn: function //
-             *     setter: function
-             *     getter: function
-             * }
-             * @param {boolean} override whether override existing attribute config ,default true
-             */
-            addAttr: function(name, attrConfig, override) {
-                var self = this,
-                    attrs = getAttrs(self),
-                    cfg = S.clone(attrConfig);
-                if (!attrs[name]) {
-                    attrs[name] = cfg;
-                } else {
-                    S.mix(attrs[name], cfg, override);
-                }
-                return self;
-            },
-
-            /**
-             * Configures a group of attributes, and sets initial values.
-             * @param {Object} attrConfigs  An object with attribute name/configuration pairs.
-             * @param {Object} initialValues user defined initial values
-             */
-            addAttrs: function(attrConfigs, initialValues) {
-                var self = this;
-                S.each(attrConfigs, function(attrConfig, name) {
-                    self.addAttr(name, attrConfig);
+                var attrNames = [],
+                    prevVals = [],
+                    newVals = [],
+                    subAttrNames = [];
+                S.each(attrs, function(attr) {
+                    prevVals.push(attr.prevVal);
+                    newVals.push(attr.newVal);
+                    attrNames.push(attr.attrName);
+                    subAttrNames.push(attr.subAttrName);
                 });
-                if (initialValues) {
-                    self.set(initialValues);
+                if (attrNames.length) {
+                    __fireAttrChange(self,
+                        '',
+                        '*',
+                        prevVals,
+                        newVals,
+                        subAttrNames,
+                        attrNames);
                 }
-                return self;
-            },
+                return ret;
+            }
 
-            /**
-             * Checks if the given attribute has been added to the host.
-             */
-            hasAttr: function(name) {
-                return name && getAttrs(this).hasOwnProperty(name);
-            },
-
-            /**
-             * Removes an attribute from the host object.
-             */
-            removeAttr: function(name) {
-                var self = this;
-
-                if (self.hasAttr(name)) {
-                    delete getAttrs(self)[name];
-                    delete getAttrVals(self)[name];
-                }
-
-                return self;
-            },
-
-            /**
-             * Sets the value of an attribute.
-             */
-            set: function(name, value, opts) {
-                var ret,self = this;
-                if (S.isPlainObject(name)) {
-                    var all = name;
-                    name = 0;
-                    ret = true;
-                    opts = value;
-                    var attrs = [];
-                    for (name in all) {
-                        ret = setInternal(self, name, all[name], opts, attrs);
-                        if (ret === false) {
-                            break;
-                        }
-                    }
-                    var attrNames = [],
-                        prevVals = [],
-                        newVals = [],
-                        subAttrNames = [];
-                    S.each(attrs, function(attr) {
-                        prevVals.push(attr.prevVal);
-                        newVals.push(attr.newVal);
-                        attrNames.push(attr.attrName);
-                        subAttrNames.push(attr.subAttrName);
-                    });
-                    if (attrNames.length) {
-                        __fireAttrChange(self,
-                            '',
-                            '*',
-                            prevVals,
-                            newVals,
-                            subAttrNames,
-                            attrNames);
-                    }
-                    return ret;
-                }
-
-                return setInternal(self, name, value, opts);
+            return setInternal(self, name, value, opts);
 
 
-            },
+        },
 
-            /**
-             * internal use, no event involved, just set.
-             * @protected overriden by mvc/model
-             */
-            __set: function(name, value) {
-                var self = this,
-                    setValue,
-                    // if host does not have meta info corresponding to (name,value)
-                    // then register on demand in order to collect all data meta info
-                    // 一定要注册属性元数据，否则其他模块通过 _attrs 不能枚举到所有有效属性
-                    // 因为属性在声明注册前可以直接设置值
-                    attrConfig = ensureNonEmpty(getAttrs(self), name, true),
-                    validator = attrConfig['validator'],
-                    setter = attrConfig['setter'];
+        /**
+         * internal use, no event involved, just set.
+         * @protected overriden by mvc/model
+         */
+        __set: function(name, value) {
+            var self = this,
+                setValue,
+                // if host does not have meta info corresponding to (name,value)
+                // then register on demand in order to collect all data meta info
+                // 一定要注册属性元数据，否则其他模块通过 _attrs 不能枚举到所有有效属性
+                // 因为属性在声明注册前可以直接设置值
+                attrConfig = ensureNonEmpty(getAttrs(self), name, true),
+                validator = attrConfig['validator'],
+                setter = attrConfig['setter'];
 
-                // validator check
-                if (validator = normalFn(self, validator)) {
-                    if (!validator.call(self, value, name)) {
-                        return false;
-                    }
-                }
-
-                // if setter has effect
-                if (setter = normalFn(self, setter)) {
-                    setValue = setter.call(self, value, name);
-                }
-
-                if (setValue === INVALID) {
+            // validator check
+            if (validator = normalFn(self, validator)) {
+                if (validator.call(self, value, name) === false) {
                     return false;
                 }
-
-                if (setValue !== undef) {
-                    value = setValue;
-                }
-
-                // finally set
-                getAttrVals(self)[name] = value;
-            },
-
-            /**
-             * Gets the current value of the attribute.
-             */
-            get: function(name) {
-                var self = this,
-                    dot = ".",
-                    path,
-                    attrConfig,
-                    getter, ret;
-
-                if (name.indexOf(dot) !== -1) {
-                    path = name.split(dot);
-                    name = path.shift();
-                }
-
-                attrConfig = ensureNonEmpty(getAttrs(self), name);
-                getter = attrConfig['getter'];
-
-                // get user-set value or default value
-                //user-set value takes privilege
-                ret = name in getAttrVals(self) ?
-                    getAttrVals(self)[name] :
-                    self.__getDefAttrVal(name);
-
-                // invoke getter for this attribute
-                if (getter = normalFn(self, getter)) {
-                    ret = getter.call(self, ret, name);
-                }
-
-                if (path) {
-                    ret = getValueByPath(ret, path);
-                }
-
-                return ret;
-            },
-
-            /**
-             * get default attribute value from valueFn/value
-             * @private
-             * @param name
-             */
-            __getDefAttrVal: function(name) {
-                var self = this,
-                    attrConfig = ensureNonEmpty(getAttrs(self), name),
-                    valFn,
-                    val;
-
-                if ((valFn = normalFn(self, attrConfig.valueFn))) {
-                    val = valFn.call(self);
-                    if (val !== undef) {
-                        attrConfig.value = val;
-                    }
-                    delete attrConfig.valueFn;
-                    getAttrs(self)[name] = attrConfig;
-                }
-
-                return attrConfig.value;
-            },
-
-            /**
-             * Resets the value of an attribute.just reset what addAttr set  (not what invoker set when call new Xx(cfg))
-             * @param {String} name name of attribute
-             */
-            reset: function (name, opts) {
-                var self = this;
-
-                if (S.isString(name)) {
-                    if (self.hasAttr(name)) {
-                        // if attribute does not have default value, then set to undefined.
-                        return self.set(name, self.__getDefAttrVal(name), opts);
-                    }
-                    else {
-                        return self;
-                    }
-                }
-
-                opts = name;
-
-                var attrs = getAttrs(self),
-                    values = {};
-
-                // reset all
-                for (name in attrs) {
-                    values[name] = self.__getDefAttrVal(name);
-                }
-
-                self.set(values, opts);
-                return self;
             }
-        });
+
+            // if setter has effect
+            if (setter = normalFn(self, setter)) {
+                setValue = setter.call(self, value, name);
+            }
+
+            if (setValue === INVALID) {
+                return false;
+            }
+
+            if (setValue !== undef) {
+                value = setValue;
+            }
+
+            // finally set
+            getAttrVals(self)[name] = value;
+        },
+
+        /**
+         * Gets the current value of the attribute.
+         */
+        get: function(name) {
+            var self = this,
+                dot = ".",
+                path,
+                attrConfig,
+                getter, ret;
+
+            if (name.indexOf(dot) !== -1) {
+                path = name.split(dot);
+                name = path.shift();
+            }
+
+            attrConfig = ensureNonEmpty(getAttrs(self), name);
+            getter = attrConfig['getter'];
+
+            // get user-set value or default value
+            //user-set value takes privilege
+            ret = name in getAttrVals(self) ?
+                getAttrVals(self)[name] :
+                self.__getDefAttrVal(name);
+
+            // invoke getter for this attribute
+            if (getter = normalFn(self, getter)) {
+                ret = getter.call(self, ret, name);
+            }
+
+            if (path) {
+                ret = getValueByPath(ret, path);
+            }
+
+            return ret;
+        },
+
+        /**
+         * get default attribute value from valueFn/value
+         * @private
+         * @param name
+         */
+        __getDefAttrVal: function(name) {
+            var self = this,
+                attrConfig = ensureNonEmpty(getAttrs(self), name),
+                valFn,
+                val;
+
+            if ((valFn = normalFn(self, attrConfig.valueFn))) {
+                val = valFn.call(self);
+                if (val !== undef) {
+                    attrConfig.value = val;
+                }
+                delete attrConfig.valueFn;
+                getAttrs(self)[name] = attrConfig;
+            }
+
+            return attrConfig.value;
+        },
+
+        /**
+         * Resets the value of an attribute.just reset what addAttr set  (not what invoker set when call new Xx(cfg))
+         * @param {String} name name of attribute
+         */
+        reset: function (name, opts) {
+            var self = this;
+
+            if (S.isString(name)) {
+                if (self.hasAttr(name)) {
+                    // if attribute does not have default value, then set to undefined.
+                    return self.set(name, self.__getDefAttrVal(name), opts);
+                }
+                else {
+                    return self;
+                }
+            }
+
+            opts = name;
+
+            var attrs = getAttrs(self),
+                values = {};
+
+            // reset all
+            for (name in attrs) {
+                values[name] = self.__getDefAttrVal(name);
+            }
+
+            self.set(values, opts);
+            return self;
+        }
+    });
 
     function capitalFirst(s) {
         return s.charAt(0).toUpperCase() + s.substring(1);
     }
 
-    Attribute['__capitalFirst'] = capitalFirst;
-
+    if (undef) {
+        Attribute.prototype.addAttrs = undef;
+    }
     return Attribute;
 });
 
@@ -13125,25 +13411,24 @@ KISSY.add("cookie", function(S,C) {
 });
 
 KISSY.add("core", function(S, UA, DOM, Event, Node, JSON, Ajax, Anim, Base, Cookie) {
-    Ajax.getScript=S.getScript;
     var re = {
         UA:UA,
         DOM:DOM,
         Event:Event,
         EventTarget:Event.Target,
-        EventObject:Event.Object,
+        "EventObject":Event.Object,
         Node:Node,
         NodeList:Node,
         JSON:JSON,
-        Ajax:Ajax,
-        IO:Ajax,
+        "Ajax":Ajax,
+        "IO":Ajax,
         ajax:Ajax,
         io:Ajax,
         jsonp:Ajax.jsonp,
         Anim:Anim,
         Easing:Anim.Easing,
         Base:Base,
-        Cookie:Cookie,
+        "Cookie":Cookie,
         one:Node.one,
         all:Node.all,
         get:DOM.get,
@@ -13169,9 +13454,9 @@ KISSY.add("core", function(S, UA, DOM, Event, Node, JSON, Ajax, Anim, Base, Cook
 
 KISSY.use('core');
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Nov 28 12:39
 */
 /*!
  * Sizzle CSS Selector Engine
@@ -14594,9 +14879,9 @@ KISSY.add("sizzle", function(S, sizzle) {
     requires:["sizzle/impl"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Nov 28 12:38
 */
 /**
  * 数据延迟加载组件
@@ -14953,6 +15238,9 @@ KISSY.add('datalazyload/impl', function(S, DOM, Event, undefined) {
                 callbacks.els.push(el);
                 callbacks.fns.push(fn);
             }
+
+            // add 立即检测，防止首屏元素问题
+            this._fireCallbacks();
         },
 
         /**
@@ -14990,7 +15278,7 @@ KISSY.add('datalazyload/impl', function(S, DOM, Event, undefined) {
             var self = this, area, imgs;
 
             if (type === 'img-src') type = 'img';
-            
+
             // 支持数组
             if (!S.isArray(containers)) {
                 containers = [DOM.get(containers)];
@@ -15097,9 +15385,9 @@ KISSY.add("datalazyload", function(S, D) {
     requires:["datalazyload/impl"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:24
+build time: Dec 8 16:21
 */
 /**
  * @fileoverview KISSY Template Engine.
@@ -15121,9 +15409,9 @@ KISSY.add('template/base', function(S) {
         KS_TEMPL_STAT_PARAM_REG = new RegExp(KS_TEMPL_STAT_PARAM, "g"),
         KS_TEMPL = 'KS_TEMPL',
         KS_DATA = 'KS_DATA_',
-        KS_EMPTY = '',
         KS_AS = 'as',
 
+        // note : double quote for generated code
         PREFIX = '");',
         SUFFIX = KS_TEMPL + '.push("',
 
@@ -15139,10 +15427,12 @@ KISSY.add('template/base', function(S) {
             PARSER_RENDER_ERROR + '" + e.message]}};return ' +
             KS_TEMPL + '.join("");',
 
+        // restore double quote in logic template variable
         restoreQuote = function(str) {
             return str.replace(/\\"/g, '"');
         },
 
+        // escape double quote in template
         escapeQuote = function(str) {
             return str.replace(/"/g, '\\"');
         },
@@ -15155,14 +15445,17 @@ KISSY.add('template/base', function(S) {
                 _empty_index;
             return escapeQuote(trim(tpl)
                 .replace(/[\r\t\n]/g, ' ')
-                // escape escape ...
+                // escape escape ... . in case \ is consumed when run tpl parser function
+                // '{{y}}\\x{{/y}}' =>tmpl.push('\x'); => tmpl.push('\\x');
                 .replace(/\\/g, '\\\\'))
                 .replace(/\{\{([#/]?)(?!\}\})([^}]*)\}\}/g,
                 function(all, expr, body) {
-                    _parser = KS_EMPTY;
+                    _parser = "";
+                    // must restore quote , if str is used as code directly
+                    body = restoreQuote(trim(body));
+                    //body = trim(body);
                     // is an expression
                     if (expr) {
-                        body = trim(body);
                         _empty_index = body.indexOf(' ');
                         body = _empty_index === -1 ?
                             [ body, '' ] :
@@ -15179,16 +15472,18 @@ KISSY.add('template/base', function(S) {
                         if (opStatement && tagStartEnd[expr]) {
                             // get expression definition function/string
                             fn = opStatement[tagStartEnd[expr]];
-                            _parser = S.isFunction(fn) ?
-                                restoreQuote(fn.apply(this, args.split(/\s+/))) :
-                                restoreQuote(fn.replace(KS_TEMPL_STAT_PARAM_REG, args));
+                            _parser = String(S.isFunction(fn) ?
+                                fn.apply(this, args.split(/\s+/)) :
+                                fn.replace(KS_TEMPL_STAT_PARAM_REG, args));
                         }
                     }
                     // return array directly
                     else {
                         _parser = KS_TEMPL +
                             '.push(' +
-                            restoreQuote(body) +
+                            // prevent variable undefined error when look up in with ,simple variable substitution
+                            // with({}){alert(x);} => ReferenceError: x is not defined
+                            'typeof (' + body + ') ==="undefined"?"":' + body +
                             ');';
                     }
                     return PREFIX + _parser + SUFFIX;
@@ -15252,18 +15547,18 @@ KISSY.add('template/base', function(S) {
                 ];
 
             try {
-                func = new Function(_ks_data, _parser.join(KS_EMPTY));
+                func = new Function(_ks_data, _parser.join(""));
             } catch (e) {
                 _parser[3] = PREFIX + SUFFIX +
                     PARSER_SYNTAX_ERROR + ',' +
                     e.message + PREFIX + SUFFIX;
-                func = new Function(_ks_data, _parser.join(KS_EMPTY));
+                func = new Function(_ks_data, _parser.join(""));
             }
 
             templateCache[tpl] = {
                 name: _ks_data,
                 o:o,
-                parser: _parser.join(KS_EMPTY),
+                parser: _parser.join(""),
                 render: func
             };
         }
@@ -15340,9 +15635,9 @@ KISSY.add("template", function(S, T) {
     requires:["template/base","template/node"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Nov 28 12:39
 */
 /**
  * @module   Flash 全局静态类
@@ -15859,18 +16154,20 @@ KISSY.add("flash", function(S, F) {
     requires:["flash/base","flash/embed"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 22 22:35
+build time: Nov 28 12:39
 */
 /**
  * dd support for kissy , dd objects central management module
  * @author yiminghe@gmail.com
  */
-KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
+KISSY.add('dd/ddm', function(S, UA, DOM, Event, Node, Base) {
 
     var doc = document,
         win = window,
+
+        ie6 = UA['ie'] === 6,
 
         // prevent collision with click , only start when move
         PIXEL_THRESH = 3,
@@ -16040,8 +16337,10 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
             "style='" +
             //red for debug
             "background-color:red;" +
-            "position:absolute;" +
+            "position:" + (ie6 ? 'absolute' : 'fixed') + ";" +
             "left:0;" +
+            "width:100%;" +
+            "height:100%;" +
             "top:0;" +
             "cursor:" + ddm.get("dragCursor") + ";" +
             "z-index:" +
@@ -16055,10 +16354,12 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
 
         activeShim = showShim;
 
-        // support dd-scroll
-        // prevent empty when scroll outside initial window
-        Event.on(win, "resize", adjustShimSize, self);
-        Event.on(win, "scroll", adjustShimSize, self);
+        if (ie6) {
+            // ie6 不支持 fixed 以及 width/height 100%
+            // support dd-scroll
+            // prevent empty when scroll outside initial window
+            Event.on(win, "resize scroll", adjustShimSize, self);
+        }
 
         showShim(self);
     }
@@ -16089,7 +16390,9 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
             cursor:cur,
             display: "block"
         });
-        adjustShimSize.call(self);
+        if (ie6) {
+            adjustShimSize.call(self);
+        }
     }
 
     /**
@@ -16179,7 +16482,7 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
             unregisterEvent(self);
             // 预备役清掉 , click 情况下 mousedown->mouseup 极快过渡
             if (self.__activeToDrag) {
-                self.__activeToDrag._clearBufferTimer();
+                self.__activeToDrag._end();
                 self.__activeToDrag = 0;
             }
             self._shim && self._shim.hide();
@@ -16252,7 +16555,7 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
     ddm.area = area;
     return ddm;
 }, {
-    requires:["dom","event","node","base"]
+    requires:["ua","dom","event","node","base"]
 });
 
 /**
@@ -16265,7 +16568,10 @@ KISSY.add('dd/ddm', function(S, DOM, Event, Node, Base) {
  */
 KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
 
-    var each = S.each;
+    var each = S.each,
+        ie = UA['ie'],
+        NULL = null,
+        doc = document;
 
     /*
      拖放纯功能类
@@ -16292,11 +16598,15 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
 
 
         clickPixelThresh:{
-            value: DDM.get("clickPixelThresh")
+            valueFn:function() {
+                return DDM.get("clickPixelThresh");
+            }
         },
 
         bufferTime:{
-            value:  DDM.get("bufferTime")
+            valueFn:function() {
+                return DDM.get("bufferTime");
+            }
         },
 
         /*
@@ -16328,8 +16638,6 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
                     if (S.isString(v) || v.nodeType) {
                         v = Node.one(v);
                     }
-                    //ie 不能在其内开始选择区域
-                    v.unselectable();
                     vs[i] = v;
                 });
                 self.__set("handlers", vs);
@@ -16342,6 +16650,18 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
          */
         activeHandler:{},
 
+        /**
+         * 当前拖对象是否开始运行，用于调用者监听 change 事件
+         */
+        dragging:{
+            value:false,
+            setter:function(d) {
+                var self = this;
+                self.get("dragNode")[d ? 'addClass' : 'removeClass']
+                    (DDM.get("prefixCls") + "dragging");
+            }
+        },
+
         mode:{
             /**
              * @enum point,intersect,strict
@@ -16351,31 +16671,136 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
              *  In strict mode, a Drop is targeted by the "entire" drag node being over the Target             *
              */
             value:'point'
+        },
+
+        /**
+         * 拖无效
+         */
+        disabled:{
+            value:false,
+            setter:function(d) {
+                this.get("dragNode")[d ? 'addClass' :
+                    'removeClass'](DDM.get("prefixCls") + '-disabled');
+                return d;
+            }
+        },
+
+        /**
+         * whether the node moves with drag object
+         */
+        move:{
+            value:false
+        },
+
+        /**
+         * only left button of mouse trigger drag?
+         */
+        primaryButtonOnly: {
+            value: true
+        },
+
+        halt:{
+            value:true
         }
 
     };
 
+
+    var _ieSelectBack;
+
+    function fixIEMouseUp() {
+        doc.body.onselectstart = _ieSelectBack;
+    }
+
+    /**
+     * prevent select text in ie
+     */
+    function fixIEMouseDown() {
+        _ieSelectBack = doc.body.onselectstart;
+        doc.body.onselectstart = fixIESelect;
+    }
+
+    /**
+     * keeps IE from blowing up on images as drag handlers.
+     * 防止 html5 draggable 元素的拖放默认行为
+     * @param e
+     */
+    function fixDragStart(e) {
+        e.preventDefault();
+    }
+
+    /**
+     * keeps IE from selecting text
+     */
+    function fixIESelect() {
+        return false;
+    }
+
+
+    /**
+     * 鼠标按下时，查看触发源是否是属于 handler 集合，
+     * 保存当前状态
+     * 通知全局管理器开始作用
+     * @param ev
+     */
+    function _handleMouseDown(ev) {
+        var self = this,
+            t = ev.target;
+
+        if (self._checkMouseDown(ev)) {
+
+            if (!self._check(t)) {
+                return;
+            }
+
+            self._prepare(ev);
+        }
+    }
+
     S.extend(Draggable, Base, {
 
         /**
-         * 是否已经开始拖放
+         * 开始拖时鼠标所在位置
          */
-        __started:0,
+        startMousePos:NULL,
+
+        /**
+         * 开始拖时节点所在位置
+         */
+        startNodePos:NULL,
+
+        /**
+         * 开始拖时鼠标和节点所在位置的差值
+         */
+        _diff:NULL,
+
+        /**
+         * mousedown 1秒后自动开始拖的定时器
+         */
+        _bufferTimer:NULL,
 
         _init: function() {
             var self = this,
                 node = self.get('node');
             self.set("dragNode", node);
-            node.on('mousedown', self._handleMouseDown, self);
+            node.on('mousedown', _handleMouseDown, self)
+                .on('dragstart', self._fixDragStart);
         },
+
+        _fixDragStart:fixDragStart,
 
         destroy:function() {
             var self = this,
                 node = self.get('dragNode');
-            node.detach('mousedown', self._handleMouseDown, self);
+            node.detach('mousedown', _handleMouseDown, self)
+                .detach('dragstart', self._fixDragStart);
             self.detach();
         },
 
+        /**
+         *
+         * @param {HTMLElement} t
+         */
         _check: function(t) {
             var self = this,
                 handlers = self.get('handlers'),
@@ -16383,7 +16808,7 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
             each(handlers, function(handler) {
                 //子区域内点击也可以启动
                 if (handler.contains(t) ||
-                    handler[0] == t[0]) {
+                    handler[0] == t) {
                     ret = 1;
                     self.set("activeHandler", handler);
                     return false;
@@ -16392,30 +16817,30 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
             return ret;
         },
 
-        /**
-         * 鼠标按下时，查看触发源是否是属于 handler 集合，
-         * 保存当前状态
-         * 通知全局管理器开始作用
-         * @param ev
-         */
-        _handleMouseDown: function(ev) {
-            var self = this,
-                t = new Node(ev.target);
-
-            if (!self._check(t)) {
-                return;
+        _checkMouseDown:function(ev) {
+            if (this.get('primaryButtonOnly') && ev.button > 1 ||
+                this.get("disabled")) {
+                return 0;
             }
-            //chrome 阻止了 flash 点击？？
-            //不组织的话chrome会选择
-            //firefox 默认会拖动对象地址
-            ev.preventDefault();
-            self._prepare(ev);
-
+            return 1;
         },
 
         _prepare:function(ev) {
-            var self = this,
-                node = self.get("node"),
+
+            var self = this;
+
+            if (ie) {
+                fixIEMouseDown();
+            }
+
+            // 防止 firefox/chrome 选中 text
+            if (self.get("halt")) {
+                ev.halt();
+            } else {
+                ev.preventDefault();
+            }
+
+            var node = self.get("node"),
                 mx = ev.pageX,
                 my = ev.pageY,
                 nxy = node.offset();
@@ -16462,7 +16887,7 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
                 top = pageY - diff.top;
 
 
-            if (!self.__started) {
+            if (!self.get("dragging")) {
                 var clickPixelThresh = self.get("clickPixelThresh"),l1,l2;
                 // 鼠标经过了一定距离，立即开始
                 if ((l1 = Math.abs(pageX - startMousePos.left)) >= clickPixelThresh ||
@@ -16488,35 +16913,56 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
                 drag:self
             };
 
-            self.fire("drag", ret);
-            DDM.fire("drag", ret);
+            var def = 1;
+
+            if (self.fire("drag", ret) === false) {
+                def = 0;
+            }
+            if (DDM.fire("drag", ret) === false) {
+                def = 0;
+            }
+
+            if (def && self.get("move")) {
+                // 取 'node' , 改 node 可能是代理哦
+                self.get('node').offset(ret);
+            }
         },
 
         _end: function() {
             var self = this,
                 activeDrop;
-            self.get("dragNode").removeClass(DDM.get("prefixCls") + "dragging");
-            self.get("node").removeClass(DDM.get("prefixCls") + "drag-over");
+
+            // 否则清除定时器即可
             self._clearBufferTimer();
-            if (activeDrop = DDM.get("activeDrop")) {
-                self.fire('dragdrophit', {
-                    drag:self,
-                    drop:activeDrop
-                });
-            } else {
-                self.fire('dragdropmiss', {
+            if (ie) {
+                fixIEMouseUp();
+            }
+            // 如果已经开始，收尾工作
+            if (self.get("dragging")) {
+                self.get("node").removeClass(DDM.get("prefixCls") + "drag-over");
+                if (activeDrop = DDM.get("activeDrop")) {
+                    self.fire('dragdrophit', {
+                        drag:self,
+                        drop:activeDrop
+                    });
+                } else {
+                    self.fire('dragdropmiss', {
+                        drag:self
+                    });
+                }
+                self.set("dragging", 0);
+                self.fire("dragend", {
                     drag:self
                 });
             }
-            self.fire("dragend", {
-                drag:self
-            });
-            self.__started = 0;
         },
 
         _handleOut:function() {
             var self = this;
             self.get("node").removeClass(DDM.get("prefixCls") + "drag-over");
+            /**
+             *  html5 => dragleave
+             */
             self.fire("dragexit", {
                 drag:self,
                 drop:DDM.get("activeDrop")
@@ -16538,8 +16984,7 @@ KISSY.add('dd/draggable', function(S, UA, Node, Base, DDM) {
         _start: function() {
             var self = this;
             self._clearBufferTimer();
-            self.__started = 1;
-            self.get("dragNode").addClass(DDM.get("prefixCls") + "dragging");
+            self.set("dragging", 1);
             DDM._start();
             self.fire("dragstart", {
                 drag:self
@@ -16607,6 +17052,9 @@ KISSY.add("dd/droppable", function(S, Node, Base, DDM) {
             var self = this,
                 ret = self.__getCustomEvt();
             self.get("node").removeClass(DDM.get("prefixCls") + "drop-over");
+            /**
+             * html5 => dragleave
+             */
             self.fire("dropexit", ret);
             DDM.fire("dropexit", ret);
             DDM.fire("dragexit", ret);
@@ -16774,11 +17222,51 @@ KISSY.add("dd/draggable-delegate", function(S, DDM, Draggable, DOM, Node) {
         Delegate.superclass.constructor.apply(this, arguments);
     }
 
+
+    /**
+     * 父容器监听 mousedown，找到合适的拖动 handlers 以及拖动节点
+     *
+     * @param ev
+     */
+    function _handleMouseDown(ev) {
+        var self = this,
+            handler,
+            node;
+
+        if (!self._checkMouseDown(ev)) {
+            return;
+        }
+
+        var handlers = self.get("handlers"),
+            target = new Node(ev.target);
+
+        // 不需要像 Draggble 一样，判断 target 是否在 handler 内
+        // 委托时，直接从 target 开始往上找 handler
+        if (handlers.length) {
+            handler = self._getHandler(target);
+        } else {
+            handler = target;
+        }
+
+        if (handler) {
+            self.set("activeHandler", handler);
+            node = self._getNode(handler);
+        } else {
+            return;
+        }
+
+        // 找到 handler 确定 委托的 node ，就算成功了
+        self.set("node", node);
+        self.set("dragNode", node);
+        self._prepare(ev);
+    }
+
     S.extend(Delegate, Draggable, {
             _init:function() {
                 var self = this,
                     node = self.get('container');
-                node.on('mousedown', self._handleMouseDown, self);
+                node.on('mousedown', _handleMouseDown, self)
+                    .on('dragstart', self._fixDragStart);
             },
 
             /**
@@ -16813,47 +17301,13 @@ KISSY.add("dd/draggable-delegate", function(S, DDM, Draggable, DOM, Node) {
                 return h.closest(this.get("selector"), this.get("container"));
             },
 
-            /**
-             * 父容器监听 mousedown，找到合适的拖动 handlers 以及拖动节点
-             *
-             * @param ev
-             */
-            _handleMouseDown:function(ev) {
-                var self = this,
-                    handler,
-                    node,
-                    handlers = self.get("handlers"),
-                    target = new Node(ev.target);
-
-                // 不需要像 Draggble 一样，判断 target 是否在 handler 内
-                // 委托时，直接从 target 开始往上找 handler
-                if (handlers.length) {
-                    handler = self._getHandler(target);
-                } else {
-                    handler = target;
-                }
-
-                if (handler) {
-                    self.set("activeHandler", handler);
-                    node = self._getNode(handler);
-                } else {
-                    return;
-                }
-
-                ev.preventDefault();
-
-                // 找到 handler 确定 委托的 node ，就算成功了
-                self.set("node", node);
-                self.set("dragNode", node);
-                self._prepare(ev);
-            },
-
             destroy:function() {
                 var self = this;
                 self.get("container")
                     .detach('mousedown',
-                    self._handleMouseDown,
-                    self);
+                    _handleMouseDown,
+                    self)
+                    .detach('dragstart', self._fixDragStart);
                 self.detach();
             }
         },
@@ -17262,9 +17716,9 @@ KISSY.add("dd", function(S, DDM, Draggable, Droppable, Proxy, Delegate, Droppabl
         "dd/scroll"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Nov 28 12:39
 */
 /**
  * resizable support for kissy
@@ -17277,7 +17731,7 @@ KISSY.add("resizable/base", function(S, Node, Base, D) {
         i,
         j,
         Draggable = D.Draggable,
-        CLS_PREFIX = "ks-resize-handler",
+        CLS_PREFIX = "ks-resizable-handler",
         horizonal = ["l","r"],
         vertical = ["t","b"],
         hcNormal = {
@@ -17456,9 +17910,9 @@ KISSY.add("resizable", function(S, R) {
     requires:["resizable/base"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 21 16:36
+build time: Nov 28 12:39
 */
 /**
  * UIBase.Align
@@ -19061,7 +19515,7 @@ KISSY.add("uibase/maskrender", function(S, UA, Node) {
             this.get("prefixCls") + "ext-mask'/>")
             .prependTo("body");
         mask.css({
-            "position":"fixed", // mask 不会撑大 docWidth
+            "position":ie6 ? "absolute" : "fixed", // mask 不会撑大 docWidth
             left:0,
             top:0,
             width: docWidth(),
@@ -19093,7 +19547,7 @@ KISSY.add("uibase/maskrender", function(S, UA, Node) {
     function Mask() {
     }
 
-    var resizeMask = S.buffer(function() {
+    var resizeMask = S.throttle(function() {
         var v = {
             width : docWidth(),
             height : docHeight()
@@ -19123,7 +19577,7 @@ KISSY.add("uibase/maskrender", function(S, UA, Node) {
                 mask.css(display);
                 iframe && iframe.css(display);
                 if (ie6) {
-                    win.on("resize", resizeMask);
+                    win.on("resize scroll", resizeMask);
                 }
             }
         },
@@ -19140,7 +19594,7 @@ KISSY.add("uibase/maskrender", function(S, UA, Node) {
                 mask && mask.css(display);
                 iframe && iframe.css(display);
                 if (ie6) {
-                    win.detach("resize", resizeMask);
+                    win.detach("resize scroll", resizeMask);
                 }
             }
         },
@@ -19545,22 +19999,25 @@ KISSY.add("uibase/stdmodrender", function(S, Node) {
         "uibase/stdmodrender"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Dec 19 13:01
 */
 /**
  * container can delegate event for its children
  * @author yiminghe@gmail.com
  */
-KISSY.add("component/container", function(S, UIBase, MC, UIStore, DelegateChildren, DecorateChildren) {
+KISSY.add("component/container", function (S, UIBase, ModelControl, UIStore, DelegateChildren, DecorateChildren) {
     /**
      * 多继承，容器也是组件，具备代理儿子事件以及递归装饰儿子的功能
+     * @name Component.Container
+     * @constructor
+     * @extends ModelControl
      */
-    return UIBase.create(MC, [DelegateChildren,DecorateChildren]);
+    return UIBase.create(ModelControl, [DelegateChildren, DecorateChildren]);
 
 }, {
-    requires:['uibase','./modelcontrol','./uistore','./delegatechildren','./decoratechildren']
+    requires:['uibase', './modelcontrol', './uistore', './delegatechildren', './decoratechildren']
 });/**
  * decorate its children from one element
  * @author yiminghe@gmail.com
@@ -19659,19 +20116,23 @@ KISSY.add("component/decoratechildren", function(S, UIStore) {
  * @fileOverview delegate events for children
  * @author yiminghe@gmail.com
  */
-KISSY.add("component/delegatechildren", function(S) {
+KISSY.add("component/delegatechildren", function (S) {
+
+    /**
+     * @name Component.DelegateChildren
+     */
     function DelegateChildren() {
 
     }
 
     S.augment(DelegateChildren, {
-        __bindUI:function() {
+        __bindUI:function () {
             var self = this;
             self.get("el").on("mousedown mouseup mouseover mouseout dblclick",
                 self._handleChildMouseEvents, self);
         },
 
-        _handleChildMouseEvents:function(e) {
+        _handleChildMouseEvents:function (e) {
             var control = this.getOwnerControl(e.target);
             if (control) {
                 // Child control identified; forward the event.
@@ -19697,7 +20158,7 @@ KISSY.add("component/delegatechildren", function(S) {
             }
         },
 
-        getOwnerControl:function(node) {
+        getOwnerControl:function (node) {
             var self = this,
                 children = self.get("children"),
                 len = children.length,
@@ -19720,534 +20181,548 @@ KISSY.add("component/delegatechildren", function(S) {
  * @author yiminghe@gmail.com
  * @refer http://martinfowler.com/eaaDev/uiArchs.html
  */
-KISSY.add("component/modelcontrol", function(S, Event, UIBase, UIStore, Render) {
+KISSY.add("component/modelcontrol", function (S, Event, UIBase, UIStore, Render) {
 
-        function wrapperViewSetter(attrName) {
-            return function(ev) {
-                var value = ev.newVal,self = this;
-                self.get("view") && self.get("view").set(attrName, value);
-            };
+    function wrapperViewSetter(attrName) {
+        return function (ev) {
+            var value = ev.newVal, self = this;
+            self.get("view") && self.get("view").set(attrName, value);
+        };
+    }
+
+    function wrapperViewGetter(attrName) {
+        return function (v) {
+            var self = this;
+            return v === undefined ?
+                self.get("view") && self.get("view").get(attrName) :
+                v;
+        };
+    }
+
+
+    function initChild(self, c, elBefore) {
+        // If this (parent) component doesn't have a DOM yet, call createDom now
+        // to make sure we render the child component's element into the correct
+        // parent element (otherwise render_ with a null first argument would
+        // render the child into the document body, which is almost certainly not
+        // what we want).
+        self.create();
+        var contentEl = self.getContentElement();
+        c.set("parent", self);
+        c.set("render", contentEl);
+        c.set("elBefore", elBefore);
+        // 如果 parent 已经渲染好了子组件也要立即渲染，就 创建 dom ，绑定事件
+        if (self.get("rendered")) {
+            c.render();
         }
-
-        function wrapperViewGetter(attrName) {
-            return function(v) {
-                var self = this;
-                return v === undefined ?
-                    self.get("view") && self.get("view").get(attrName) :
-                    v;
-            };
-        }
-
-
-        function initChild(self, c, elBefore) {
-            // If this (parent) component doesn't have a DOM yet, call createDom now
-            // to make sure we render the child component's element into the correct
-            // parent element (otherwise render_ with a null first argument would
-            // render the child into the document body, which is almost certainly not
-            // what we want).
-            self.create();
-            var contentEl = self.getContentElement();
-            c.set("parent", self);
-            c.set("render", contentEl);
-            c.set("elBefore", elBefore);
-            // 如果 parent 已经渲染好了子组件也要立即渲染，就 创建 dom ，绑定事件
-            if (self.get("rendered")) {
-                c.render();
-            }
-            // 如果 parent 也没渲染，子组件 create 出来和 parent 节点关联
-            // 子组件和 parent 组件一起渲染
-            else {
+        // 如果 parent 也没渲染，子组件 create 出来和 parent 节点关联
+        // 子组件和 parent 组件一起渲染
+        else {
 // 之前设好属性，view ，logic 同步还没 bind ,create 不是 render ，还没有 bindUI
-                c.create();
-                contentEl[0].insertBefore(c.get("el")[0], elBefore && elBefore[0] || null);
+            c.create();
+            contentEl[0].insertBefore(c.get("el")[0], elBefore && elBefore[0] || null);
 
-            }
         }
+    }
 
-        /**
-         * 不使用 valueFn
-         * 只有 render 时需要找到默认，其他时候不需要，防止莫名其妙初始化
-         */
-        function getDefaultView() {
-            // 逐层找默认渲染器
-            var self = this,
-                c = self.constructor,
-                DefaultRender;
+    /**
+     * 不使用 valueFn
+     * 只有 render 时需要找到默认，其他时候不需要，防止莫名其妙初始化
+     */
+    function getDefaultView() {
+        // 逐层找默认渲染器
+        var self = this,
+            c = self.constructor,
+            DefaultRender;
 
-            while (c && !DefaultRender) {
-                DefaultRender = c['DefaultRender'];
-                c = c.superclass && c.superclass.constructor;
-            }
-            if (DefaultRender) {
-                /**
-                 * 将渲染层初始化所需要的属性，直接构造器设置过去
-                 */
-                var attrs = self['__attrs'] || {},
-                    cfg = {};
-                for (var attrName in attrs) {
-                    if (attrs.hasOwnProperty(attrName)) {
-                        var attrCfg = attrs[attrName],v;
-                        if (attrCfg.view) {
-                            // 只设置用户设置的值
-                            // 考虑 c 上的默认值
-                            if (( v = self.get(attrName) ) !== undefined) {
-                                cfg[attrName] = v;
-                            }
+        while (c && !DefaultRender) {
+            DefaultRender = c['DefaultRender'];
+            c = c.superclass && c.superclass.constructor;
+        }
+        if (DefaultRender) {
+            /**
+             * 将渲染层初始化所需要的属性，直接构造器设置过去
+             */
+            var attrs = self['__attrs'] || {},
+                cfg = {};
+            for (var attrName in attrs) {
+                if (attrs.hasOwnProperty(attrName)) {
+                    var attrCfg = attrs[attrName], v;
+                    if (attrCfg.view) {
+                        // 只设置用户设置的值
+                        // 考虑 c 上的默认值
+                        if (( v = self.get(attrName) ) !== undefined) {
+                            cfg[attrName] = v;
                         }
                     }
                 }
-                return new DefaultRender(cfg);
             }
-            return 0;
+            return new DefaultRender(cfg);
         }
+        return 0;
+    }
 
-        function getClsByHierarch(self) {
-            if (self.__componentClasses) {
-                return self.__componentClasses;
+    function getClsByHierarchy(self) {
+        if (self.__componentClasses) {
+            return self.__componentClasses;
+        }
+        var constructor = self.constructor, re = [];
+        while (constructor && constructor != ModelControl) {
+            var cls = UIStore.getClsByUI(constructor);
+            if (cls) {
+                re.push(cls);
             }
-            var constructor = self.constructor,re = [];
-            while (constructor && constructor != ModelControl) {
-                var cls = UIStore.getClsByUI(constructor);
-                if (cls) {
-                    re.push(cls);
-                }
-                constructor = constructor.superclass && constructor.superclass.constructor;
-            }
-            return self.__componentClasses = re.join(" ");
+            constructor = constructor.superclass && constructor.superclass.constructor;
         }
+        return self.__componentClasses = re.join(" ");
+    }
 
 
-        function capitalFirst(s) {
-            return s.charAt(0).toUpperCase() + s.substring(1);
-        }
+    function capitalFirst(s) {
+        return s.charAt(0).toUpperCase() + s.substring(1);
+    }
 
-        /**
-         * model and control for component
-         * @name ModelControl
-         * @constructor
-         */
-        var ModelControl = UIBase.create([UIBase.Box], {
+    /**
+     * model and control for component
+     * @name ModelControl
+     * @constructor
+     */
+    var ModelControl = UIBase.create([UIBase.Box],
+        /** @lends ModelControl.prototype */
+        {
 
-                getCls:UIStore.getCls,
+            getCls:UIStore.getCls,
 
-                initializer:function() {
-                    /**
-                     * 整理属性，对纯属于 view 的属性，添加 getter setter 直接到 view
-                     */
-                    var self = this,
-                        attrs = self['__attrs'] || {};
-                    for (var attrName in attrs) {
-                        if (attrs.hasOwnProperty(attrName)) {
-                            var attrCfg = attrs[attrName];
-                            if (attrCfg.view) {
+            initializer:function () {
+                /**
+                 * 整理属性，对纯属于 view 的属性，添加 getter setter 直接到 view
+                 */
+                var self = this,
+                    attrs = self['__attrs'] || {};
+                for (var attrName in attrs) {
+                    if (attrs.hasOwnProperty(attrName)) {
+                        var attrCfg = attrs[attrName];
+                        if (attrCfg.view) {
 // setter 不应该有实际操作，仅用于正规化比较好
 // attrCfg.setter = wrapperViewSetter(attrName);
-                                self.on("after" + capitalFirst(attrName) + "Change",
-                                    wrapperViewSetter(attrName));
+                            self.on("after" + capitalFirst(attrName) + "Change",
+                                wrapperViewSetter(attrName));
 // 逻辑层读值直接从 view 层读
 // 那么如果存在默认值也设置在 view 层
 // 逻辑层不要设置 getter
-                                attrCfg.getter = wrapperViewGetter(attrName);
-                            }
+                            attrCfg.getter = wrapperViewGetter(attrName);
                         }
-                    }
-                },
-
-                /**
-                 * control 层的渲染 ui 就是 render view
-                 * finally，不能被 override
-                 */
-                renderUI:function() {
-                    var self = this;
-                    self.get("view").render();
-                    //then render my children
-                    var children = self.get("children");
-                    S.each(children, function(child) {
-                        // 不在 Base 初始化设置属性时运行，防止和其他初始化属性冲突
-                        initChild(self, child);
-                        child.render();
-                    });
-                },
-
-                /**
-                 * 控制层的 createDom 实际上就是调用 view 层的 create 来创建真正的节点
-                 */
-                createDom:function() {
-                    var self = this;
-                    var view = self.get("view") || getDefaultView.call(self);
-                    if (!view) {
-                        S.error("no view for");
-                        S.error(self.constructor);
-                        return;
-                    }
-                    view.create();
-                    view._renderCls(getClsByHierarch(self));
-                    if (!self.get("allowTextSelection_")) {
-                        view.get("el").unselectable();
-                    }
-                    self.set("view", view);
-                },
-
-                /**
-                 * Returns the DOM element into which child components are to be rendered,
-                 or null if the container itself hasn't been rendered yet.  Overrides
-                 */
-                getContentElement:function() {
-                    var view = this.get('view');
-                    return view && view.getContentElement();
-                },
-
-                /**
-                 *
-                 * @param c  children to be added
-                 * @param {int=} index  position to be inserted
-                 */
-                addChild:function(c, index) {
-                    var self = this,
-                        children = self.get("children"),
-                        elBefore = null;
-                    if (index !== undefined) {
-                        children.splice(index, 0, c);
-                        elBefore = children[index] || null;
-                    } else {
-                        children.push(c);
-                    }
-                    initChild(self, c, elBefore);
-                },
-
-                removeChild:function(c, destroy) {
-                    var children = this.get("children"),
-                        index = S.indexOf(c, children);
-                    if (index != -1) {
-                        children.splice(index, 1);
-                    }
-                    if (destroy) {
-                        c.destroy();
-                    }
-                },
-
-                removeChildren:function(destroy) {
-                    var self = this,
-                        t = [].concat(self.get("children"));
-                    S.each(t, function(c) {
-                        self.removeChild(c, destroy);
-                    });
-                    self.set("children", []);
-                },
-
-                getChildAt:function(index) {
-                    var children = this.get("children");
-                    return children[index];
-                },
-
-                _uiSetHandleMouseEvents:function(v) {
-                    var self = this,
-                        el = self.get("el");
-                    if (v) {
-                        el.on("mouseenter", self._handleMouseEnter, self);
-                        el.on("mouseleave", self._handleMouseLeave, self);
-                        el.on("mousedown", self._handleMouseDown, self);
-                        el.on("mouseup", self._handleMouseUp, self);
-                        el.on("dblclick", self._handleDblClick, self);
-                    } else {
-                        el.detach("mouseenter", self._handleMouseEnter, self);
-                        el.detach("mouseleave", self._handleMouseLeave, self);
-                        el.detach("mousedown", self._handleMouseDown, self);
-                        el.detach("mouseup", self._handleMouseUp, self);
-                        el.detach("dblclick", self._handleDblClick, self);
-                    }
-                },
-
-                _handleDblClick:function(e) {
-                    var self = this;
-                    if (!self.get("disabled")) {
-                        self._performInternal(e);
-                    }
-                },
-
-                _isMouseEventWithinElement:function(e, elem) {
-                    var relatedTarget = e.relatedTarget;
-                    if (!relatedTarget) {
-                        return false;
-                    }
-                    // 在里面或等于自身都不算 mouseenter/leave
-                    if (relatedTarget === elem[0]
-                        || elem.contains(relatedTarget)) {
-                        return true;
-                    }
-                },
-
-                _handleMouseOver:function(e) {
-                    var self = this,
-                        el = self.get("el");
-                    if (self.get("disabled")) {
-                        return true;
-                    }
-                    if (!self._isMouseEventWithinElement(e, el)) {
-                        self._handleMouseEnter(e);
-                    }
-                },
-
-
-                _handleMouseOut:function(e) {
-                    var self = this,
-                        el = self.get("el");
-                    if (self.get("disabled")) {
-                        return true;
-                    }
-                    if (!self._isMouseEventWithinElement(e, el)) {
-                        self._handleMouseLeave(e);
-                    }
-                },
-
-                /**
-                 * root element handler for mouse enter
-                 */
-                _handleMouseEnter:function() {
-                    var self = this;
-                    if (self.get("disabled")) {
-                        return true;
-                    }
-                    self.set("highlighted", true);
-                },
-
-                /**
-                 * root element handler for mouse leave
-                 */
-                _handleMouseLeave:function() {
-                    var self = this;
-                    if (self.get("disabled")) {
-                        return true;
-                    }
-                    self.set("active", false);
-                    self.set("highlighted", false);
-                },
-
-                /**
-                 * root element handler for mouse down
-                 * @param ev
-                 */
-                _handleMouseDown:function(ev) {
-                    var self = this;
-                    if (self.get("disabled")) {
-                        return true;
-                    }
-                    if (ev.which == 1 && self.get("activeable")) {
-                        self.set("active", true);
-                    }
-                    var el = self.getKeyEventTarget();
-                    // 左键，否则 unselectable 在 ie 下鼠标点击获得不到焦点
-                    if (ev.which == 1 && el.attr("tabindex") >= 0) {
-                        el[0].focus();
-                    }
-                    // Cancel the default action unless the control
-                    // allows text selection.
-                    if (ev.which == 1 && !self.get("allowTextSelection_")) {
-                        // firefox 不会引起焦点转移
-                        ev.preventDefault();
-                    }
-                },
-
-                /**
-                 * whether component can receive focus
-                 */
-                _uiSetFocusable:function(v) {
-                    var self = this,
-                        el = self.getKeyEventTarget();
-                    if (v) {
-                        el.on("focus", self._handleFocus, self);
-                        el.on("blur", self._handleBlur, self);
-                        el.on("keydown", self._handleKeydown, self);
-                    } else {
-                        el.detach("focus", self._handleFocus, self);
-                        el.detach("blur", self._handleBlur, self);
-                        el.detach("keydown", self._handleKeydown, self);
-                    }
-                },
-
-                _uiSetFocused:function(v) {
-                    this._forwardSetAttrToView("focused", v);
-                },
-
-                _uiSetHighlighted:function(v) {
-                    this._forwardSetAttrToView("highlighted", v);
-                },
-
-                _forwardSetAttrToView:function(attrName, v) {
-                    var view = this.get("view");
-                    view["_set" + capitalFirst(attrName)].call(view, v, getClsByHierarch(this));
-                },
-
-
-                _uiSetDisabled:function(v) {
-                    this._forwardSetAttrToView("disabled", v);
-                },
-
-
-                _uiSetActive:function(v) {
-                    this._forwardSetAttrToView("active", v);
-                },
-
-                /**
-                 * 焦点所在元素即键盘事件处理元素
-                 */
-                getKeyEventTarget:function() {
-                    return this.get("view").getKeyEventTarget();
-                },
-                /**
-                 * root element handler for mouse up
-                 */
-                _handleMouseUp:function(ev) {
-                    var self = this;
-                    if (self.get("disabled")) {
-                        return true;
-                    }
-                    // 左键
-                    if (self.get("active") && ev.which == 1) {
-                        self._performInternal(ev);
-                        self.set("active", false);
-                    }
-                },
-                /**
-                 * root element handler for focus
-                 */
-                _handleFocus:function() {
-                    this.set("focused", true);
-                },
-                /**
-                 * root element handler for blur
-                 */
-                _handleBlur:function() {
-                    this.set("focused", false);
-                },
-
-                _handleKeyEventInternal:function(ev) {
-                    if (ev.keyCode == Event.KeyCodes.ENTER) {
-                        return this._performInternal(ev);
-                    }
-                },
-                /**
-                 * root element handler for keydown
-                 * @param ev
-                 */
-                _handleKeydown:function(ev) {
-                    var self = this;
-                    if (self.get("disabled")) {
-                        return true;
-                    }
-                    if (self._handleKeyEventInternal(ev)) {
-                        ev.halt();
-                        return true;
-                    }
-                },
-
-                /**
-                 * root element handler for click
-                 */
-                _performInternal:function() {
-                },
-
-                destructor:function() {
-                    var self = this,
-                        children = self.get("children");
-                    S.each(children, function(child) {
-                        child.destroy();
-                    });
-                    var view = self.get("view");
-                    if (view) {
-                        view.destroy();
                     }
                 }
             },
-            {
-                ATTRS:{
-                    /**
-                     *  session state
-                     */
 
-                        // 是否绑定鼠标事件
-                    handleMouseEvents:{
-                        value:true
-                    },
+            /**
+             * control 层的渲染 ui 就是 render view
+             * finally，不能被 override
+             */
+            renderUI:function () {
+                var self = this;
+                self.get("view").render();
+                //then render my children
+                var children = self.get("children");
+                S.each(children, function (child) {
+                    // 不在 Base 初始化设置属性时运行，防止和其他初始化属性冲突
+                    initChild(self, child);
+                    child.render();
+                });
+            },
 
-                    // 是否支持焦点处理
-                    focusable:{
-                        /*
-                         *  observer synchronization , model 分成两类：
-                         *view 负责监听 view 类 model 变化更新界面
-                         *control 负责监听 control 类变化改变逻辑
-                         *  problem : Observer behavior is hard to understand and debug because it's implicit behavior.
-                         *
-                         *  Keeping screen state and session state synchronized is an important task
-                         *  Data Binding
-                         */
-                        view:true,
-                        value:true
-                        /**
-                         * In general data binding gets tricky
-                         * because if you have to avoid cycles where a change to the control,
-                         * changes the record set, which updates the control,
-                         * which updates the record set....
-                         * The flow of usage helps avoid these -
-                         * we load from the session state to the screen when the screen is opened,
-                         * after that any changes to the screen state propagate back to the session state.
-                         * It's unusual for the session state to be updated directly once the screen is up.
-                         * As a result data binding might not be entirely bi-directional -
-                         * just confined to initial upload and
-                         * then propagating changes from the controls to the session state.
-                         */
-                        // sync
-                    },
+            /**
+             * 控制层的 createDom 实际上就是调用 view 层的 create 来创建真正的节点
+             */
+            createDom:function () {
+                var self = this;
+                var view = self.get("view") || getDefaultView.call(self);
+                if (!view) {
+                    S.error("no view for");
+                    S.error(self.constructor);
+                    return;
+                }
+                view.create();
+                view._renderCls(getClsByHierarchy(self));
+                if (!self.get("allowTextSelection_")) {
+                    view.get("el").unselectable();
+                }
+                self.set("view", view);
+            },
 
-                    activeable:{
-                        value:true
-                    },
+            /**
+             * Returns the DOM element into which child components are to be rendered,
+             or null if the container itself hasn't been rendered yet.  Overrides
+             */
+            getContentElement:function () {
+                var view = this.get('view');
+                return view && view.getContentElement();
+            },
 
-                    focused:{},
+            /**
+             *
+             * @param c  children to be added
+             * @param {int=} index  position to be inserted
+             */
+            addChild:function (c, index) {
+                var self = this,
+                    children = self.get("children"),
+                    elBefore = null;
+                if (index !== undefined) {
+                    children.splice(index, 0, c);
+                    elBefore = children[index] || null;
+                } else {
+                    children.push(c);
+                }
+                initChild(self, c, elBefore);
+            },
 
-                    active:{},
+            /**
+             * @public
+             * @param c
+             * @param destroy
+             */
+            removeChild:function (c, destroy) {
+                var children = this.get("children"),
+                    index = S.indexOf(c, children);
+                if (index != -1) {
+                    children.splice(index, 1);
+                }
+                if (destroy) {
+                    c.destroy();
+                }
+            },
 
-                    highlighted:{},
+            removeChildren:function (destroy) {
+                var self = this,
+                    t = [].concat(self.get("children"));
+                S.each(t, function (c) {
+                    self.removeChild(c, destroy);
+                });
+                self.set("children", []);
+            },
 
-                    //子组件
-                    children:{
-                        value:[]
-                    },
+            getChildAt:function (index) {
+                var children = this.get("children");
+                return children[index];
+            },
 
-                    // 转交给渲染层
-                    prefixCls:{
-                        view:true,
-                        value:"ks-"
-                    },
+            _uiSetHandleMouseEvents:function (v) {
+                var self = this,
+                    el = self.get("el");
+                if (v) {
+                    el.on("mouseenter", self._handleMouseEnter, self);
+                    el.on("mouseleave", self._handleMouseLeave, self);
+                    el.on("mousedown", self._handleMouseDown, self);
+                    el.on("mouseup", self._handleMouseUp, self);
+                    el.on("dblclick", self._handleDblClick, self);
+                } else {
+                    el.detach("mouseenter", self._handleMouseEnter, self);
+                    el.detach("mouseleave", self._handleMouseLeave, self);
+                    el.detach("mousedown", self._handleMouseDown, self);
+                    el.detach("mouseup", self._handleMouseUp, self);
+                    el.detach("dblclick", self._handleDblClick, self);
+                }
+            },
 
-                    // 父组件
-                    // Parent component to which events will be propagated.
-                    parent:{
-                    },
+            _handleDblClick:function (e) {
+                var self = this;
+                if (!self.get("disabled")) {
+                    self._performInternal(e);
+                }
+            },
 
-                    //渲染层
-                    view:{
-                    },
+            _isMouseEventWithinElement:function (e, elem) {
+                var relatedTarget = e.relatedTarget;
+                if (!relatedTarget) {
+                    return false;
+                }
+                // 在里面或等于自身都不算 mouseenter/leave
+                if (relatedTarget === elem[0]
+                    || elem.contains(relatedTarget)) {
+                    return true;
+                }
+            },
 
-                    //是否禁用
-                    disabled:{},
+            _handleMouseOver:function (e) {
+                var self = this,
+                    el = self.get("el");
+                if (self.get("disabled")) {
+                    return true;
+                }
+                if (!self._isMouseEventWithinElement(e, el)) {
+                    self._handleMouseEnter(e);
+                }
+            },
 
-                    // 是否允许 DOM 结构内的文字选定
-                    allowTextSelection_:{
-                        value:false
-                    }
+
+            _handleMouseOut:function (e) {
+                var self = this,
+                    el = self.get("el");
+                if (self.get("disabled")) {
+                    return true;
+                }
+                if (!self._isMouseEventWithinElement(e, el)) {
+                    self._handleMouseLeave(e);
+                }
+            },
+
+            /**
+             * root element handler for mouse enter
+             * @param [e]
+             */
+            _handleMouseEnter:function (e) {
+                var self = this;
+                if (self.get("disabled")) {
+                    return true;
+                }
+                if (0) {
+                    S.log(e);
+                }
+                self.set("highlighted", true);
+            },
+
+            /**
+             * root element handler for mouse leave
+             */
+            _handleMouseLeave:function (e) {
+                var self = this;
+                if (self.get("disabled")) {
+                    return true;
+                }
+                if (1 > 2) {
+                    S.log(e);
+                }
+                self.set("active", false);
+                self.set("highlighted", false);
+            },
+
+            /**
+             * root element handler for mouse down
+             * @param ev
+             */
+            _handleMouseDown:function (ev) {
+                var self = this;
+                if (self.get("disabled")) {
+                    return true;
+                }
+                if (ev.which == 1 && self.get("activeable")) {
+                    self.set("active", true);
+                }
+                var el = self.getKeyEventTarget();
+                // 左键，否则 unselectable 在 ie 下鼠标点击获得不到焦点
+                if (ev.which == 1 && el.attr("tabindex") >= 0) {
+                    el[0].focus();
+                }
+                // Cancel the default action unless the control
+                // allows text selection.
+                if (ev.which == 1 && !self.get("allowTextSelection_")) {
+                    // firefox 不会引起焦点转移
+                    ev.preventDefault();
+                }
+            },
+
+            /**
+             * whether component can receive focus
+             */
+            _uiSetFocusable:function (v) {
+                var self = this,
+                    el = self.getKeyEventTarget();
+                if (v) {
+                    el.on("focus", self._handleFocus, self);
+                    el.on("blur", self._handleBlur, self);
+                    el.on("keydown", self._handleKeydown, self);
+                } else {
+                    el.detach("focus", self._handleFocus, self);
+                    el.detach("blur", self._handleBlur, self);
+                    el.detach("keydown", self._handleKeydown, self);
+                }
+            },
+
+            _uiSetFocused:function (v) {
+                this._forwardSetAttrToView("focused", v);
+            },
+
+            _uiSetHighlighted:function (v) {
+                this._forwardSetAttrToView("highlighted", v);
+            },
+
+            _forwardSetAttrToView:function (attrName, v) {
+                var view = this.get("view");
+                view["_set" + capitalFirst(attrName)].call(view, v, getClsByHierarchy(this));
+            },
+
+
+            _uiSetDisabled:function (v) {
+                this._forwardSetAttrToView("disabled", v);
+            },
+
+
+            _uiSetActive:function (v) {
+                this._forwardSetAttrToView("active", v);
+            },
+
+            /**
+             * 焦点所在元素即键盘事件处理元素
+             */
+            getKeyEventTarget:function () {
+                return this.get("view").getKeyEventTarget();
+            },
+            /**
+             * root element handler for mouse up
+             */
+            _handleMouseUp:function (ev) {
+                var self = this;
+                if (self.get("disabled")) {
+                    return true;
+                }
+                // 左键
+                if (self.get("active") && ev.which == 1) {
+                    self._performInternal(ev);
+                    self.set("active", false);
+                }
+            },
+            /**
+             * root element handler for focus
+             */
+            _handleFocus:function () {
+                this.set("focused", true);
+            },
+            /**
+             * root element handler for blur
+             */
+            _handleBlur:function () {
+                this.set("focused", false);
+            },
+
+            _handleKeyEventInternal:function (ev) {
+                if (ev.keyCode == Event.KeyCodes.ENTER) {
+                    return this._performInternal(ev);
+                }
+            },
+            /**
+             * root element handler for keydown
+             * @param ev
+             */
+            _handleKeydown:function (ev) {
+                var self = this;
+                if (self.get("disabled")) {
+                    return true;
+                }
+                if (self._handleKeyEventInternal(ev)) {
+                    ev.halt();
+                    return true;
+                }
+            },
+
+            /**
+             * root element handler for click
+             */
+            _performInternal:function (e) {
+                if (0) {
+                    S.log(e);
+                }
+            },
+
+            destructor:function () {
+                var self = this,
+                    children = self.get("children");
+                S.each(children, function (child) {
+                    child.destroy();
+                });
+                var view = self.get("view");
+                if (view) {
+                    view.destroy();
+                }
+            }
+        },
+        {
+            ATTRS:{
+                /**
+                 *  session state
+                 */
+
+                // 是否绑定鼠标事件
+                handleMouseEvents:{
+                    value:true
                 },
 
-                DefaultRender:Render
-            });
+                // 是否支持焦点处理
+                focusable:{
+                    /*
+                     *  observer synchronization , model 分成两类：
+                     *view 负责监听 view 类 model 变化更新界面
+                     *control 负责监听 control 类变化改变逻辑
+                     *  problem : Observer behavior is hard to understand and debug because it's implicit behavior.
+                     *
+                     *  Keeping screen state and session state synchronized is an important task
+                     *  Data Binding
+                     */
+                    view:true,
+                    value:true
+                    /**
+                     * In general data binding gets tricky
+                     * because if you have to avoid cycles where a change to the control,
+                     * changes the record set, which updates the control,
+                     * which updates the record set....
+                     * The flow of usage helps avoid these -
+                     * we load from the session state to the screen when the screen is opened,
+                     * after that any changes to the screen state propagate back to the session state.
+                     * It's unusual for the session state to be updated directly once the screen is up.
+                     * As a result data binding might not be entirely bi-directional -
+                     * just confined to initial upload and
+                     * then propagating changes from the controls to the session state.
+                     */
+                    // sync
+                },
 
-        return ModelControl;
-    },
-    {
-        requires:['event','uibase','./uistore','./render']
-    }
-)
-    ;
+                activeable:{
+                    value:true
+                },
+
+                focused:{},
+
+                active:{},
+
+                highlighted:{},
+
+                //子组件
+                children:{
+                    value:[]
+                },
+
+                // 转交给渲染层
+                prefixCls:{
+                    view:true,
+                    value:"ks-"
+                },
+
+                // 父组件
+                // Parent component to which events will be propagated.
+                parent:{
+                },
+
+                //渲染层
+                view:{
+                },
+
+                //是否禁用
+                disabled:{},
+
+                // 是否允许 DOM 结构内的文字选定
+                allowTextSelection_:{
+                    value:false
+                }
+            },
+
+            DefaultRender:Render
+        });
+
+    return ModelControl;
+}, {
+    requires:['event', 'uibase', './uistore', './render']
+});
 /**
  *  Note:
  *  控制层元属性配置中 view 的作用
@@ -20445,9 +20920,9 @@ KISSY.add("component", function(KISSY, ModelControl, Render, Container, UIStore,
         'component/decoratechild']
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 23 11:43
+build time: Dec 8 18:36
 */
 /**
  * Switchable
@@ -22037,8 +22512,7 @@ KISSY.add('switchable/effect', function(S, DOM, Event, Anim, Switchable, undefin
     S.mix(Switchable.Config, {
         effect: NONE, // 'scrollx', 'scrolly', 'fade' 或者直接传入 custom effect fn
         duration: .5, // 动画的时长
-        easing: 'easeNone', // easing method
-        nativeAnim: undefined
+        easing: 'easeNone' // easing method
     });
 
     /**
@@ -22097,7 +22571,7 @@ KISSY.add('switchable/effect', function(S, DOM, Event, Anim, Switchable, undefin
                         DOM.css(toEl, Z_INDEX, 9);
                         DOM.css(fromEl, Z_INDEX, 1);
                         callback && callback();
-                    }, cfg.nativeAnim).run();
+                    }).run();
                 self.anim.toEl = toEl;
                 self.anim.fromEl = fromEl;
             } else {
@@ -22127,7 +22601,7 @@ KISSY.add('switchable/effect', function(S, DOM, Event, Anim, Switchable, undefin
                     function() {
                         self.anim = undefined; // free
                         callback && callback();
-                    }, cfg.nativeAnim).run();
+                    }).run();
             } else {
                 DOM.css(self.content, props);
                 callback && callback();
@@ -22309,7 +22783,7 @@ KISSY.add('switchable/circular', function(S, DOM, Anim, Switchable) {
                     // free
                     self.anim = undefined;
                     callback && callback();
-                }, cfg.nativeAnim).run();
+                }).run();
         } else {
             // 初始化
             DOM.css(self.content, props);
@@ -23050,9 +23524,9 @@ KISSY.add("switchable", function(S, Switchable, Aria, Accordion, AAria, autoplay
     ]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Nov 28 12:39
 */
 /**
  * KISSY Overlay
@@ -23561,9 +24035,9 @@ KISSY.add('overlay/popup', function(S, Component, Overlay, undefined) {
     requires:["overlay/overlay","overlay/overlayrender","overlay/dialog","overlay/dialogrender", "overlay/popup"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:24
+build time: Nov 28 12:39
 */
 KISSY.add("suggest", function(S, Sug) {
     S.Suggest = Sug;
@@ -24751,9 +25225,9 @@ KISSY.add('suggest/base', function(S, DOM, Event, UA, undefined) {
  *                   2. 改进上下方向键选择item的代码逻辑
  */
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Nov 28 12:39
 */
 /**
  * @fileoverview 图像放大区域
@@ -25385,9 +25859,9 @@ KISSY.add("imagezoom", function(S, ImageZoom) {
     "imagezoom/autorender"
 ]});
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:22
+build time: Dec 8 00:57
 */
 /**
  * KISSY Calendar
@@ -25410,7 +25884,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @private
          */
         _init: function(selector, config) {
-            var self = this,con = Node.one(selector);
+            var self = this,con = $(selector);
             self.id = self.C_Id = self._stamp(con);
             self._buildParam(config);
 
@@ -25424,7 +25898,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
             } else {
                 self.trigger = con;
                 self.con = new Node('<div>');
-                Node.one('body').append(self.con);
+                $(document.body).append(self.con);
                 self.C_Id = self._stamp(self.con);
                 self.con.css({
                     'top':'0px',
@@ -25513,18 +25987,23 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @private
          */
         _buildEvent: function() {
-            var self = this;
+            var self = this,tev,i;
             if (!self.popup) {
                 return this;
             }
             //点击空白
             //flush event
-            for (var i = 0; i < self.EV.length; i++) {
-                if (self.EV[i] !== undefined) {
-                    self.EV[i].detach();
+            S.each(self.EV, function(tev) {
+                if (tev) {
+                    tev.target.detach(tev.type, tev.fn);
                 }
-            }
-            self.EV[0] = Node.one('body').on('click', function(e) {
+            });
+            self.EV = self.EV || [];
+            tev = self.EV[0] = {
+                target:$(document),
+                type:'click'
+            };
+            tev.fn = function(e) {
                 var target = $(e.target);
                 //点击到日历上
                 if (target.attr('id') === self.C_Id) {
@@ -25539,7 +26018,9 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                     return;
                 }
 
-                if (self.con.css('visibility') == 'hidden') return;
+                if (self.con.css('visibility') == 'hidden') {
+                    return;
+                }
                 var inRegion = function(dot, r) {
                     return dot[0] > r[0].x
                         && dot[0] < r[1].x
@@ -25569,34 +26050,38 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                 ])) {
                     self.hide();
                 }
-            });
+            };
+            tev.target.on(tev.type, tev.fn);
             //点击触点
             for (i = 0; i < self.triggerType.length; i++) {
+                tev = self.EV[i + 1] = {
+                    target: $('#' + self.id),
+                    type: self.triggerType[i],
+                    fn: function(e) {
+                        e.target = $(e.target);
+                        e.preventDefault();
+                        //如果focus和click同时存在的hack
 
-                self.EV[1] = Node.one('#' + self.id).on(self.triggerType[i], function(e) {
-                    e.target = $(e.target);
-                    e.preventDefault();
-                    //如果focus和click同时存在的hack
-
-                    var a = self.triggerType;
-                    if (S.inArray('click', a) && S.inArray('focus', a)) {//同时含有
-                        if (e.type == 'focus') {
+                        var a = self.triggerType;
+                        if (S.inArray('click', a) && S.inArray('focus', a)) {//同时含有
+                            if (e.type == 'focus') {
+                                self.toggle();
+                            }
+                        } else if (S.inArray('click', a) && !S.inArray('focus', a)) {//只有click
+                            if (e.type == 'click') {
+                                self.toggle();
+                            }
+                        } else if (!S.inArray('click', a) && S.inArray('focus', a)) {//只有focus
+                            setTimeout(function() {//为了跳过document.onclick事件
+                                self.toggle();
+                            }, 170);
+                        } else {
                             self.toggle();
                         }
-                    } else if (S.inArray('click', a) && !S.inArray('focus', a)) {//只有click
-                        if (e.type == 'click') {
-                            self.toggle();
-                        }
-                    } else if (!S.inArray('click', a) && S.inArray('focus', a)) {//只有focus
-                        setTimeout(function() {//为了跳过document.onclick事件
-                            self.toggle();
-                        }, 170);
-                    } else {
-                        self.toggle();
+
                     }
-
-                });
-
+                };
+                tev.target.on(tev.type, tev.fn);
             }
             return this;
         },
@@ -25627,6 +26112,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                 _y = self.trigger.offset().top + height;
             self.con.css('left', _x.toString() + 'px');
             self.con.css('top', _y.toString() + 'px');
+            self.fire("show");
             return this;
         },
 
@@ -25637,6 +26123,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
         hide: function() {
             var self = this;
             self.con.css('visibility', 'hidden');
+            self.fire("hide");
             return this;
         },
 
@@ -25751,7 +26238,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
         _handleDate: function() {
             var self = this,
                 date = self.date;
-            self.weekday = date.getDay() + 1;//星期几 //指定日期是星期几
+            self['weekday'] = date.getDay() + 1;//星期几 //指定日期是星期几
             self.day = date.getDate();//几号
             self.month = date.getMonth();//月份
             self.year = date.getFullYear();//年份
@@ -25847,6 +26334,10 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
 }, { requires: ['node',"event"] });
 
 /**
+ * 2011-12-06 by yiminghe@gmail.com
+ *  - 全局绑定放 document
+ *  - fix 清除事件调用
+ *
  * 2010-09-09 by lijing00333@163.com - 拔赤
  *     - 将基于YUI2/3的Calendar改为基于KISSY
  *     - 增加起始日期（星期x）的自定义
@@ -26210,89 +26701,139 @@ KISSY.add('calendar/page', function(S, UA, Node, Calendar) {
              */
             this._buildEvent = function() {
                 var cc = this,i,
+                    tev,
                     con = Node.one('#' + cc.id);
                 //flush event
-                for (i = 0; i < cc.EV.length; i++) {
-                    if (typeof cc.EV[i] != 'undefined') {
-                        cc.EV[i].detach();
+                S.each(cc.EV, function(tev) {
+                    if (tev) {
+                        tev.target.detach(tev.type, tev.fn);
                     }
+                });
+                cc.EV = cc.EV || [];
+                tev = cc.EV[0] = {
+                    target:     con.one('div.ks-dbd'),
+                    type:"click",
+                    fn:   function(e) {
+                        //e.preventDefault();
+                        e.target = Node(e.target);
+                        if (e.target.hasClass('ks-null')) {
+                            return;
+                        }
+                        if (e.target.hasClass('ks-disabled')) {
+                            return;
+                        }
+                        var selectedd = Number(e.target.html());
+                        //如果当天是30日或者31日，设置2月份就会出问题
+                        var d = new Date('2010/01/01');
+                        d.setYear(cc.year);
+                        d.setMonth(cc.month);
+                        d.setDate(selectedd);
+                        //self.callback(d);
+                        //datetime的date
+                        cc.father.dt_date = d;
+                        cc.father.fire('select', {
+                            date:d
+                        });
+                        if (cc.father.popup && cc.father.closable) {
+                            cc.father.hide();
+                        }
+                        if (cc.father.rangeSelect) {
+                            cc.father._handleRange(d);
+                        }
+                        cc.father.render({selected:d});
+                    }
+                };
+                function bindEventTev() {
+                    tev.target.on(tev.type, tev.fn);
                 }
 
-                cc.EV[0] = con.one('div.ks-dbd').on('click', function(e) {
-                    //e.preventDefault();
-                    e.target = Node(e.target);
-                    if (e.target.hasClass('ks-null')) {
-                        return;
-                    }
-                    if (e.target.hasClass('ks-disabled')) {
-                        return;
-                    }
-                    var selectedd = Number(e.target.html());
-                    //如果当天是30日或者31日，设置2月份就会出问题
-                    var d = new Date('2010/01/01');
-                    d.setYear(cc.year);
-                    d.setMonth(cc.month);
-                     d.setDate(selectedd);
-                    //self.callback(d);
-                    //datetime的date
-                    cc.father.dt_date = d;
-                    cc.father.fire('select', {
-                        date:d
-                    });
-                    if (cc.father.popup && cc.father.closable) {
-                        cc.father.hide();
-                    }
-                    if (cc.father.rangeSelect) {
-                        cc.father._handleRange(d);
-                    }
-                    cc.father.render({selected:d});
-                });
+                bindEventTev();
                 //向前
-                cc.EV[1] = con.one('a.ks-prev').on('click', function(e) {
-                    e.preventDefault();
-                    cc.father._monthMinus().render();
-                    cc.father.fire('monthChange', {
-                        date:new Date(cc.father.year + '/' + (cc.father.month + 1) + '/01')
-                    });
-
-                });
-                //向后
-                cc.EV[2] = con.one('a.ks-next').on('click', function(e) {
-                    e.preventDefault();
-                    cc.father._monthAdd().render();
-                    cc.father.fire('monthChange', {
-                        date:new Date(cc.father.year + '/' + (cc.father.month + 1) + '/01')
-                    });
-                });
-                if (cc.father.navigator) {
-                    cc.EV[3] = con.one('a.ks-title').on('click', function(e) {
-                        try {
-                            cc.timmer.hidePopup();
-                            e.preventDefault();
-                        } catch(exp) {
-                        }
-                        e.target = Node(e.target);
-                        var setime_node = con.one('.ks-setime');
-                        setime_node.html('');
-                        var in_str = cc.father._templetShow(cc.nav_html, {
-                            the_month:cc.month + 1,
-                            the_year:cc.year
+                tev = cc.EV[1] = {
+                    target:con.one('a.ks-prev'),
+                    type:'click',
+                    fn:function(e) {
+                        e.preventDefault();
+                        cc.father._monthMinus().render();
+                        cc.father.fire('monthChange', {
+                            date:new Date(cc.father.year + '/' + (cc.father.month + 1) + '/01')
                         });
-                        setime_node.html(in_str);
-                        setime_node.removeClass('hidden');
-                        con.one('input').on('keydown', function(e) {
+
+                    }
+                };
+                bindEventTev();
+                //向后
+                tev = cc.EV[2] = {
+                    target:con.one('a.ks-next'),
+                    type:'click',
+                    fn: function(e) {
+                        e.preventDefault();
+                        cc.father._monthAdd().render();
+                        cc.father.fire('monthChange', {
+                            date:new Date(cc.father.year + '/' + (cc.father.month + 1) + '/01')
+                        });
+                    }
+                };
+                bindEventTev();
+                if (cc.father.navigator) {
+                    tev = cc.EV[3] = {
+                        target:con.one('a.ks-title'),
+                        type:'click',
+                        fn:function(e) {
+                            try {
+                                cc.timmer.hidePopup();
+                                e.preventDefault();
+                            } catch(exp) {
+                            }
                             e.target = Node(e.target);
-                            if (e.keyCode == 38) {//up
-                                e.target.val(Number(e.target.val()) + 1);
-                                e.target[0].select();
-                            }
-                            if (e.keyCode == 40) {//down
-                                e.target.val(Number(e.target.val()) - 1);
-                                e.target[0].select();
-                            }
-                            if (e.keyCode == 13) {//enter
-                                var _month = con.one('.ks-setime').one('select').val();
-                                var _year = con.one('.ks-setime').one('input').val();
+                            var setime_node = con.one('.ks-setime');
+                            setime_node.html('');
+                            var in_str = cc.father._templetShow(cc.nav_html, {
+                                the_month:cc.month + 1,
+                                the_year:cc.year
+                            });
+                            setime_node.html(in_str);
+                            setime_node.removeClass('hidden');
+                            con.one('input').on('keydown', function(e) {
+                                e.target = Node(e.target);
+                                if (e.keyCode == 38) {//up
+                                    e.target.val(Number(e.target.val()) + 1);
+                                    e.target[0].select();
+                                }
+                                if (e.keyCode == 40) {//down
+                                    e.target.val(Number(e.target.val()) - 1);
+                                    e.target[0].select();
+                                }
+                                if (e.keyCode == 13) {//enter
+                                    var _month = con.one('.ks-setime').one('select').val();
+                                    var _year = con.one('.ks-setime').one('input').val();
+                                    con.one('.ks-setime').addClass('hidden');
+                                    if (!cc.Verify().isYear(_year)) {
+                                        return;
+                                    }
+                                    if (!cc.Verify().isMonth(_month)) {
+                                        return;
+                                    }
+                                    cc.father.render({
+                                        date:new Date(_year + '/' + _month + '/01')
+                                    });
+                                    cc.father.fire('monthChange', {
+                                        date:new Date(_year + '/' + _month + '/01')
+                                    });
+                                }
+                            });
+                        }
+                    };
+                    bindEventTev();
+                    tev = cc.EV[4] = {
+                        target:con.one('.ks-setime'),
+                        type:'click',
+                        fn:function(e) {
+                            e.preventDefault();
+                            e.target = Node(e.target);
+                            if (e.target.hasClass('ok')) {
+                                var _month = con.one('.ks-setime').one('select').val(),
+                                    _year = con.one('.ks-setime').one('input').val();
                                 con.one('.ks-setime').addClass('hidden');
                                 if (!cc.Verify().isYear(_year)) {
                                     return;
@@ -26306,32 +26847,12 @@ KISSY.add('calendar/page', function(S, UA, Node, Calendar) {
                                 cc.father.fire('monthChange', {
                                     date:new Date(_year + '/' + _month + '/01')
                                 });
+                            } else if (e.target.hasClass('cancel')) {
+                                con.one('.ks-setime').addClass('hidden');
                             }
-                        });
-                    });
-                    cc.EV[4] = con.one('.ks-setime').on('click', function(e) {
-                        e.preventDefault();
-                        e.target = Node(e.target);
-                        if (e.target.hasClass('ok')) {
-                            var _month = con.one('.ks-setime').one('select').val(),
-                                _year = con.one('.ks-setime').one('input').val();
-                            con.one('.ks-setime').addClass('hidden');
-                            if (!cc.Verify().isYear(_year)) {
-                                return;
-                            }
-                            if (!cc.Verify().isMonth(_month)) {
-                                return;
-                            }
-                            cc.father.render({
-                                date:new Date(_year + '/' + _month + '/01')
-                            });
-                            cc.father.fire('monthChange', {
-                                date:new Date(_year + '/' + _month + '/01')
-                            });
-                        } else if (e.target.hasClass('cancel')) {
-                            con.one('.ks-setime').addClass('hidden');
                         }
-                    });
+                    };
+                    bindEventTev();
                 }
                 return this;
 
@@ -26380,7 +26901,7 @@ KISSY.add('calendar/page', function(S, UA, Node, Calendar) {
 
 
                     } else if ((cc.father.range.start !== null && cc.father.range.end !== null) && //日期选择范围
-                       (  _td_s.getTime() >= cc.father._showdate(1,cc.father.range.start).getTime() && _td_e.getTime() < cc.father._showdate(1,cc.father.range.end).getTime())) {
+                        (  _td_s.getTime() >= cc.father._showdate(1, cc.father.range.start).getTime() && _td_e.getTime() < cc.father._showdate(1, cc.father.range.end).getTime())) {
 
                         if (i == (startweekday + (new Date()).getDate() - 1) &&
                             (new Date()).getFullYear() == cc.year &&
@@ -26671,9 +27192,9 @@ KISSY.add("calendar", function(S, C, Page, Time, Date) {
     requires:["calendar/base","calendar/page","calendar/time","calendar/date"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Dec 19 13:01
 */
 /**
  * deletable menuitem
@@ -27053,186 +27574,195 @@ KISSY.add("menu/filtermenurender", function(S, Node, UIBase, MenuRender) {
  * menu model and controller for kissy,accommodate menu items
  * @author yiminghe@gmail.com
  */
-KISSY.add("menu/menu", function(S, Event, UIBase, Component, MenuRender) {
+KISSY.add("menu/menu", function (S, Event, UIBase, Component, MenuRender) {
     var KeyCodes = Event.KeyCodes;
-
 
     function onMenuHide() {
         this.set("highlightedItem", undefined);
     }
 
-    var Menu = UIBase.create(Component.Container, {
-        _uiSetHighlightedItem:function(v, ev) {
-            var pre = ev && ev.prevVal;
-            if (pre) {
-                pre.set("highlighted", false);
-            }
-            v && v.set("highlighted", true);
-            this.set("activeItem", v);
-        },
-
-        _handleBlur:function(e) {
-            Menu.superclass._handleBlur.call(this, e);
-            this.set("highlightedItem", undefined);
-        },
-
-
-        //dir : -1 ,+1
-        //skip disabled items
-        _getNextEnabledHighlighted:function(index, dir) {
-            var children = this.get("children"),
-                len = children.length,
-                o = index;
-            do {
-                var c = children[index];
-                if (!c.get("disabled") && (c.get("visible") !== false)) {
-                    return children[index];
+    /**
+     * @name Menu
+     * @constructor
+     * @extends Component.Container
+     */
+    var Menu = UIBase.create(Component.Container,
+        /** @lends Menu.prototype*/
+        {
+            _uiSetHighlightedItem:function (v, ev) {
+                var pre = ev && ev.prevVal;
+                if (pre) {
+                    pre.set("highlighted", false);
                 }
-                index = (index + dir + len) % len;
-            } while (index != o);
-            return undefined;
-        },
+                v && v.set("highlighted", true);
+                this.set("activeItem", v);
+            },
 
-        _handleKeydown:function(e) {
-            if (this._handleKeyEventInternal(e)) {
-                e.halt();
-                return true;
-            }
-            // return false , 会阻止 tab 键 ....
-            return undefined;
-        },
+            _handleBlur:function (e) {
+                Menu.superclass._handleBlur.call(this, e);
+                this.set("highlightedItem", undefined);
+            },
 
-        /**
-         * Attempts to handle a keyboard event; returns true if the event was handled,
-         * false otherwise.  If the container is enabled, and a child is highlighted,
-         * calls the child control's {@code handleKeyEvent} method to give the control
-         * a chance to handle the event first.
-         * @param  e Key event to handle.
-         * @return {boolean} Whether the event was handled by the container (or one of
-         *     its children).
-         */
-        _handleKeyEventInternal:function(e) {
 
-            // Give the highlighted control the chance to handle the key event.
-            var highlightedItem = this.get("highlightedItem");
-
-            // 先看当前活跃 menuitem 是否要处理
-            if (highlightedItem && highlightedItem._handleKeydown(e)) {
-                return true;
-            }
-
-            var children = this.get("children"),len = children.length;
-
-            if (len === 0) {
+            //dir : -1 ,+1
+            //skip disabled items
+            _getNextEnabledHighlighted:function (index, dir) {
+                var children = this.get("children"),
+                    len = children.length,
+                    o = index;
+                do {
+                    var c = children[index];
+                    if (!c.get("disabled") && (c.get("visible") !== false)) {
+                        return children[index];
+                    }
+                    index = (index + dir + len) % len;
+                } while (index != o);
                 return undefined;
-            }
+            },
 
-            var index,destIndex;
-
-            //自己处理了，不要向上处理，嵌套菜单情况
-            switch (e.keyCode) {
-                // esc
-                case KeyCodes.ESC:
-                    // TODO
-                    // focus 的话手动失去焦点
-                    return undefined;
-                    break;
-
-                // home
-                case KeyCodes.HOME:
-                    this.set("highlightedItem",
-                        this._getNextEnabledHighlighted(0, 1));
-                    break;
-                // end
-                case KeyCodes.END:
-                    this.set("highlightedItem",
-                        this._getNextEnabledHighlighted(len - 1, -1));
-                    break;
-                // up
-                case KeyCodes.UP:
-                    if (!highlightedItem) {
-                        destIndex = len - 1;
-                    } else {
-                        index = S.indexOf(highlightedItem, children);
-                        destIndex = (index - 1 + len) % len;
-                    }
-                    this.set("highlightedItem",
-                        this._getNextEnabledHighlighted(destIndex, -1));
-                    break;
-                //down
-                case KeyCodes.DOWN:
-                    if (!highlightedItem) {
-                        destIndex = 0;
-                    } else {
-                        index = S.indexOf(highlightedItem, children);
-                        destIndex = (index + 1 + len) % len;
-                    }
-                    this.set("highlightedItem",
-                        this._getNextEnabledHighlighted(destIndex, 1));
-                    break;
-                default:
-                    return undefined;
-            }
-            return true;
-        },
-
-        bindUI:function() {
-            var self = this;
-            /**
-             * 隐藏后，去掉高亮与当前
-             */
-            self.on("hide", onMenuHide, self);
-        },
-
-        containsElement:function(element) {
-            if (this.get("view").containsElement(element)) {
-                return true;
-            }
-
-            var children = this.get('children');
-
-            for (var i = 0, count = children.length; i < count; i++) {
-                var child = children[i];
-                if (typeof child.containsElement == 'function' &&
-                    child.containsElement(element)) {
+            _handleKeydown:function (e) {
+                if (this._handleKeyEventInternal(e)) {
+                    e.halt();
                     return true;
                 }
-            }
+                // return false , 会阻止 tab 键 ....
+                return undefined;
+            },
 
-            return false;
-        }
-    }, {
-        ATTRS:{
-            // 普通菜单可聚焦
-            // 通过 tab 聚焦到菜单的根节点，通过上下左右操作子菜单项
-            focusable:{
-                value:true
-            },
-            visibleMode:{
-                value:"display"
-            },
             /**
-             * 当前高亮的儿子菜单项
+             * Attempts to handle a keyboard event; returns true if the event was handled,
+             * false otherwise.  If the container is enabled, and a child is highlighted,
+             * calls the child control's {@code handleKeyEvent} method to give the control
+             * a chance to handle the event first.
+             * @param  e Key event to handle.
+             * @return {boolean} Whether the event was handled by the container (or one of
+             *     its children).
              */
-            highlightedItem:{},
-            /**
-             * 当前 active 的子孙菜单项，并不一直等于 highlightedItem
-             */
-            activeItem:{
-                view:true
+            _handleKeyEventInternal:function (e) {
+
+                // Give the highlighted control the chance to handle the key event.
+                var highlightedItem = this.get("highlightedItem");
+
+                // 先看当前活跃 menuitem 是否要处理
+                if (highlightedItem && highlightedItem._handleKeydown(e)) {
+                    return true;
+                }
+
+                var children = this.get("children"), len = children.length;
+
+                if (len === 0) {
+                    return undefined;
+                }
+
+                var index, destIndex;
+
+                //自己处理了，不要向上处理，嵌套菜单情况
+                switch (e.keyCode) {
+                    // esc
+                    case KeyCodes.ESC:
+                        // TODO
+                        // focus 的话手动失去焦点
+                        return undefined;
+                        break;
+
+                    // home
+                    case KeyCodes.HOME:
+                        this.set("highlightedItem",
+                            this._getNextEnabledHighlighted(0, 1));
+                        break;
+                    // end
+                    case KeyCodes.END:
+                        this.set("highlightedItem",
+                            this._getNextEnabledHighlighted(len - 1, -1));
+                        break;
+                    // up
+                    case KeyCodes.UP:
+                        if (!highlightedItem) {
+                            destIndex = len - 1;
+                        } else {
+                            index = S.indexOf(highlightedItem, children);
+                            destIndex = (index - 1 + len) % len;
+                        }
+                        this.set("highlightedItem",
+                            this._getNextEnabledHighlighted(destIndex, -1));
+                        break;
+                    //down
+                    case KeyCodes.DOWN:
+                        if (!highlightedItem) {
+                            destIndex = 0;
+                        } else {
+                            index = S.indexOf(highlightedItem, children);
+                            destIndex = (index + 1 + len) % len;
+                        }
+                        this.set("highlightedItem",
+                            this._getNextEnabledHighlighted(destIndex, 1));
+                        break;
+                    default:
+                        return undefined;
+                }
+                return true;
+            },
+
+            bindUI:function () {
+                var self = this;
+                /**
+                 * 隐藏后，去掉高亮与当前
+                 */
+                self.on("hide", onMenuHide, self);
+            },
+
+            containsElement:function (element) {
+                var self = this;
+                if (!self.get("view") ||
+                    self.get("view").containsElement(element)) {
+                    return true;
+                }
+
+                var children = self.get('children');
+
+                for (var i = 0, count = children.length; i < count; i++) {
+                    var child = children[i];
+                    if (typeof child.containsElement == 'function' &&
+                        child.containsElement(element)) {
+                        return true;
+                    }
+                }
+
+                return false;
             }
-        },
-        DefaultRender:MenuRender
-    });
+        }, {
+            ATTRS:{
+                // 普通菜单可聚焦
+                // 通过 tab 聚焦到菜单的根节点，通过上下左右操作子菜单项
+                focusable:{
+                    value:true
+                },
+                visibleMode:{
+                    value:"display"
+                },
+                /**
+                 * 当前高亮的儿子菜单项
+                 */
+                highlightedItem:{},
+                /**
+                 * 当前 active 的子孙菜单项，并不一直等于 highlightedItem
+                 */
+                activeItem:{
+                    view:true
+                }
+            },
+            DefaultRender:MenuRender
+        });
 
     Component.UIStore.setUIByClass("menu", {
         priority:Component.UIStore.PRIORITY.LEVEL1,
         ui:Menu
     });
+
     return Menu;
 
 }, {
-    requires:['event','uibase','component','./menurender','./submenu']
+    requires:['event', 'uibase', 'component', './menurender', './submenu']
 });
 
 /**
@@ -27242,13 +27772,13 @@ KISSY.add("menu/menu", function(S, Event, UIBase, Component, MenuRender) {
  * menu item ,child component for menu
  * @author yiminghe@gmail.com
  */
-KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
+KISSY.add("menu/menuitem", function (S, UIBase, Component, MenuItemRender) {
 
     var $ = S.all;
 
     var MenuItem = UIBase.create(Component.ModelControl, [UIBase.Contentbox], {
 
-        _handleMouseEnter:function(e) {
+        _handleMouseEnter:function (e) {
             // 父亲不允许自己处理
             if (MenuItem.superclass._handleMouseEnter.call(this, e)) {
                 return true;
@@ -27256,7 +27786,7 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
             this.get("parent").set("highlightedItem", this);
         },
 
-        _handleMouseLeave:function(e) {
+        _handleMouseLeave:function (e) {
             // 父亲不允许自己处理
             if (MenuItem.superclass._handleMouseLeave.call(this, e)) {
                 return true;
@@ -27264,38 +27794,39 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
             this.get("parent").set("highlightedItem", undefined);
         },
 
-        _performInternal:function() {
+        _performInternal:function () {
+            var self = this;
             // 可选
-            if (this.get("selectable")) {
-                this.set("selected", true);
+            if (self.get("selectable")) {
+                self.set("selected", true);
             }
             // 可选中，取消选中
-            if (this.get("checkable")) {
-                this.set("checked", !this.get("checked"));
+            if (self.get("checkable")) {
+                self.set("checked", !self.get("checked"));
             }
-            this.get("parent").fire("click", {
+            self.get("parent").fire("click", {
                 // 使用熟悉的 target，而不是自造新词！
-                target:this
+                target:self
             });
             return true;
         },
 
-        _uiSetChecked:function(v) {
+        _uiSetChecked:function (v) {
             this._forwardSetAttrToView("checked", v);
         },
 
-        _uiSetSelected:function(v) {
+        _uiSetSelected:function (v) {
             this._forwardSetAttrToView("selected", v);
         },
 
-        _uiSetHighlighted:function(v) {
+        _uiSetHighlighted:function (v) {
             MenuItem.superclass._uiSetHighlighted.apply(this, arguments);
             // 是否要滚动到当前菜单项(横向，纵向)
             if (v) {
                 var el = this.get("el"),
                     // 找到向上路径上第一个可以滚动的容器，直到父组件节点（包括）
                     // 找不到就放弃，为效率考虑不考虑 parent 的嵌套可滚动 div
-                    p = el.parent(function(e) {
+                    p = el.parent(function (e) {
                         return $(e).css("overflow") != "visible";
                     }, this.get("parent").get("el").parent());
                 if (!p) {
@@ -27305,7 +27836,7 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
             }
         },
 
-        containsElement:function(element) {
+        containsElement:function (element) {
             return this.get('view') && this.get('view').containsElement(element);
         }
 
@@ -27352,7 +27883,7 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
         },
 
         HTML_PARSER:{
-            selectable:function(el) {
+            selectable:function (el) {
                 var cls = this.getCls("menuitem-selectable");
                 return el.hasClass(cls);
             }
@@ -27368,7 +27899,7 @@ KISSY.add("menu/menuitem", function(S, UIBase, Component, MenuItemRender) {
 
     return MenuItem;
 }, {
-    requires:['uibase','component','./menuitemrender']
+    requires:['uibase', 'component', './menuitemrender']
 });/**
  * simple menuitem render
  * @author yiminghe@gmail.com
@@ -27491,7 +28022,7 @@ KISSY.add("menu/menurender", function(S, UA, UIBase, Component) {
  * positionable and not focusable menu
  * @author yiminghe@gmail.com
  */
-KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender) {
+KISSY.add("menu/popupmenu", function (S, UIBase, Component, Menu, PopupMenuRender) {
 
     function getParentMenu(self) {
         var subMenuItem = self.get("parent"),
@@ -27511,7 +28042,7 @@ KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender
     }
 
     function getOldestMenu(self) {
-        var pre = self,now = self;
+        var pre = self, now = self;
         while (now) {
             pre = now;
             now = getAutoHideParentMenu(pre);
@@ -27532,12 +28063,16 @@ KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender
         }
     }
 
+    /**
+     * @name PopMenu
+     * @constructor
+     */
     var PopMenu = UIBase.create(Menu, [
         UIBase.Position,
         UIBase.Align
     ], {
-        _clearLeaveHideTimers:function() {
-            var self = this,i,item,menu;
+        _clearLeaveHideTimers:function () {
+            var self = this, i, item, menu;
             if (!self.get(autoHideOnMouseLeave)) {
                 return;
             }
@@ -27553,12 +28088,12 @@ KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender
                 }
             }
         },
-        _handleMouseLeave:function() {
+        _handleMouseLeave:function () {
             var self = this;
             if (!self.get(autoHideOnMouseLeave)) {
                 return;
             }
-            self._leaveHideTimer = setTimeout(function() {
+            self._leaveHideTimer = setTimeout(function () {
                 // only hide ancestor is enough , it will listen to its ancestor's hide event to hide
                 var oldMenu = getOldestMenu(self);
                 oldMenu.hide();
@@ -27569,7 +28104,7 @@ KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender
             }, self.get("autoHideDelay"));
         },
 
-        _handleMouseEnter:function() {
+        _handleMouseEnter:function () {
             var self = this,
                 parent = getAutoHideParentMenu(self);
             if (parent) {
@@ -27584,7 +28119,7 @@ KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender
          *  suppose it has focus (as a context menu),
          *  then it must hide when click document
          */
-        _handleBlur:function() {
+        _handleBlur:function () {
             var self = this;
             PopMenu.superclass._handleBlur.apply(self, arguments);
             self.hide();
@@ -27614,7 +28149,7 @@ KISSY.add("menu/popupmenu", function(S, UIBase, Component, Menu, PopupMenuRender
     return PopMenu;
 
 }, {
-    requires:['uibase','component','./menu','./popupmenurender']
+    requires:['uibase', 'component', './menu', './popupmenurender']
 });/**
  * popup menu render
  * @author yiminghe@gmail.com
@@ -27679,7 +28214,7 @@ KISSY.add("menu/separatorrender", function(S, UIBase, Component) {
 KISSY.add(
     /* or precisely submenuitem */
     "menu/submenu",
-    function(S, Event, UIBase, Component, MenuItem, SubMenuRender) {
+    function (S, Event, UIBase, Component, MenuItem, SubMenuRender) {
 
 
         function _onDocClick(e) {
@@ -27689,9 +28224,9 @@ KISSY.add(
                 el = self.get("el");
             // only hide this menu, if click outside this menu and this menu's submenus
             if (
-                ! el.contains(target) &&
+                !el.contains(target) &&
                     el[0] !== target &&
-                    ! menu.containsElement(target)
+                    !menu.containsElement(target)
                 ) {
                 menu.hide();
                 // submenuitem should also hide
@@ -27707,11 +28242,11 @@ KISSY.add(
          */
         var SubMenu = UIBase.create(MenuItem, [Component.DecorateChild], {
 
-                _onParentHide:function() {
+                _onParentHide:function () {
                     this.get("menu") && this.get("menu").hide();
                 },
 
-                bindUI:function() {
+                bindUI:function () {
                     /**
                      * 自己不是 menu，自己只是 menuitem，其所属的 menu 为 get("parent")
                      */
@@ -27727,7 +28262,7 @@ KISSY.add(
                         // 子菜单选中后也要通知父级菜单
                         // 不能使用 afterSelectedItemChange ，多个 menu 嵌套，可能有缓存
                         // 单个 menu 来看可能 selectedItem没有变化
-                        menu.on("click", function(ev) {
+                        menu.on("click", function (ev) {
                             parentMenu.fire("click", {
                                 target:ev.target
                             });
@@ -27741,7 +28276,7 @@ KISSY.add(
                         }
 
                         // 通知父级菜单
-                        menu.on("afterActiveItemChange", function(ev) {
+                        menu.on("afterActiveItemChange", function (ev) {
                             parentMenu.set("activeItem", ev.newVal);
                         });
                     }
@@ -27756,12 +28291,11 @@ KISSY.add(
                 },
 
 
-
                 /**
                  * @inheritDoc
                  * Sets a timer to show the submenu
                  **/
-                _handleMouseEnter:function(e) {
+                _handleMouseEnter:function (e) {
                     var self = this;
                     if (SubMenu.superclass._handleMouseEnter.call(self, e)) {
                         return true;
@@ -27771,12 +28305,12 @@ KISSY.add(
                         this.get("menuDelay"), false, self);
                 },
 
-                showMenu:function() {
+                showMenu:function () {
                     var self = this;
                     var menu = self.get("menu");
                     menu.set("align", S.mix({
                         node:self.get("el"),
-                        points:['tr','tl']
+                        points:['tr', 'tl']
                     }, self.get("menuAlign")));
                     menu.render();
                     /**
@@ -27794,7 +28328,7 @@ KISSY.add(
                 /**
                  * Clears the show and hide timers for the sub menu.
                  */
-                clearTimers : function() {
+                clearTimers:function () {
                     var self = this;
                     if (self.dismissTimer_) {
                         self.dismissTimer_.cancel();
@@ -27813,7 +28347,7 @@ KISSY.add(
                  * @param  e Highlight event to handle.
                  * @private
                  */
-                onChildHighlight_ :function(e) {
+                onChildHighlight_:function (e) {
                     if (e.newVal) {
                         if (this.get("menu").get("parent") == this) {
                             this.clearTimers();
@@ -27824,15 +28358,17 @@ KISSY.add(
                     }
                 },
 
-                hideMenu:function() {
+                hideMenu:function () {
                     var menu = this.get("menu");
                     menu && menu.hide();
                 },
 
                 // click ，立即显示
-                _performInternal:function() {
+                _performInternal:function () {
                     this.clearTimers();
                     this.showMenu();
+                    //  trigger click event from menuitem
+                    SubMenu.superclass._performInternal.apply(this, arguments);
                 },
 
                 /**
@@ -27843,14 +28379,11 @@ KISSY.add(
                  * @param e A key event.
                  * @return {boolean} Whether the event was handled.
                  */
-                _handleKeydown:function(e) {
-                    var self = this;
-
-                    var menu = self.get("menu");
-
-                    var hasKeyboardControl_ = menu && menu.get("visible");
-
-                    var keyCode = e.keyCode;
+                _handleKeydown:function (e) {
+                    var self = this,
+                        menu = self.get("menu"),
+                        hasKeyboardControl_ = menu && menu.get("visible"),
+                        keyCode = e.keyCode;
 
                     if (!hasKeyboardControl_) {
                         // right
@@ -27860,7 +28393,12 @@ KISSY.add(
                             if (menuChildren[0]) {
                                 menu.set("highlightedItem", menuChildren[0]);
                             }
-                        } else {
+                        }
+                        // enter as click
+                        else if (e.keyCode == Event.KeyCodes.ENTER) {
+                            return this._performInternal(e);
+                        }
+                        else {
                             return undefined;
                         }
                     } else if (menu._handleKeydown(e)) {
@@ -27883,7 +28421,7 @@ KISSY.add(
                  * Dismisses the submenu on a delay, with the result that the user needs less
                  * accuracy when moving to submenus.
                  **/
-                _uiSetHighlighted:function(highlight, ev) {
+                _uiSetHighlighted:function (highlight, ev) {
                     var self = this;
                     SubMenu.superclass._uiSetHighlighted.call(self, highlight, ev);
                     if (!highlight) {
@@ -27896,13 +28434,13 @@ KISSY.add(
                     }
                 },
 
-                containsElement:function(element) {
+                containsElement:function (element) {
                     var menu = this.get("menu");
                     return menu && menu.containsElement(element);
                 },
 
                 // 默认 addChild，这里里面的元素需要放到 menu 属性中
-                decorateChildrenInternal:function(ui, el, cls) {
+                decorateChildrenInternal:function (ui, el, cls) {
                     // 不能用 diaplay:none
                     el.css("visibility", "hidden");
                     var docBody = S.one(el[0].ownerDocument.body);
@@ -27914,7 +28452,7 @@ KISSY.add(
                     this.set("menu", menu);
                 },
 
-                destructor : function() {
+                destructor:function () {
                     var self = this,
                         parentMenu = self.get("parent"),
                         menu = this.get("menu");
@@ -27952,7 +28490,7 @@ KISSY.add(
                     },
                     menuAlign:{},
                     menu:{
-                        setter:function(m) {
+                        setter:function (m) {
                             m.set("parent", this);
                         }
                     },
@@ -27973,7 +28511,7 @@ KISSY.add(
 
         return SubMenu;
     }, {
-        requires:['event','uibase','component','./menuitem','./submenurender']
+        requires:['event', 'uibase', 'component', './menuitem', './submenurender']
     });
 
 /**
@@ -28036,9 +28574,9 @@ KISSY.add("menu/submenurender", function(S, UIBase, MenuItemRender) {
     ]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:26
+build time: Nov 28 12:38
 */
 /**
  * Model and Control for button
@@ -28276,19 +28814,32 @@ KISSY.add("button", function(S, Button, Render, Split) {
     requires:['button/base','button/customrender','button/split']
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Dec 15 12:37
 */
 /**
  * combination of menu and button ,similar to native select
  * @author yiminghe@gmail.com
  */
-KISSY.add("menubutton/menubutton", function(S, UIBase, Node, Button, MenuButtonRender, Menu, Component) {
+KISSY.add("menubutton/menubutton", function (S, UIBase, Node, Button, MenuButtonRender, Menu, Component, undefined) {
+
+    function _reposition() {
+        var self = this,
+            menu = self.get("menu"),
+            el = self.get("el");
+        if (menu &&
+            menu.get("visible")) {
+            menu.set("align", S.merge({
+                node:el
+            }, ALIGN, self.get("menuAlign")));
+        }
+    }
+
     var $ = Node.all,
         KeyCodes = Node.KeyCodes,
         ALIGN = {
-            points:["bl","tl"],
+            points:["bl", "tl"],
             overflow:{
                 failX:1,
                 failY:1,
@@ -28296,254 +28847,266 @@ KISSY.add("menubutton/menubutton", function(S, UIBase, Node, Button, MenuButtonR
                 adjustY:1
             }
         },
-        MenuButton = UIBase.create(Button, [Component.DecorateChild], {
+        /**
+         * @name MenuButton
+         * @constructor
+         * @extends Button
+         */
+            MenuButton =
+            UIBase.create(Button, [Component.DecorateChild], {
 
-            /**
-             * private
-             */
-            _hideMenu:function() {
-                var menu = this.get("menu");
-                if (menu) {
-                    menu.hide();
-                }
-            },
+                initializer:function () {
+                    this._reposition = S.buffer(_reposition, 50, this);
+                },
 
-            /**
-             * private
-             */
-            _showMenu:function() {
-                var self = this,
-                    el = self.get("el"),
-                    menu = self.get("menu");
-                if (menu && !menu.get("visible")) {
-                    menu.set("align", S.merge({
-                        node:el
-                    }, ALIGN, self.get("menuAlign")));
-                    menu.show();
-                    el.attr("aria-haspopup", menu.get("el").attr("id"));
-                }
-            },
+                /**
+                 * private
+                 */
+                _hideMenu:function () {
+                    var menu = this.get("menu");
+                    if (menu) {
+                        menu.hide();
+                    }
+                },
 
-            _uiSetCollapsed:function(v) {
-                if (v) {
-                    this._hideMenu();
-                } else {
-                    this._showMenu();
-                }
-            },
+                /**
+                 * private
+                 */
+                _showMenu:function () {
+                    var self = this,
+                        el = self.get("el"),
+                        menu = self.get("menu");
+                    if (menu && !menu.get("visible")) {
+                        menu.set("align", S.merge({
+                            node:el
+                        }, ALIGN, self.get("menuAlign")));
+                        menu.show();
+                        el.attr("aria-haspopup", menu.get("el").attr("id"));
+                    }
+                },
 
+                _uiSetCollapsed:function (v) {
+                    if (v) {
+                        this._hideMenu();
+                    } else {
+                        this._showMenu();
+                    }
+                },
 
-            _reposition:function() {
-                var self = this,
-                    menu = self.get("menu"),
-                    el = self.get("el");
-                if (menu && menu.get("visible")) {
-                    menu.set("align", S.mix({
-                        node:el
-                    }, self.get("menuAlign")));
-                }
-            },
+                /**
+                 * 产生菜单时对菜单监听，只监听一次
+                 * @protected
+                 */
+                __bindMenu:function () {
+                    var self = this,
+                        menu = this.get("menu");
+                    if (menu) {
+                        menu.on("afterActiveItemChange", function (ev) {
+                            self.set("activeItem", ev.newVal);
+                        });
 
-            /**
-             * 产生菜单时对菜单监听，只监听一次
-             * @protected
-             */
-            __bindMenu:function() {
-                var self = this,
-                    menu = this.get("menu");
-                if (menu) {
-                    menu.on("afterActiveItemChange", function(ev) {
-                        self.set("activeItem", ev.newVal);
+                        menu.on("click", self._handleMenuClick, self);
+
+                        //窗口改变大小，重新调整
+                        $(window).on("resize", self._reposition, self);
+                        /*
+                         bind 与 getMenu 都可能调用，时序不定
+                         */
+                        self.__bindMenu = S.noop;
+                    }
+                },
+
+                /**
+                 * @protected
+                 */
+                _handleMenuClick:function (e) {
+                    this.fire("click", {
+                        target:e.target
                     });
+                    this.set("collapsed", true);
+                },
 
-                    menu.on("click", self._handleMenuClick, self);
+                /**
+                 * @private
+                 */
+                bindUI:function () {
+                    this.__bindMenu();
+                },
 
-                    //窗口改变大小，重新调整
-                    $(window).on("resize", self._reposition, self);
-                    /*
-                     bind 与 getMenu 都可能调用，时序不定
-                     */
-                    self.__bindMenu = S.noop;
-                }
-            },
+                /**
+                 * @inheritDoc
+                 */
+                _handleKeyEventInternal:function (e) {
+                    var self = this,
+                        menu = self.get("menu");
 
-            /**
-             * @protected
-             */
-            _handleMenuClick:function(e) {
-                this.fire("click", {
-                    target:e.target
-                });
-                this.set("collapsed", true);
-            },
-
-            /**
-             * @private
-             */
-            bindUI:function() {
-                this.__bindMenu();
-            },
-
-            /**
-             * @inheritDoc
-             */
-            _handleKeyEventInternal:function(e) {
-                var self = this,menu = self.get("menu");
-
-                // space 只在 keyup 时处理
-                if (e.keyCode == KeyCodes.SPACE) {
-                    // Prevent page scrolling in Chrome.
-                    e.preventDefault();
-                    if (e.type != "keyup") {
+                    // space 只在 keyup 时处理
+                    if (e.keyCode == KeyCodes.SPACE) {
+                        // Prevent page scrolling in Chrome.
+                        e.preventDefault();
+                        if (e.type != "keyup") {
+                            return undefined;
+                        }
+                    } else if (e.type != "keydown") {
                         return undefined;
                     }
-                } else if (e.type != "keydown") {
-                    return undefined;
-                }
-                //转发给 menu 处理
-                if (menu && menu.get("visible")) {
-                    var handledByMenu = menu._handleKeydown(e);
-                    // esc
-                    if (e.keyCode == KeyCodes.ESC) {
-                        self.set("collapsed", true);
+                    //转发给 menu 处理
+                    if (menu && menu.get("visible")) {
+                        var handledByMenu = menu._handleKeydown(e);
+                        // esc
+                        if (e.keyCode == KeyCodes.ESC) {
+                            self.set("collapsed", true);
+                            return true;
+                        }
+                        return handledByMenu;
+                    }
+
+                    // Menu is closed, and the user hit the down/up/space key; open menu.
+                    if (e.keyCode == KeyCodes.SPACE ||
+                        e.keyCode == KeyCodes.DOWN ||
+                        e.keyCode == KeyCodes.UP) {
+                        self.set("collapsed", false);
                         return true;
                     }
-                    return handledByMenu;
-                }
-
-                // Menu is closed, and the user hit the down/up/space key; open menu.
-                if (e.keyCode == KeyCodes.SPACE ||
-                    e.keyCode == KeyCodes.DOWN ||
-                    e.keyCode == KeyCodes.UP) {
-                    self.set("collapsed", false);
-                    return true;
-                }
-                return undefined;
-            },
-
-            _performInternal:function() {
-                var self = this,menu = self.get("menu");
-                if (menu) {
-                    if (menu.get("visible")) {
-                        // popup menu 监听 doc click ?
-                        self.set("collapsed", true);
-                    } else {
-                        self.set("collapsed", false);
-                    }
-                }
-            },
-
-            /**
-             * @inheritDoc
-             */
-            _handleBlur:function(e) {
-                MenuButton.superclass._handleBlur.call(this, e);
-                // such as : click the document
-                this.set("collapsed", true);
-            },
-
-            /**
-             * if no menu , then construct
-             * @private
-             */
-            getMenu:function() {
-                var self = this,m = self.get("menu");
-                if (!m) {
-                    m = new Menu.PopupMenu(S.mix({
-                        prefixCls:this.get("prefixCls")
-                    }, self.get("menuCfg")));
-                    self.set("menu", m);
-                    self.__bindMenu();
-                }
-                return m;
-            },
-
-            /**
-             * Adds a new menu item at the end of the menu.
-             * @param item Menu item to add to the menu.
-             */
-            addItem:function(item, index) {
-                this.getMenu().addChild(item, index);
-            },
-
-            removeItem:function(c, destroy) {
-                this.get("menu") && this.get("menu").removeChild(c, destroy);
-            },
-
-            removeItems:function(destroy) {
-                this.get("menu") && this.get("menu").removeChildren(destroy);
-            },
-
-            getItemAt:function(index) {
-                return this.get("menu") && this.get("menu").getChildAt(index);
-            },
-
-            // 禁用时关闭已显示菜单
-            _uiSetDisabled:function(v) {
-                MenuButton.superclass._uiSetDisabled.apply(this, S.makeArray(arguments));
-                !v && this.set("collapsed", true);
-            },
-
-            /**
-             * @private
-             */
-            decorateChildrenInternal:function(ui, el, cls) {
-                // 不能用 diaplay:none , menu 的隐藏是靠 visibility
-                // eg: menu.show(); menu.hide();
-                el.css("visibility", "hidden");
-                var docBody = S.one(el[0].ownerDocument.body);
-                docBody.prepend(el);
-                var menu = new ui(S.mix({
-                    srcNode:el,
-                    prefixCls:cls
-                }, this.get("menuCfg")));
-                this.set("menu", menu);
-            },
-
-            /**
-             * @private
-             */
-            destructor:function() {
-                var self = this, menu = self.get("menu");
-                $(window).detach("resize", self._reposition, self);
-                menu && menu.destroy();
-            }
-
-        }, {
-            ATTRS:{
-                activeItem:{
-                    view:true
+                    return undefined;
                 },
-                menuAlign:{
-                    value:{}
-                },
-                menuCfg:{},
-                decorateChildCls:{
-                    value:"popupmenu"
-                },
-                // 不关心选中元素 , 由 select 负责
-                // selectedItem
-                menu:{
-                    setter:function(v) {
-                        v.set("parent", this);
+
+                /**
+                 * handle click or enter key
+                 */
+                _performInternal:function () {
+                    var self = this, menu = self.get("menu");
+                    if (menu) {
+                        if (menu.get("visible")) {
+                            // popup menu 监听 doc click ?
+                            self.set("collapsed", true);
+                        } else {
+                            self.set("collapsed", false);
+                        }
                     }
                 },
-                collapsed:{
-                    value:true,
-                    view:true
+
+                /**
+                 * @inheritDoc
+                 */
+                _handleBlur:function (e) {
+                    MenuButton.superclass._handleBlur.call(this, e);
+                    // such as : click the document
+                    this.set("collapsed", true);
+                },
+
+                /**
+                 * if no menu , then construct
+                 * @private
+                 */
+                getMenu:function () {
+                    var self = this, m = self.get("menu");
+                    if (!m) {
+                        m = new Menu.PopupMenu(S.mix({
+                            prefixCls:this.get("prefixCls")
+                        }, self.get("menuCfg")));
+                        self.set("menu", m);
+                        self.__bindMenu();
+                    }
+                    return m;
+                },
+
+                /**
+                 * Adds a new menu item at the end of the menu.
+                 * @param item Menu item to add to the menu.
+                 */
+                addItem:function (item, index) {
+                    this.getMenu().addChild(item, index);
+                },
+
+                removeItem:function (c, destroy) {
+                    /**
+                     * @type ModelControl
+                     */
+                    var menu = this.get("menu");
+                    if (menu) {
+                        menu.removeChild(c, destroy);
+                    }
+                },
+
+                removeItems:function (destroy) {
+                    this.get("menu") && this.get("menu").removeChildren(destroy);
+                },
+
+                getItemAt:function (index) {
+                    return this.get("menu") && this.get("menu").getChildAt(index);
+                },
+
+                // 禁用时关闭已显示菜单
+                _uiSetDisabled:function (v) {
+                    MenuButton.superclass._uiSetDisabled.apply(this, S.makeArray(arguments));
+                    !v && this.set("collapsed", true);
+                },
+
+                /**
+                 * @private
+                 */
+                decorateChildrenInternal:function (ui, el, cls) {
+                    // 不能用 diaplay:none , menu 的隐藏是靠 visibility
+                    // eg: menu.show(); menu.hide();
+                    el.css("visibility", "hidden");
+                    var docBody = S.one(el[0].ownerDocument.body);
+                    docBody.prepend(el);
+                    var menu = new ui(S.mix({
+                        srcNode:el,
+                        prefixCls:cls
+                    }, this.get("menuCfg")));
+                    this.set("menu", menu);
+                },
+
+                /**
+                 * @private
+                 */
+                destructor:function () {
+                    var self = this, menu = self.get("menu");
+                    $(window).detach("resize", self._reposition, self);
+                    menu && menu.destroy();
                 }
-            },
-            DefaultRender:MenuButtonRender
-        });
+
+            }, {
+                ATTRS:{
+                    activeItem:{
+                        view:true
+                    },
+                    menuAlign:{
+                        value:{}
+                    },
+                    menuCfg:{},
+                    decorateChildCls:{
+                        value:"popupmenu"
+                    },
+                    // 不关心选中元素 , 由 select 负责
+                    // selectedItem
+                    menu:{
+                        setter:function (v) {
+                            v.set("parent", this);
+                        }
+                    },
+                    collapsed:{
+                        value:true,
+                        view:true
+                    }
+                },
+                DefaultRender:MenuButtonRender
+            });
 
     Component.UIStore.setUIByClass("menu-button", {
         priority:Component.UIStore.PRIORITY.LEVEL2,
         ui:MenuButton
     });
 
+    if (1 > 2) {
+        MenuButton.getItemAt();
+    }
+
     return MenuButton;
 }, {
-    requires:["uibase","node","button","./menubuttonrender","menu","component"]
+    requires:["uibase", "node", "button", "./menubuttonrender", "menu", "component"]
 });/**
  * render aria and drop arrow for menubutton
  * @author  yiminghe@gmail.com
@@ -28813,9 +29376,9 @@ KISSY.add("menubutton/select", function(S, Node, UIBase, Component, MenuButton, 
         'menubutton/option']
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:24
+build time: Nov 28 12:39
 */
 /**
  * @fileOverview abstraction of tree node ,root and other node will extend it
@@ -29758,9 +30321,9 @@ KISSY.add('tree', function(S, Tree, TreeNode, CheckNode, CheckTree) {
     requires:["tree/tree","tree/basenode","tree/checknode","tree/checktree"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:24
+build time: Dec 8 19:41
 */
 /**
  * intervein elements dynamically
@@ -29778,7 +30341,7 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
 
 
     function timedChunk(items, process, context, callback) {
-        var todo = S.makeArray(items),
+        var todo = [].concat(S.makeArray(items)),
             stopper = {},
             timer;
         if (todo.length > 0) {
@@ -29870,6 +30433,7 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
 
     function adjustItem(itemRaw) {
         var self = this,
+            effect = self.get("effect"),
             item = $(itemRaw),
             curColHeights = self.get("curColHeights"),
             container = self.get("container"),
@@ -29897,6 +30461,9 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
         });
         /*不在容器里，就加上*/
         if (!container.contains(item)) {
+            if (effect && effect.effect == "fadeIn") {
+                item.css("opacity", 0);
+            }
             container.append(item);
         }
         curColHeights[dest] += item.outerHeight(true);
@@ -29922,7 +30489,8 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
         adjust:function(callback) {
             S.log("waterfall:adjust");
             var self = this,
-                items = self.get("container").all(".ks-waterfall");
+                items = self.get("container").all(".ks-waterfall"),
+                count = items.length;
             /* 正在加，直接开始这次调整，剩余的加和正在调整的一起处理 */
             /* 正在调整中，取消上次调整，开始这次调整 */
             if (self.isAdjusting()) {
@@ -29930,15 +30498,20 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
             }
             /*计算容器宽度等信息*/
             recalculate.call(self);
-            return self._adjuster = timedChunk(items, adjustItem, self, function() {
+            return self._adjuster = timedChunk(items, self._addItem, self, function() {
                 self.get("container").height(Math.max.apply(Math, self.get("curColHeights")));
                 self._adjuster = 0;
                 callback && callback.call(self);
+
+                count && self.fire('adjustComplete', {
+                    items:items
+                });
             });
         },
 
         addItems:function(items, callback) {
-            var self = this;
+            var self = this,
+                count = items.length;
 
             /* 正在调整中，直接这次加，和调整的节点一起处理 */
             /* 正在加，直接这次加，一起处理 */
@@ -29950,6 +30523,10 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
                         self.get("curColHeights")));
                     self._adder = 0;
                     callback && callback.call(self);
+
+                    count && self.fire('addComplete', {
+                        items:items
+                    });
                 });
 
             return self._adder;
@@ -29961,10 +30538,20 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
                 container = self.get("container"),
                 item = adjustItem.call(self, itemRaw),
                 effect = self.get("effect");
-            if (!effect.effect) {
+            if (!effect.effect ||
+                effect.effect !== "fadeIn") {
                 return;
             }
-            item[effect.effect](effect.duration, undefined, effect.easing);
+            // only allow fadeIn temporary
+            item.animate({
+                opacity:1
+            }, {
+                duration:effect.duration,
+                easing:effect.easing,
+                complete:function() {
+                    item.css("opacity", "");
+                }
+            });
         },
 
         destroy:function() {
@@ -30095,9 +30682,9 @@ KISSY.add("waterfall/loader", function(S, Node, Intervein) {
     requires:['waterfall/base','waterfall/loader']
 });
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:24
+build time: Nov 28 12:39
 */
 /**
  * @author: 常胤 (lzlu.com)
@@ -31618,9 +32205,9 @@ KISSY.add("validation", function(S, Validation) {
 	}
 );
 /*
-Copyright 2011, KISSY UI Library v1.20dev
+Copyright 2011, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 18 17:23
+build time: Dec 23 12:08
 */
 /**
  * mvc base
@@ -31717,7 +32304,8 @@ KISSY.add("mvc/collection", function(S, Event, Model, mvc, Base) {
             if (S.isArray(model)) {
                 var orig = [].concat(model);
                 S.each(orig, function(m) {
-                    ret = ret && self._add(m, opts);
+                    var t = self._add(m, opts);
+                    ret = ret && t;
                 });
             } else {
                 ret = self._add(model, opts);
@@ -32232,11 +32820,17 @@ KISSY.add('mvc/router', function(S, Event, Base) {
                         m.shift();
 
                         function genParam() {
-                            var params = {};
-                            each(m, function(sm, i) {
-                                params[paramNames[i]] = sm;
-                            });
-                            return params;
+                            if (paramNames) {
+                                var params = {};
+                                each(m, function(sm, i) {
+                                    params[paramNames[i]] = sm;
+                                });
+                                return params;
+                            } else {
+                                // if user gave directly reg
+                                // then call callback with match result array
+                                return [].concat(m);
+                            }
                         }
 
                         function upToFinal() {
@@ -32251,12 +32845,10 @@ KISSY.add('mvc/router', function(S, Event, Base) {
 
                         // route: /xx/yy/zz
                         if (!m.length) {
-
                             upToFinal();
                             exactlyMatch = 1;
                             return false;
-
-                        } else {
+                        } else if (regStr) {
 
                             firstCaptureGroupIndex = findFirstCaptureGroupIndex(regStr);
 
@@ -32284,7 +32876,10 @@ KISSY.add('mvc/router', function(S, Event, Base) {
                                 upToFinal();
                             }
                         }
-
+                        // if exists user-given reg router rule then update value directly
+                        else {
+                            upToFinal();
+                        }
                     }
                 }
             );
@@ -32314,30 +32909,39 @@ KISSY.add('mvc/router', function(S, Event, Base) {
      *         /search/:q
      *         /user/*path
      */
-    function transformRouterReg(str, callback) {
+    function transformRouterReg(self, str, callback) {
         var name = str,
             paramNames = [];
-        // escape keyword from regexp
-        str = S.escapeRegExp(str);
 
-        str = str.replace(grammar, function(m, g1, g2, g3, g4) {
-            paramNames.push(g2 || g4);
-            // :name
-            if (g2) {
-                return "([^/]+)";
-            }
-            // *name
-            else if (g4) {
-                return "(.*)";
-            }
-        });
+        if (S.isFunction(callback)) {
+            // escape keyword from regexp
+            str = S.escapeRegExp(str);
 
-        return {
-            name:name,
-            paramNames:paramNames,
-            reg:new RegExp("^" + str + "$"),
-            regStr:str,
-            callback:callback
+            str = str.replace(grammar, function(m, g1, g2, g3, g4) {
+                paramNames.push(g2 || g4);
+                // :name
+                if (g2) {
+                    return "([^/]+)";
+                }
+                // *name
+                else if (g4) {
+                    return "(.*)";
+                }
+            });
+
+            return {
+                name:name,
+                paramNames:paramNames,
+                reg:new RegExp("^" + str + "$"),
+                regStr:str,
+                callback:callback
+            };
+        } else {
+            return {
+                name:name,
+                reg:callback.reg,
+                callback:normFn(self, callback.callback)
+            };
         }
     }
 
@@ -32349,9 +32953,10 @@ KISSY.add('mvc/router', function(S, Event, Base) {
     function normFn(self, callback) {
         if (S.isFunction(callback)) {
             return callback;
-        } else {
+        } else if (S.isString(callback)) {
             return self[callback];
         }
+        return callback;
     }
 
     function _afterRoutesChange(e) {
@@ -32384,12 +32989,17 @@ KISSY.add('mvc/router', function(S, Event, Base) {
          * @param routes
          *         {
          *           "/search/:param":"callback"
+         *           or
+         *           "search":{
+         *              reg:/xx/,
+         *              callback:fn
+         *           }
          *         }
          */
         addRoutes:function(routes) {
             var self = this;
             each(routes, function(callback, name) {
-                self[__routerMap][name] = transformRouterReg(name, normFn(self, callback));
+                self[__routerMap][name] = transformRouterReg(self, name, normFn(self, callback));
             });
         }
     }, {
@@ -32480,6 +33090,9 @@ KISSY.add('mvc/router', function(S, Event, Base) {
 });
 
 /**
+ * 2011-11-30
+ *  - support user-given native regexp for router rule
+ *
  * refer :
  * http://www.w3.org/TR/html5/history.html
  * http://documentcloud.github.com/backbone/
@@ -32487,12 +33100,12 @@ KISSY.add('mvc/router', function(S, Event, Base) {
  * default sync for model
  * @author yiminghe@gmail.com
  */
-KISSY.add("mvc/sync", function(S, io) {
+KISSY.add("mvc/sync", function (S, io, JSON) {
     var methodMap = {
-        'create': 'POST',
-        'update': 'POST', //'PUT'
-        'delete': 'POST', //'DELETE'
-        'read'  : 'GET'
+        'create':'POST',
+        'update':'POST', //'PUT'
+        'delete':'POST', //'DELETE'
+        'read':'GET'
     };
 
     function sync(self, method, options) {
@@ -32512,7 +33125,7 @@ KISSY.add("mvc/sync", function(S, io) {
         }
 
         if (method == 'create' || method == 'update') {
-            data.model = self.toJSON();
+            data.model = JSON.stringify(self.toJSON());
         }
 
         return io(ioParam);
@@ -32520,7 +33133,7 @@ KISSY.add("mvc/sync", function(S, io) {
 
     return sync;
 }, {
-    requires:['ajax']
+    requires:['ajax', 'json']
 });/**
  * view for kissy mvc : event delegation,el generator
  * @author yiminghe@gmail.com

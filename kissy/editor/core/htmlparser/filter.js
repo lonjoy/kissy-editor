@@ -1,3 +1,7 @@
+/**
+ * modified from ckeditor
+ * @author <yiminghe@gmail.com>
+ */
 /*
 Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
@@ -245,17 +249,4 @@ KISSY.Editor.add("htmlparser-filter", function(
     }
 
     KE.HtmlParser.Filter = Filter;
-    var FilterP = Filter.prototype;
-    KE.Utils.extern(FilterP, {
-        "addRules":FilterP.addRules,
-        "onElementName":FilterP.onElementName,
-        "onAttributeName":FilterP.onAttributeName,
-        "onText":FilterP.onText,
-        "onComment":FilterP.onComment,
-        "onFragment":FilterP.onFragment,
-        "onElement":FilterP.onElement,
-        "onNode":FilterP.onNode,
-        "onAttribute":FilterP.onAttribute
-    });
-    KE.HtmlParser["Filter"] = Filter;
 });

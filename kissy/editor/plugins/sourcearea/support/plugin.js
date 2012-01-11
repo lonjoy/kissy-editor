@@ -5,9 +5,8 @@
 KISSY.Editor.add("sourcearea/support", function() {
     var S = KISSY,
         KE = S.Editor,
-        UA = S.UA;
-
-    var SOURCE_MODE = KE.SOURCE_MODE ,
+        UA = S.UA,
+        SOURCE_MODE = KE.SOURCE_MODE ,
         WYSIWYG_MODE = KE.WYSIWYG_MODE;
 
     function SourceAreaSupport() {
@@ -36,10 +35,12 @@ KISSY.Editor.add("sourcearea/support", function() {
                 iframe = editor.iframe;
             textarea.css("display", "");
             iframe.css("display", "none");
-            //ie textarea height:100%不起作用
-            if (UA.ieEngine < 8) {
-                textarea.css("height", editor.wrap.css("height"));
-            }
+            // ie textarea height:100%不起作用
+            // resize also modify height wrongly
+            textarea.css({
+                "height": editor.wrap.css("height"),
+                "width":"100%"
+            });
             //ie6 光标透出
             textarea[0].focus();
         },
@@ -69,6 +70,6 @@ KISSY.Editor.add("sourcearea/support", function() {
         }
     });
     KE.SourceAreaSupport = new SourceAreaSupport();
-},{
+}, {
     attach:false
 });

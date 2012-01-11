@@ -18,7 +18,7 @@ KISSY.Editor.add("music/support", function() {
         var disableObjectResizing = editor.cfg['disableObjectResizing'];
         if (!disableObjectResizing) {
             Event.on(editor.document.body,
-                UA.ie ? 'resizestart' : 'resize',
+                UA['ie'] ? 'resizestart' : 'resize',
                     function(evt) {
                         var t = new S.Node(evt.target);
                         if (t.hasClass(CLS_MUSIC))
@@ -50,7 +50,7 @@ KISSY.Editor.add("music/support", function() {
     });
 
 
-    Flash.registerBubble("music", "音乐网址： ", checkMusic);
+    Flash.registerBubble("music", "在新窗口查看", checkMusic);
     KE.MusicInserter = MusicInserter;
     var contextMenu = {
         "音乐属性":function(cmd) {

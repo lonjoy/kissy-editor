@@ -12,7 +12,7 @@ KISSY.Editor.add("xiami-music/support", function() {
         var disableObjectResizing = editor.cfg['disableObjectResizing'];
         if (!disableObjectResizing) {
             Event.on(editor.document.body,
-                UA.ie ? 'resizestart' : 'resize',
+                UA['ie'] ? 'resizestart' : 'resize',
                     function(evt) {
                         var t = new S.Node(evt.target);
                         if (t.hasClass(CLS_XIAMI))
@@ -55,7 +55,7 @@ KISSY.Editor.add("xiami-music/support", function() {
             }
         }
     };
-    KE.Flash.registerBubble(TYPE_XIAMI, "虾米音乐： ", checkXiami);
+    KE.Flash.registerBubble(TYPE_XIAMI, "在新窗口查看", checkXiami);
     KE.XiamiMusic = XiamiMusic;
 
     KE.add({

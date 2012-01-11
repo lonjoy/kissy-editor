@@ -113,7 +113,7 @@ KISSY.Editor.add("xiami-music", function(editor) {
         var disableObjectResizing = editor.cfg['disableObjectResizing'];
         if (!disableObjectResizing) {
             Event.on(editor.document.body,
-                UA.ie ? 'resizestart' : 'resize',
+                UA['ie'] ? 'resizestart' : 'resize',
                     function(evt) {
                         var t = new S.Node(evt.target);
                         if (t.hasClass(CLS_XIAMI))
@@ -156,7 +156,7 @@ KISSY.Editor.add("xiami-music", function(editor) {
             }
         }
     };
-    KE.Flash.registerBubble(TYPE_XIAMI, "虾米音乐： ", checkXiami);
+    KE.Flash.registerBubble(TYPE_XIAMI, "在新窗口查看", checkXiami);
     KE.XiamiMusic = XiamiMusic;
 
     KE.add({
@@ -459,7 +459,7 @@ KISSY.Editor.add("video", function(editor) {
             && (!!node.hasClass(CLS_VIDEO)) && node;
     }
 
-    Flash.registerBubble("video", "视频链接： ", checkVideo);
+    Flash.registerBubble("video", "在新窗口查看", checkVideo);
     KE.Video = Video;
     var contextMenu = {
         "视频属性":function(cmd) {
