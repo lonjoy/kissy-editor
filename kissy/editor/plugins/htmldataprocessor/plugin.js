@@ -600,6 +600,7 @@ KISSY.Editor.add("htmldataprocessor", function (editor) {
                             savedAttributeName in attribs && ( delete attribs[ attributeNames[ i ] ] );
                         }
                     }
+
                     return element;
                 },
                 embed:function (element) {
@@ -621,12 +622,12 @@ KISSY.Editor.add("htmldataprocessor", function (editor) {
                 },
                 // Remove empty link but not empty anchor.(#3829)
                 a:function (element) {
-                    if (!element.children.length&& S.isEmptyObject(element.attributes)) {
+                    if (!element.children.length && S.isEmptyObject(element.attributes)) {
                         return false;
                     }
                 },
                 span:function (element) {
-                    if (!element.children.length&& S.isEmptyObject(element.attributes)) {
+                    if (!element.children.length && S.isEmptyObject(element.attributes)) {
                         return false;
                     }
                 }

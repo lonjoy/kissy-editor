@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Jan 5 12:13
+build time: Feb 25 23:15
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -92,7 +92,7 @@ build time: Jan 5 12:13
          */
         version:'1.20',
 
-        buildTime:'20120105121255',
+        buildTime:'20120225231543',
 
         /**
          * Returns a new object containing all of the properties of
@@ -8422,7 +8422,7 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
  *
  * @author yiminghe@gmail.com
  */
-KISSY.add('event/valuechange', function(S, Event, DOM) {
+KISSY.add('event/valuechange', function (S, Event, DOM) {
     var VALUE_CHANGE = "valuechange",
         nodeName = DOM._nodeName,
         KEY = "event/valuechange",
@@ -8446,8 +8446,8 @@ KISSY.add('event/valuechange', function(S, Event, DOM) {
 
     function startPoll(target) {
         if (DOM.hasData(target, POLL_KEY)) return;
-        DOM.data(target, POLL_KEY, setTimeout(function() {
-            var v = target.value,h = DOM.data(target, HISTORY_KEY);
+        DOM.data(target, POLL_KEY, setTimeout(function () {
+            var v = target.value, h = DOM.data(target, HISTORY_KEY);
             if (v !== h) {
                 // 只触发自己绑定的 handler
                 Event.fire(target, VALUE_CHANGE, {
@@ -8482,21 +8482,21 @@ KISSY.add('event/valuechange', function(S, Event, DOM) {
     }
 
     Event.special[VALUE_CHANGE] = {
-        setup: function() {
+        setup:function () {
             var target = this;
             if (nodeName(target, "input")
                 || nodeName(target, "textarea")) {
                 monitor(target);
             }
         },
-        tearDown: function() {
+        tearDown:function () {
             var target = this;
             unmonitored(target);
         }
     };
     return Event;
 }, {
-    requires:["./base","dom"]
+    requires:["./base", "dom"]
 });
 
 /**
