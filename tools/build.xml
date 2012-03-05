@@ -57,15 +57,6 @@ build file for kissy editor
     domiterator.js,
     selection.js,
     styles.js,
-    htmlparser/htmlparser.js,
-    htmlparser/basicwriter.js,
-    htmlparser/htmlwriter.js,
-    htmlparser/fragment.js,
-    htmlparser/element.js,
-    htmlparser/filter.js,
-    htmlparser/text.js,
-    htmlparser/cdata.js,
-    htmlparser/comment.js,
     ui/button/plugin.js,
     ui/select/plugin.js
     "/>
@@ -90,14 +81,11 @@ build file for kissy editor
         <!--
         引入kissy overlay 到 editor
         -->
-        <concat destfile="${src.dir}/plugins/overlay/plugin.js"
+        <concat destfile="${src.dir}/plugin/overlay/plugin.js"
                 encoding="${charset}"
-                outputencoding="${charset}"
-                >
-
-            <filelist dir="${src.dir}/plugins/overlay/support/editor/"
-                      files="focus_4e-ext.js,overlay.js"
-                    ></filelist>
+                outputencoding="${charset}">
+            <filelist dir="${src.dir}/plugin/overlay/support/editor/"
+                      files="focus_4e-ext.js,overlay.js"></filelist>
         </concat>
 
         <delete file='${build.parts.dir}/editor.js'/>
