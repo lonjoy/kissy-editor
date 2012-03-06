@@ -204,11 +204,25 @@
 <!--
 core
 -->
-<script src="../src/editor/core/src/??base.js,dom.js,domiterator.js,editor.js,meta.js,elementpath.js,focusmanager.js,range.js,selection.js,styles.js,utils.js,walker.js,zindexmanager.js"></script>
+<script src="../src/editor/core/src/base.js"></script>
+<script src="../src/editor/core/src/dom.js"></script>
+<script src="../src/editor/core/src/domiterator.js"></script>
+<script src="../src/editor/core/src/editor.js"></script>
+<script src="../src/editor/core/src/meta.js"></script>
+<script src="../src/editor/core/src/elementpath.js"></script>
+<script src="../src/editor/core/src/focusmanager.js"></script>
+<script src="../src/editor/core/src/range.js"></script>
+<script src="../src/editor/core/src/selection.js"></script>
+<script src="../src/editor/core/src/styles.js"></script>
+<script src="../src/editor/core/src/utils.js"></script>
+<script src="../src/editor/core/src/walker.js"></script>
+<script src="../src/editor/core/src/zindexmanager.js"></script>
 <!--
 core plugins
 -->
-<script src="../src/editor/core/src/??clipboard.js,enterkey.js,htmldataprocessor.js"></script>
+<script src="../src/editor/core/src/clipboard.js"></script>
+<script src="../src/editor/core/src/enterkey.js"></script>
+<script src="../src/editor/core/src/htmldataprocessor.js"></script>
 <!--
 other plugins
 -->
@@ -216,7 +230,7 @@ other plugins
 KISSY.ready(function (S) {
 
     S.config({
-        combine:true,
+        // combine:true,
         packages:[
             {
                 name:'editor',
@@ -504,16 +518,14 @@ KISSY.ready(function (S) {
         });
 
 
-        setTimeout(function () {
-            window.editor3 = KE("#editor2", S.clone(cfg))
-                    .use("sourcearea"
-                    // +",separator,undo,elementpaths"
-                    , function () {
-                        this.on("selectionChange", function (e) {
-                            S.log("selectionChange : " + e.path.toString());
-                        });
+        window.editor3 = KE("#editor2", S.clone(cfg))
+                .use("sourcearea,font"
+                // +",separator,undo,elementpaths"
+                , function () {
+                    this.on("selectionChange", function (e) {
+                        S.log("selectionChange : " + e.path.toString());
                     });
-        }, 1000);
+                });
 
 
     });

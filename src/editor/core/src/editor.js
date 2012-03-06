@@ -371,7 +371,6 @@ KISSY.add("editor", function (S) {
                 htmlDataProcessor,
                 body = self.document.body,
                 afterData = data;
-
             if (htmlDataProcessor = self.htmlDataProcessor) {
                 afterData = htmlDataProcessor.toDataFormat(data, "p");
             }

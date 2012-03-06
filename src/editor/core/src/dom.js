@@ -572,7 +572,7 @@ KISSY.add("editor/core/dom", function (S) {
             /**
              * @param el {(Node)}
              * @param name {string}
-             * @param includeSelf {boolean}
+             * @param [includeSelf] {boolean}
              */
             _4e_ascendant:function (el, name, includeSelf) {
 
@@ -912,7 +912,7 @@ KISSY.add("editor/core/dom", function (S) {
             /**
              * @param element {(Node)}
              * @param database {Object}
-             * @param removeFromDatabase {boolean}
+             * @param [removeFromDatabase] {boolean}
              */
             _4e_clearMarkers:function (element, database, removeFromDatabase) {
                 element = normalEl(element);

@@ -395,11 +395,10 @@ KISSY.add("editor/plugin/htmldataprocessor", function (S) {
                 }
 
                 function extendBlockForDisplay(block) {
-
                     trimFillers(block, true);
 
                     if (blockNeedsExtension(block)) {
-                        //任何浏览器都要加空格！，否则空表格可能间隙太小，不能容下光标
+                        // 任何浏览器都要加空格！否则空表格可能间隙太小，不能容下光标
                         if (UA['ie']) {
                             block.appendChild(new HtmlParser.Text('\xa0'));
                         } else {
@@ -407,7 +406,6 @@ KISSY.add("editor/plugin/htmldataprocessor", function (S) {
                             block.appendChild(new HtmlParser.Text('&nbsp;'));
                             block.appendChild(new HtmlParser.Tag('br'));
                         }
-
                     }
                 }
 
@@ -440,6 +438,7 @@ KISSY.add("editor/plugin/htmldataprocessor", function (S) {
                 delete blockLikeTags.pre;
                 var defaultDataBlockFilterRules = { tags:{} };
                 var defaultHtmlBlockFilterRules = { tags:{} };
+
                 for (i in blockLikeTags) {
                     if (blockLikeTags.hasOwnProperty(i)) {
                         defaultDataBlockFilterRules.tags[ i ] = extendBlockForDisplay;

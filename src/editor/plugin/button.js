@@ -2,7 +2,7 @@
  * triple state button for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/button", function (S,KE,UIBase) {
+KISSY.add("editor/plugin/button", function (S, KE, UIBase) {
     var ON = "on",
         OFF = "off",
         DISABLED = "disabled",
@@ -188,6 +188,8 @@ KISSY.add("editor/plugin/button", function (S,KE,UIBase) {
         }
         return context;
     };
-},{
-    requires:['editor','uibase']
+
+    return TripleButton;
+}, {
+    requires:['editor', 'uibase']
 });

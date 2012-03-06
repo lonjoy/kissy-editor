@@ -2,10 +2,9 @@
  * source editor for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/sourcearea", function (S) {
+KISSY.add("editor/plugin/sourcearea", function (S,KE) {
 
-    var KE = S.Editor,
-        UA = S.UA,
+    var UA = S.UA,
         SOURCE_MODE = KE.SOURCE_MODE ,
         WYSIWYG_MODE = KE.WYSIWYG_MODE;
 
@@ -127,5 +126,5 @@ KISSY.add("editor/plugin/sourcearea", function (S) {
         }
     };
 }, {
-    requires:['./button']
+    requires:['editor','./button']
 });

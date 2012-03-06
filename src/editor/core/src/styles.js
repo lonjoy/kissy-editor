@@ -44,7 +44,7 @@ KISSY.add("editor/core/styles", function (S) {
             "p":1,
             "pre":1
         },
-        DTD=KE.XHTML_DTD,
+        DTD = KE.XHTML_DTD,
         objectElements = {
             //why? a should be same to inline? 但是不能互相嵌套
             //a:1,
@@ -72,7 +72,7 @@ KISSY.add("editor/core/styles", function (S) {
     function notBookmark(node) {
         //only get attributes on element nodes by kissy
         //when textnode attr() return undefined ,wonderful !!!
-        return !node.attr("_ke_bookmark");
+        return !DOM.attr(node, "_ke_bookmark");
     }
 
     function replaceVariables(list, variablesValues) {
@@ -1377,6 +1377,6 @@ KISSY.add("editor/core/styles", function (S) {
     }
 
     KE.Style = KEStyle;
-},{
-    requires:['./range','./selection','./domiterator','./elementpath']
+}, {
+    requires:['./range', './selection', './domiterator', './elementpath']
 });

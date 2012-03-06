@@ -2,43 +2,43 @@
  * select component for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/core/select", function (S) {
+KISSY.add("editor/plugin/select", function (S, KE, Overlay) {
+
     var Node = S.Node,
         Event = S.Event,
         DOM = S.DOM,
-        KE = S.Editor,
-        TITLE = "title",
-        ke_select_active = "ke-select-active",
-        ke_menu_selected = "ke-menu-selected",
-        markup = "<span class='ke-select-wrap'>" +
+        SELECT_ACTIVE_CLASS = "ke-select-active",
+        MENU_SELECTED_CLASS = "ke-menu-selected",
+        SELECT_MARKUP = "<span class='ke-select-wrap'>" +
             "<a class='ke-select'>" +
-            "<span class='ke-select-text'><span class='ke-select-text-inner'></span></span>" +
+            "<span class='ke-select-text'>" +
+            "<span class='ke-select-text-inner'></span>" +
+            "</span>" +
             "<span class='ke-select-drop-wrap'>" +
             "<span class='ke-select-drop'></span>" +
             "</span>" +
-            "</a></span>",
-        menu_markup = "<div>";
+            "</a>" +
+            "</span>",
+        MENU_ITEM_TPL = "<a " +
+            "class='ke-select-menu-item' " +
+            "href='javascript:void(\"{tip}\")' " +
+            "data-value='{value}'>" +
+            "{name}" +
+            "</a>",
+        SELECT_MENU_MARKUP = "<div>",
+        SELECT_DISABLED_CLASS = "ke-select-disabled",
+        ENABLED = 1,
+        dtd = KE.XHTML_DTD,
+        DISABLED = 0;
 
-    if (KE.Select) {
-        S.log("ke select attach more");
-        return;
-    }
-    /**
-     * @constructor
-     * @param cfg
-     */
+    Select.DISABLED = DISABLED;
+    Select.ENABLED = ENABLED;
+
     function Select(cfg) {
         var self = this;
         Select['superclass'].constructor.call(self, cfg);
         self._init();
     }
-
-    var DISABLED_CLASS = "ke-select-disabled",
-        ENABLED = 1,
-        DISABLED = 0;
-    Select.DISABLED = DISABLED;
-    Select.ENABLED = ENABLED;
-    var dtd = KE.XHTML_DTD;
 
     Select.ATTRS = {
         //title标题栏显示值value还是name
@@ -55,7 +55,9 @@ KISSY.add("editor/core/select", function (S) {
         emptyText:{},
         //下拉框优先和select左左对齐，上下对齐
         //可以改作右右对齐，下上对齐
-        align:{value:["l", "b"]},
+        align:{
+            value:["l", "b"]
+        },
         menuContainer:{
             valueFn:function () {
                 //chrome 需要添加在能够真正包含div的地方
@@ -69,19 +71,21 @@ KISSY.add("editor/core/select", function (S) {
                 return new Node(document.body);
             }
         },
-        state:{value:ENABLED}
+        state:{
+            value:ENABLED
+        }
     };
+
     Select.decorate = function (el) {
         var width = el.width() ,
             items = [],
             options = el.all("option");
-        for (var i = 0; i < options.length; i++) {
-            var opt = options[i];
+        el.all("option").each(function (opt) {
             items.push({
-                name:DOM.html(opt),
-                value:DOM.attr(opt, "value")
+                name:opt.html(),
+                value:opt.val()
             });
-        }
+        });
         return new Select({
             width:width + "px",
             title:el.attr("title"),
@@ -90,9 +94,10 @@ KISSY.add("editor/core/select", function (S) {
             cls:"ke-combox",
             value:el.val()
         });
-
     };
-    var addRes = KE.Utils.addRes, destroyRes = KE.Utils.destroyRes;
+
+    var addRes = KE.Utils.addRes,
+        destroyRes = KE.Utils.destroyRes;
 
     function getTipText(str) {
         if (str && str.indexOf("<") == -1) {
@@ -106,9 +111,9 @@ KISSY.add("editor/core/select", function (S) {
             var self = this,
                 container = self.get("container"),
                 fakeEl = self.get("el"),
-                el = new Node(markup),
+                el = new Node(SELECT_MARKUP),
                 titleA = el.one("a"),
-                title = self.get(TITLE) || "",
+                title = self.get("title") || "",
                 cls = self.get("cls"),
                 text = el.one(".ke-select-text"),
                 innerText = el.one(".ke-select-text-inner"),
@@ -124,7 +129,7 @@ KISSY.add("editor/core/select", function (S) {
             //ie6,7 不失去焦点
             el.unselectable();
             if (title) {
-                el.attr(TITLE, title);
+                el.attr("title", title);
             }
             titleA.attr("href", "javascript:void('" + getTipText(title) + "')");
             if (cls) {
@@ -145,19 +150,18 @@ KISSY.add("editor/core/select", function (S) {
         },
         _findNameByV:function (v) {
             var self = this,
-                name = self.get(TITLE) || "",
+                name = self.get("title") || "",
                 items = self.get("items");
             //显示值，防止下拉描述过多
             if (self.get("showValue")) {
                 return v || name;
             }
-            for (var i = 0; i < items.length; i++) {
-                var item = items[i];
+            S.each(items, function (item) {
                 if (item.value == v) {
                     name = item.name;
-                    break;
+                    return false;
                 }
-            }
+            });
             return name;
         },
 
@@ -180,18 +184,22 @@ KISSY.add("editor/core/select", function (S) {
             _selectList.html("");
             if (items && items.length) {
                 for (var i = 0; i < items.length; i++) {
-                    var item = items[i], a = new Node("<a " +
-                        "class='ke-select-menu-item' " +
-                        "href='javascript:void(\"" + getTipText(item.name) + "\")' data-value='" + item.value + "'>"
-                        + item.name + "</a>", item.attrs)
+                    var item = items[i], a = new Node(
+                        S.substitute(MENU_ITEM_TPL, {
+                            tip:getTipText(item.name),
+                            value:item.value,
+                            name:item.name
+                        }), item.attrs)
                         .appendTo(_selectList)
                         .unselectable();
                 }
             } else if (empty = self.get("emptyText")) {
-                new Node("<a " +
-                    "class='ke-select-menu-item' " +
-                    "href='javascript:void(\"" + getTipText(empty) + "\")'>"
-                    + empty + "</a>")
+                new Node(
+                    S.substitute(MENU_ITEM_TPL, {
+                        tip:getTipText(empty),
+                        value:"",
+                        name:empty
+                    }))
                     .appendTo(_selectList)
                     .unselectable();
             }
@@ -202,8 +210,9 @@ KISSY.add("editor/core/select", function (S) {
             if (v !== undefined) {
                 self.set("value", v);
                 return self;
+            } else {
+                return self.get("value");
             }
-            else return self.get("value");
         },
         _resize:function () {
             var self = this,
@@ -219,17 +228,16 @@ KISSY.add("editor/core/select", function (S) {
                 focusA = self._focusA,
                 menuNode;
             //要在适当位置插入 !!!
-            var menu = new KE.Overlay({
+            var menu = new Overlay({
                 autoRender:true,
                 render:self.get("menuContainer"),
-                content:menu_markup,
-                focus4e:false,
+                content:SELECT_MENU_MARKUP,
                 elCls:"ke-menu",
                 width:popUpWidth ? popUpWidth : el.width(),
-                zIndex:KE.baseZIndex(KE.zIndexManager.SELECT),
-                focusMgr:false
-            }),
-                items = self.get("items");
+                elStyle:{
+                    zIndex:KE.baseZIndex(KE.zIndexManager.SELECT)
+                }
+            }), items = self.get("items");
             addRes.call(self, menu);
             menuNode = menu.get("contentEl").one("div");
             self.menu = menu;
@@ -240,55 +248,65 @@ KISSY.add("editor/core/select", function (S) {
                 Event.remove(window, "resize", self._resize, self);
             });
 
-            if (self.get(TITLE)) {
-                new Node("<div class='ke-menu-title ke-select-menu-item' " +
-                    "style='" +
-                    "margin-top:-6px;" +
-                    "' " +
+            if (self.get("title")) {
+                new Node("<div " +
+                    "class='ke-menu-title ke-select-menu-item' " +
+                    "style='margin-top:-6px;' " +
                     ">" + self.get("title") + "</div>").appendTo(menuNode);
             }
             self._selectList = new Node("<div>").appendTo(menuNode);
 
-            self._itemsChange({newVal:items});
-
+            self._itemsChange({
+                newVal:items
+            });
 
             menu.on("show", function () {
-                focusA.addClass(ke_select_active);
+                focusA.addClass(SELECT_ACTIVE_CLASS);
             });
+
             menu.on("hide", function () {
-                focusA.removeClass(ke_select_active);
+                focusA.removeClass(SELECT_ACTIVE_CLASS);
             });
+
             function deactivate(ev) {
                 //ev && ev.halt();
                 var t = new Node(ev.target);
-                if (el.contains(t) || el.equals(t)) return;
+                if (el.contains(t) || el.equals(t)) {
+                    return;
+                }
                 menu.hide();
             }
 
             Event.on(document, "click", deactivate);
+
             addRes.call(self, function () {
                 Event.remove(document, "click", deactivate);
             });
+
             if (self.get("doc"))
                 Event.on(self.get("doc"), "click", deactivate);
 
             menuNode.on("click", self._select, self);
+
             self.as = self._selectList.all("a");
 
-            //mouseenter kissy core bug
             Event.on(menuNode[0], 'mouseenter', function () {
-                self.as.removeClass(ke_menu_selected);
+                self.as.removeClass(MENU_SELECTED_CLASS);
             });
+
             addRes.call(self, menuNode);
+
             self.on("afterItemsChange", self._itemsChange, self);
+
             self.menuNode = menuNode;
         },
         _stateChange:function (ev) {
-            var v = ev.newVal, el = this.el;
+            var v = ev.newVal,
+                el = this.el;
             if (v == ENABLED) {
-                el.removeClass(DISABLED_CLASS);
+                el.removeClass(SELECT_DISABLED_CLASS);
             } else {
-                el.addClass(DISABLED_CLASS);
+                el.addClass(SELECT_DISABLED_CLASS);
             }
         },
         enable:function () {
@@ -298,7 +316,7 @@ KISSY.add("editor/core/select", function (S) {
             this.set("state", DISABLED);
         },
         _select:function (ev) {
-            ev && ev.halt();
+            ev.halt();
             var self = this,
                 menu = self.menu,
                 menuNode = self.menuNode,
@@ -307,10 +325,13 @@ KISSY.add("editor/core/select", function (S) {
                     return menuNode.contains(n) && n._4e_name() == "a";
                 }, true);
 
-            if (!a || !a.hasAttr("data-value")) return;
+            if (!a || !a.attr("data-value")) {
+                return;
+            }
 
             var preVal = self.get("value"),
                 newVal = a.attr("data-value");
+
             //更新逻辑值
             self.set("value", newVal);
 
@@ -346,19 +367,15 @@ KISSY.add("editor/core/select", function (S) {
                 xAlign = align[0],
                 yAlign = align[1];
 
-
             if (yAlign == "b") {
                 //向下弹出优先
                 xy.top = sb;
                 if (
-                    (
-                        //不能显示完全
-                        (xy.top + menuHeight) > wb
-                        )
+                //不能显示完全
+                    (xy.top + menuHeight) > wb
                         &&
-                        (   //向上弹能显示更多
-                            (orixy.top - wt) > (wb - sb)
-                            )
+                        //向上弹能显示更多
+                        (orixy.top - wt) > (wb - sb)
                     ) {
                     xy.top = orixy.top - menuHeight;
                 }
@@ -381,13 +398,11 @@ KISSY.add("editor/core/select", function (S) {
                 //左对其优先
                 if (
                 //左对齐不行
-                    (xy.left + menuWidth > wr)
+                    (xy.left + menuWidth) > wr
                         &&
                         //右对齐可以弹出更多
-                        (
-                            (sr - wl) > (wr - orixy.left)
-                            )
 
+                        (sr - wl) > (wr - orixy.left)
                     ) {
                     xy.left = sr - menuWidth;
                 }
@@ -408,50 +423,44 @@ KISSY.add("editor/core/select", function (S) {
             self.menu.show();
         },
         _click:function (ev) {
-            if (this.loading) return;
-            ev && ev.preventDefault();
+            ev.preventDefault();
 
             var self = this,
                 el = self.el,
                 v = self.get("value");
 
-            if (el.hasClass(DISABLED_CLASS)) {
+            if (el.hasClass(SELECT_DISABLED_CLASS)) {
                 return;
             }
 
-            if (self._focusA.hasClass(ke_select_active)) {
+            if (self._focusA.hasClass(SELECT_ACTIVE_CLASS)) {
                 self.menu && self.menu.hide();
                 return;
             }
 
-            self.loading = true;
-            KE.use("overlay", function () {
-                self.loading = false;
-                self.fire("select");
-                self._prepare();
+            self.fire("select");
 
-                //可能的话当显示层时，高亮当前值对应option
-                if (v && self.menu) {
-                    var as = self.as;
-                    as.each(function (a) {
-                        if (a.attr("data-value") == v) {
-                            a.addClass(ke_menu_selected);
-                        } else {
-                            a.removeClass(ke_menu_selected);
-                        }
-                    });
-                }
-            });
+            self._prepare();
+
+            //可能的话当显示层时，高亮当前值对应option
+            if (v && self.menu) {
+                var as = self.as;
+                as.each(function (a) {
+                    if (a.attr("data-value") == v) {
+                        a.addClass(MENU_SELECTED_CLASS);
+                    } else {
+                        a.removeClass(MENU_SELECTED_CLASS);
+                    }
+                });
+            }
         },
         destroy:function () {
             destroyRes.call(this);
-            this.el.detach();
             this.el.remove();
         }
     });
 
     KE.Select = Select;
-
 
     /**
      * 将button ui 和点击功能分离
@@ -517,4 +526,8 @@ KISSY.add("editor/core/select", function (S) {
         }
         return context;
     };
+
+    return Select;
+}, {
+    requires:['editor', 'overlay']
 });

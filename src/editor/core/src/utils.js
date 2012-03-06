@@ -117,7 +117,7 @@ KISSY.add("editor/core/utils", function (S) {
              * @param doc {Document}
              * @param address {Array.<number>}
              * @param normalized {boolean}
-             * @return {KISSY.Node}
+             * @return {Node}
              */
             getByAddress:function (doc, address, normalized) {
                 var $ = doc.documentElement;
@@ -157,16 +157,11 @@ KISSY.add("editor/core/utils", function (S) {
              * @param database {Object}
              */
             clearAllMarkers:function (database) {
-                for (var i in database)
-                    database[i]._4e_clearMarkers(database, TRUE);
-            },
-            /**
-             *
-             * @param text {string}
-             * @return {string}
-             */
-            htmlEncodeAttr:function (text) {
-                return text.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/, '&gt;');
+                for (var i in database) {
+                    if (database.hasOwnProperty(i)) {
+                        database[i]._4e_clearMarkers(database, TRUE);
+                    }
+                }
             },
             /**
              *
@@ -535,12 +530,10 @@ KISSY.add("editor/core/utils", function (S) {
                     if (S.isFunction(r)) {
                         r();
                     } else {
-                        if (r.detach)
-                            r.detach();
                         if (r.destroy) {
                             r.destroy();
                         }
-                        if (r.nodeType && r.remove) {
+                        if (r.remove) {
                             r.remove();
                         }
                     }

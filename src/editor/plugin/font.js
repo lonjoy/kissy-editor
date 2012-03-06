@@ -2,7 +2,7 @@
  * font formatting for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/font", function (S) {
+KISSY.add("editor/plugin/font", function (S, KE, TripleButton) {
 
 
     return {
@@ -10,132 +10,166 @@ KISSY.add("editor/plugin/font", function (S) {
 
             function wrapFont(vs) {
                 var v = [];
-                for (var i = 0;
-                     i < vs.length;
-                     i++) {
+                S.each(vs, function (n) {
                     v.push({
-                        name:vs[i],
-                        value:vs[i]
+                        name:n,
+                        value:n
                     });
-                }
+                });
                 return v;
             }
 
-            var KE = S.Editor,
-                KEStyle = KE.Style,
-                TripleButton = KE.TripleButton,
-                pluginConfig = editor.cfg.pluginConfig;
-
-            var FONT_SIZES = pluginConfig["font-size"],
-                item,
-                name,
-                attrs,
+            var KEStyle = KE.Style,
+                pluginConfig = editor.cfg.pluginConfig,
+                fontSizes = pluginConfig["font-size"],
                 controls = [];
 
-            if (FONT_SIZES !== false) {
+            if (fontSizes !== false) {
 
-                FONT_SIZES = FONT_SIZES || {};
+                fontSizes = fontSizes || {};
 
-                S.mix(FONT_SIZES, {
-                    items:wrapFont(["8px", "10px", "12px",
+                S.mix(fontSizes, {
+                    items:wrapFont([
+                        "8px", "10px", "12px",
                         "14px", "18px", "24px",
-                        "36px", "48px", "60px", "72px", "84px", "96px"]),
+                        "36px", "48px", "60px",
+                        "72px", "84px", "96px"
+                    ]),
                     width:"55px"
                 }, false);
 
-                var FONT_SIZE_STYLES = {},
-                    FONT_SIZE_ITEMS = [],
+                var fontSizeStyles = {},
+                    fontSizeItems = [],
                     fontSize_style = {
                         element:'span',
-                        styles:{ 'font-size':'#(size)' },
+                        styles:{
+                            'font-size':'#(size)'
+                        },
                         overrides:[
-                            { element:'font', attributes:{ 'size':null } }
+                            {
+                                element:'font',
+                                attributes:{
+                                    'size':null
+                                }
+                            }
                         ]
                     };
 
-                for (i = 0; i < FONT_SIZES.items.length; i++) {
-                    item = FONT_SIZES.items[i];
-                    name = item.name;
-                    attrs = item.attrs;
-                    var size = item.value;
+                S.each(fontSizes.items, function (item) {
+                    var name = item.name,
+                        attrs = item.attrs,
+                        size = item.value;
 
-                    FONT_SIZE_STYLES[size] = new KEStyle(fontSize_style, {
+                    fontSizeStyles[size] = new KEStyle(fontSize_style, {
                         size:size
                     });
 
-                    FONT_SIZE_ITEMS.push({
+                    fontSizeItems.push({
                         name:name,
                         value:size,
                         attrs:attrs
                     });
-                }
+                });
 
-                pluginConfig["font-size"] = FONT_SIZES;
+                pluginConfig["font-size"] = fontSizes;
             }
 
+            var fontFamilies = pluginConfig["font-family"];
 
-            /*
-             FONT_SIZE_STYLES["inherit"] = new KEStyle(fontSize_style, {
-             size:"inherit"
-             });
-             */
+            if (fontFamilies !== false) {
 
-            var FONT_FAMILIES = pluginConfig["font-family"];
+                fontFamilies = fontFamilies || {};
 
-            if (FONT_FAMILIES !== false) {
-
-                FONT_FAMILIES = FONT_FAMILIES || {};
-
-                S.mix(FONT_FAMILIES, {
+                S.mix(fontFamilies, {
                     items:[
                         //ie 不认识中文？？？
-                        {name:"宋体", value:"SimSun"},
-                        {name:"黑体", value:"SimHei"},
-                        {name:"隶书", value:"LiSu"},
-                        {name:"楷体", value:"KaiTi_GB2312"},
-                        {name:"微软雅黑", value:"Microsoft YaHei"},
-                        {name:"Georgia", value:"Georgia"},
-                        {name:"Times New Roman", value:"Times New Roman"},
-                        {name:"Impact", value:"Impact"},
-                        {name:"Courier New", value:"Courier New"},
-                        {name:"Arial", value:"Arial"},
-                        {name:"Verdana", value:"Verdana"},
-                        {name:"Tahoma", value:"Tahoma"}
+                        {
+                            name:"宋体",
+                            value:"SimSun"
+                        },
+                        {
+                            name:"黑体",
+                            value:"SimHei"
+                        },
+                        {
+                            name:"隶书",
+                            value:"LiSu"
+                        },
+                        {
+                            name:"楷体",
+                            value:"KaiTi_GB2312"
+                        },
+                        {
+                            name:"微软雅黑",
+                            value:"Microsoft YaHei"
+                        },
+                        {
+                            name:"Georgia",
+                            value:"Georgia"
+                        },
+                        {
+                            name:"Times New Roman",
+                            value:"Times New Roman"
+                        },
+                        {
+                            name:"Impact",
+                            value:"Impact"
+                        },
+                        {
+                            name:"Courier New",
+                            value:"Courier New"
+                        },
+                        {
+                            name:"Arial",
+                            value:"Arial"
+                        },
+                        {
+                            name:"Verdana",
+                            value:"Verdana"
+                        },
+                        {
+                            name:"Tahoma",
+                            value:"Tahoma"
+                        }
                     ],
                     width:"130px"
                 }, false);
 
 
-                var FONT_FAMILY_STYLES = {},
-                    FONT_FAMILY_ITEMS = [],
-                    fontFamily_style = {
+                var fontFamilyStyles = {},
+                    fontFamilyItems = [],
+                    fontFamilyStyle = {
                         element:'span',
-                        styles:{ 'font-family':'#(family)' },
+                        styles:{
+                            'font-family':'#(family)'
+                        },
                         overrides:[
-                            { element:'font', attributes:{ 'face':null } }
+                            {
+                                element:'font',
+                                attributes:{
+                                    'face':null
+                                }
+                            }
                         ]
                     }, i;
 
+                pluginConfig["font-family"] = fontFamilies;
 
-                pluginConfig["font-family"] = FONT_FAMILIES;
-
-
-                for (i = 0; i < FONT_FAMILIES.items.length; i++) {
-                    item = FONT_FAMILIES.items[i];
-                    name = item.name;
-                    attrs = item.attrs || {};
-                    var value = item.value;
+                S.each(fontFamilies.items, function (item) {
+                    var name = item.name,
+                        attrs = item.attrs || {},
+                        value = item.value;
                     attrs.style = attrs.style || "";
                     attrs.style += ";font-family:" + value;
-                    FONT_FAMILY_STYLES[value] = new KEStyle(fontFamily_style, {
+                    fontFamilyStyles[value] = new KEStyle(fontFamilyStyle, {
                         family:value
                     });
-                    FONT_FAMILY_ITEMS.push({
+                    fontFamilyItems.push({
                         name:name,
                         value:value,
                         attrs:attrs
                     });
-                }
+                });
             }
 
             var selectTpl = {
@@ -143,6 +177,7 @@ KISSY.add("editor/plugin/font", function (S) {
                     var self = this,
                         v = ev.newVal,
                         pre = ev.prevVal,
+                        editor = self.editor,
                         styles = self.cfg.styles;
                     editor.focus();
                     editor.fire("save");
@@ -161,6 +196,7 @@ KISSY.add("editor/plugin/font", function (S) {
                     var self = this,
                         elementPath = ev.path,
                         elements = elementPath.elements,
+                        btn = self.btn,
                         styles = self.cfg.styles;
 
                     // For each element into the elements path.
@@ -172,7 +208,7 @@ KISSY.add("editor/plugin/font", function (S) {
                             if (styles.hasOwnProperty(value)) {
                                 if (styles[ value ].checkElementRemovable(element, true)) {
                                     //S.log(value);
-                                    self.btn.set("value", value);
+                                    btn.set("value", value);
                                     return;
                                 }
                             }
@@ -181,9 +217,9 @@ KISSY.add("editor/plugin/font", function (S) {
 
                     var defaultValue = self.cfg.defaultValue;
                     if (defaultValue) {
-                        self.btn.set("value", defaultValue);
+                        btn.set("value", defaultValue);
                     } else {
-                        self.btn.reset("value");
+                        btn.reset("value");
                     }
                 }
             };
@@ -195,10 +231,10 @@ KISSY.add("editor/plugin/font", function (S) {
                     width:"30px",
                     mode:KE.WYSIWYG_MODE,
                     showValue:true,
-                    defaultValue:FONT_SIZES.defaultValue,
-                    popUpWidth:FONT_SIZES.width,
-                    items:FONT_SIZE_ITEMS,
-                    styles:FONT_SIZE_STYLES
+                    defaultValue:fontSizes.defaultValue,
+                    popUpWidth:fontSizes.width,
+                    items:fontSizeItems,
+                    styles:fontSizeStyles
                 }, selectTpl)));
             }
 
@@ -207,10 +243,10 @@ KISSY.add("editor/plugin/font", function (S) {
                     title:"字体",
                     width:"110px",
                     mode:KE.WYSIWYG_MODE,
-                    defaultValue:FONT_FAMILIES.defaultValue,
-                    popUpWidth:FONT_FAMILIES.width,
-                    items:FONT_FAMILY_ITEMS,
-                    styles:FONT_FAMILY_STYLES
+                    defaultValue:fontFamilies.defaultValue,
+                    popUpWidth:fontFamilies.width,
+                    items:fontFamilyItems,
+                    styles:fontFamilyStyles
                 }, selectTpl)));
             }
 
@@ -257,9 +293,15 @@ KISSY.add("editor/plugin/font", function (S) {
                     style:new KEStyle({
                         element:'strong',
                         overrides:[
-                            { element:'b' },
-                            {element:'span',
-                                attributes:{ style:'font-weight: bold;' }}
+                            {
+                                element:'b'
+                            },
+                            {
+                                element:'span',
+                                attributes:{
+                                    style:'font-weight: bold;'
+                                }
+                            }
                         ]
                     })
                 }, singleFontTpl)));
@@ -272,9 +314,15 @@ KISSY.add("editor/plugin/font", function (S) {
                     style:new KEStyle({
                         element:'em',
                         overrides:[
-                            { element:'i' },
-                            {element:'span',
-                                attributes:{ style:'font-style: italic;' }}
+                            {
+                                element:'i'
+                            },
+                            {
+                                element:'span',
+                                attributes:{
+                                    style:'font-style: italic;'
+                                }
+                            }
                         ]
                     })
                 }, singleFontTpl)));
@@ -287,8 +335,12 @@ KISSY.add("editor/plugin/font", function (S) {
                     style:new KEStyle({
                         element:'u',
                         overrides:[
-                            {element:'span',
-                                attributes:{ style:'text-decoration: underline;' }}
+                            {
+                                element:'span',
+                                attributes:{
+                                    style:'text-decoration: underline;'
+                                }
+                            }
                         ]
                     })
                 }, singleFontTpl)));
@@ -298,10 +350,18 @@ KISSY.add("editor/plugin/font", function (S) {
                 var strikeStyle = (pluginConfig["font-strikeThrough"] || {})["style"] || {
                     element:'del',
                     overrides:[
-                        {element:'span',
-                            attributes:{ style:'text-decoration: line-through;' }},
-                        { element:'s' },
-                        { element:'strike' }
+                        {
+                            element:'span',
+                            attributes:{
+                                style:'text-decoration: line-through;'
+                            }
+                        },
+                        {
+                            element:'s'
+                        },
+                        {
+                            element:'strike'
+                        }
                     ]
                 };
                 controls.push(editor.addButton("font-underline", S.mix({
@@ -312,10 +372,11 @@ KISSY.add("editor/plugin/font", function (S) {
             }
 
             editor.addDestructor(function () {
-                for (var i = 0; i < controls.length; i++) {
-                    var c = controls[i];
+                S.each(controls, function (c) {
                     c.destroy();
-                }
+                });
             });
         }};
+}, {
+    requires:['editor', './button', './select']
 });
