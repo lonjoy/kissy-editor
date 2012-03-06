@@ -575,8 +575,8 @@ KISSY.add("editor/plugin/htmldataprocessor", function (S) {
                 /*
                  最精简html传送到server
                  */
-                toServer:function (html, fixForBody) {
-                    var writer = new HtmlParser.BeautifyWriter(),
+                toServer:function (html) {
+                    var writer = new HtmlParser.MinifyWriter(),
                         n = new HtmlParser.Parser(html).parse();
                     n.writeHtml(writer, htmlFilter);
                     return writer.getHtml();
