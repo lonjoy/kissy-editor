@@ -12,19 +12,7 @@
 <body>
 
 <h1>KISSY Editor Demo</h1>
-
-<p>
-    <label>选择主题：
-        <select id="themes">
-            <option value="google">
-                google
-            </option>
-            <option value="cool">
-                清爽
-            </option>
-        </select></label>
-
-</p>
+<!--
 <label>
     执行代码：
     <textarea id='code1' style="width: 60%; height:200px;margin: 0 auto"></textarea>
@@ -195,6 +183,7 @@
     <input type="button" value="submit2"/>
     <input type="submit" value="submit"/>
 </form>
+-->
 <a href="http://www.g.cn"> leave </a>
 <div style="width: 60%; margin: 50px auto;position:relative;overflow:hidden;">
     <label for="editor2">Editor Instance 2:</label>
@@ -502,20 +491,20 @@ KISSY.ready(function (S) {
 
         if (0) {
             test();
+            S.one('#destroy1').on("click", function (ev) {
+                ev.halt();
+                editor2.destroy();
+                editor2 = null;
+            });
+
+            S.one('#recover1').on("click", function (ev) {
+                ev.halt();
+                if (!editor2) {
+                    test()
+                }
+
+            });
         }
-        S.one('#destroy1').on("click", function (ev) {
-            ev.halt();
-            editor2.destroy();
-            editor2 = null;
-        });
-
-        S.one('#recover1').on("click", function (ev) {
-            ev.halt();
-            if (!editor2) {
-                test()
-            }
-
-        });
 
         window.editor3 = KE("#editor2", S.clone(cfg))
                 .use("sourcearea,font-bold,font-italic,font-family,font-size," +
