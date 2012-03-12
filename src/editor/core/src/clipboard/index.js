@@ -2,7 +2,7 @@
  * monitor user's paste key ,clear user input,modified from ckeditor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/clipboard", function (S) {
+KISSY.add("editor/plugin/clipboard/index", function (S) {
     var KE = S.Editor,
         Node = S.Node,
         UA = S.UA,
@@ -180,20 +180,20 @@ KISSY.add("editor/plugin/clipboard", function (S) {
     };
 
     // Attempts to execute the Cut and Copy operations.
-    var tryToCutCopy =UA['ie'] ?
-            function (editor, type) {
-                return execIECommand(editor, type);
+    var tryToCutCopy = UA['ie'] ?
+        function (editor, type) {
+            return execIECommand(editor, type);
+        }
+        : // !IE.
+        function (editor, type) {
+            try {
+                // Other browsers throw an error if the command is disabled.
+                return editor.document.execCommand(type);
             }
-            : // !IE.
-            function (editor, type) {
-                try {
-                    // Other browsers throw an error if the command is disabled.
-                    return editor.document.execCommand(type);
-                }
-                catch (e) {
-                    return false;
-                }
-            };
+            catch (e) {
+                return false;
+            }
+        };
 
     var error_types = {
         "cut":"您的浏览器安全设置不允许编辑器自动执行剪切操作，请使用键盘快捷键(Ctrl/Cmd+X)来完成",
@@ -206,7 +206,7 @@ KISSY.add("editor/plugin/clipboard", function (S) {
         this.type = type;
     };
 
-    cutCopyCmd.prototype =    {
+    cutCopyCmd.prototype = {
         exec:function (editor) {
             this.type == 'cut' && fixCut(editor);
 
@@ -221,7 +221,7 @@ KISSY.add("editor/plugin/clipboard", function (S) {
     var KES = KE.Selection;
     // Cutting off control type element in IE standards breaks the selection entirely. (#4881)
     function fixCut(editor) {
-        if (!UA['ie'] ||            editor.document.compatMode == 'BackCompat')
+        if (!UA['ie'] || editor.document.compatMode == 'BackCompat')
             return;
 
         var sel = editor.getSelection();
@@ -258,17 +258,16 @@ KISSY.add("editor/plugin/clipboard", function (S) {
      */
     KE.on("contextmenu", function (ev) {
         var contextmenu = ev.contextmenu,
-            editor = contextmenu.cfg["editor"],
+            editor = contextmenu.get("editor"),
             // 原始内容
-            el = contextmenu.elDom,
+            el = contextmenu.menu.get("contentEl"),
             pastes = {"copy":0, "cut":0, "paste":0};
         for (var i in pastes) {
             if (pastes.hasOwnProperty(i)) {
                 pastes[i] = el.one(".ke-paste-" + i);
-                (function (cmd) {
-                    var cmdObj = pastes[cmd];
-                    if (!cmdObj) {
-                        cmdObj = new Node("<a href='#'" +
+                if (!pastes[i]) {
+                    (function (cmd) {
+                        var cmdObj = new Node("<a href='#'" +
                             "class='ke-paste-" + cmd + "'>"
                             + lang[cmd]
                             + "</a>").appendTo(el);
@@ -282,8 +281,8 @@ KISSY.add("editor/plugin/clipboard", function (S) {
                             }, 30);
                         });
                         pastes[cmd] = cmdObj;
-                    }
-                })(i);
+                    })(i);
+                }
             }
         }
     });

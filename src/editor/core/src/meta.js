@@ -1,11 +1,17 @@
 KISSY.add("editor/core/meta", function () {
 
     KISSY.add({
-        "editor/plugin/button":{
+        "editor/plugin/button/index":{
             requires:['uibase']
         },
-        "editor/plugin/sourcearea":{
-            requires:['./button']
+        "editor/plugin/sourcearea/index":{
+            requires:['../button/']
+        },
+        "editor/plugin/font/index":{
+            requires:['../button/', '../select/']
+        },
+        "editor/plugin/checkbox-sourcearea/index":{
+            requires:['../sourcearea/']
         }
     });
 

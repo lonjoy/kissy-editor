@@ -2,13 +2,13 @@
  * source editor for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/sourcearea", function (S,KE) {
+KISSY.add("editor/plugin/sourcearea/command", function (S, KE) {
 
     var UA = S.UA,
         SOURCE_MODE = KE.SOURCE_MODE ,
         WYSIWYG_MODE = KE.WYSIWYG_MODE;
 
-    function SourceAreaSupport() {
+    function SourceAreaCommand() {
         var self = this;
         self.mapper = {};
         var m = self.mapper;
@@ -16,7 +16,7 @@ KISSY.add("editor/plugin/sourcearea", function (S,KE) {
         m[WYSIWYG_MODE] = self._hide;
     }
 
-    S.augment(SourceAreaSupport, {
+    S.augment(SourceAreaCommand, {
         exec:function (editor, mode) {
             var m = this.mapper;
             m[mode] && m[mode].call(this, editor);
@@ -94,37 +94,16 @@ KISSY.add("editor/plugin/sourcearea", function (S,KE) {
         });
     }
 
-    var cmdObj = new SourceAreaSupport();
+    var cmdObj = new SourceAreaCommand();
     return {
         init:function (editor) {
-            var context = editor.addButton("sourcearea", {
-                title:"源码",
-                contentCls:"ke-toolbar-source",
-                init:function () {
-                    var self = this,
-                        btn = self.btn,
-                        editor = self.editor;
-                    editor.on("wysiwygmode", btn.boff, btn);
-                    editor.on("sourcemode", btn.bon, btn);
-                },
-                offClick:function () {
-                    var self = this,
-                        editor = self.editor;
-                    editor.execCommand("sourceAreaSupport", SOURCE_MODE);
-                },
-                onClick:function () {
-                    var self = this,
-                        editor = self.editor;
-                    editor.execCommand("sourceAreaSupport", WYSIWYG_MODE);
-                }
-            });
-            editor.addCommand("sourceAreaSupport", cmdObj);
-            editor.addDestructor(function () {
-                context.destroy();
-            });
+            if (editor.hasCommand("sourceArea")) {
+                return;
+            }
+            editor.addCommand("sourceArea", cmdObj);
             initWrap(editor);
         }
     };
 }, {
-    requires:['editor','./button']
+    requires:['editor']
 });

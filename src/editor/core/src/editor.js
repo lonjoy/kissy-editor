@@ -165,8 +165,7 @@ KISSY.add("editor", function (S) {
                 editorWrap;
 
             self.__commands = {};
-            self.__destructors = [];
-
+            self.__dialogs = {};
             if (IS_IE) {
                 DOM.addClass(DOC.body, "ke-ie" + IS_IE);
             }
@@ -235,10 +234,6 @@ KISSY.add("editor", function (S) {
             }
         },
 
-        addDestructor:function (fn) {
-            this.__destructors.push(fn);
-        },
-
         destroy:function () {
             var self = this,
                 editorWrap = self.editorWrap,
@@ -248,10 +243,7 @@ KISSY.add("editor", function (S) {
             self.sync();
             KE.focusManager.remove(self);
             Event.remove([doc, doc.documentElement, doc.body, win, self.iframe[0]]);
-
-            S.each(self.__destructors, function (d) {
-                d.call(self);
-            });
+            self.fire("destroy");
             textarea.insertBefore(editorWrap);
             editorWrap.remove();
             textarea.css({
@@ -259,8 +251,6 @@ KISSY.add("editor", function (S) {
                 height:self.wrap.css("height")
             });
             textarea.show();
-            self.__destructors = [];
-            self.fire("destroy");
             self.detach();
             //其他可能处理
         },
@@ -276,19 +266,21 @@ KISSY.add("editor", function (S) {
                 form.detach("submit", self.sync, self);
             });
         },
-
-        showDialog:function (name, args, fn) {
-            var self = this;
-            args = args || [];
-            self.use(name, function (S, dialog) {
-                dialog.show.apply(dialog, args);
-                fn && fn(dialog);
-                self.fire("dialogShow", {
-                    dialog:dialog.dialog,
-                    pluginDialog:dialog,
-                    dialogName:name
-                });
+        addDialog:function (name, d) {
+            this.__dialogs[name] = d;
+        },
+        showDialog:function (name, args) {
+            var self = this,
+                d = self.__dialogs[name];
+            self.__dialogs[name].show(args);
+            self.fire("dialogShow", {
+                dialog:d.dialog,
+                pluginDialog:d,
+                dialogName:name
             });
+        },
+        hasDialog:function (name) {
+            return !!this.__dialogs[name];
         },
         /**
          *
@@ -411,7 +403,7 @@ KISSY.add("editor", function (S) {
 
         _prepareIFrameHtml:function (id) {
             var cfg = this.cfg;
-            return prepareIFrameHtml(id, cfg.customStyle, cfg.customLink);
+            return prepareIFrameHtml(id, cfg['customStyle'], cfg['customLink']);
         },
 
         getSelection:function () {
@@ -457,7 +449,7 @@ KISSY.add("editor", function (S) {
         addCustomLink:function (link) {
             var self = this,
                 cfg = self.cfg,
-                customLink = cfg.customLink,
+                customLink = cfg['customLink'],
                 doc = self.document;
             customLink.push(link);
             var elem = doc.createElement("link");
@@ -476,7 +468,7 @@ KISSY.add("editor", function (S) {
                     DOM.remove(links[i]);
                 }
             }
-            var cls = cfg.customLink || [],
+            var cls = cfg['customLink'] || [],
                 ind = S.indexOf(link, cls);
             if (ind != -1) {
                 cls.splice(ind, 1);

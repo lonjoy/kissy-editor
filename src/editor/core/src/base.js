@@ -4,6 +4,7 @@
  */
 KISSY.add("editor/core/base", function (S, HtmlParser) {
     var PREFIX = "editor/plugin/",
+        SUFFIX = "/",
         BASIC = ["htmldataprocessor", "enterkey", "clipboard"];
 
     /**
@@ -47,7 +48,7 @@ KISSY.add("editor/core/base", function (S, HtmlParser) {
 
             S.each(mods, function (m, i) {
                 if (mods[i]) {
-                    mods[i] = PREFIX + m;
+                    mods[i] = PREFIX + m + SUFFIX;
                 }
             });
 

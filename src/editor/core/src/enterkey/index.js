@@ -2,7 +2,7 @@
  * monitor user's enter and shift enter keydown,modified from ckeditor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/enterkey", function (S) {
+KISSY.add("editor/plugin/enterkey/index", function (S) {
     var KE = S.Editor,
         UA = S.UA,
         headerTagRegex = /^h[1-6]$/,

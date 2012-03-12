@@ -2,7 +2,7 @@
  * triple state button for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/button", function (S, KE, UIBase) {
+KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
     var ON = "on",
         OFF = "off",
         DISABLED = "disabled",
@@ -53,9 +53,8 @@ KISSY.add("editor/plugin/button", function (S, KE, UIBase) {
             var self = this,
                 el = self.get("el");
             if (contentCls !== undefined) {
-                el.html("<span class='ke-toolbar-item " + contentCls + "' />");
-                //ie 失去焦点
-                el.unselectable();
+                el.html("<span class='ke-toolbar-item " + contentCls + "' />")
+                    .unselectable();
             }
         },
         _uiSetText:function (text) {
@@ -74,8 +73,9 @@ KISSY.add("editor/plugin/button", function (S, KE, UIBase) {
         },
         enable:function () {
             var self = this;
-            if (self.get("state") == DISABLED)
+            if (self.get("state") == DISABLED) {
                 self.set("state", self._savedState);
+            }
         },
         _action:function (ev) {
             var self = this;
@@ -85,7 +85,7 @@ KISSY.add("editor/plugin/button", function (S, KE, UIBase) {
             self.fire("click", {
                 TripleClickType:self.get("state") + "Click"
             });
-            ev && ev.preventDefault();
+            ev.preventDefault();
         },
         bon:function () {
             this.set("state", ON);
@@ -95,18 +95,18 @@ KISSY.add("editor/plugin/button", function (S, KE, UIBase) {
         },
         _on:function () {
             var el = this.get("el");
-            el.removeClass(OFF_CLASS + " " + DISABLED_CLASS);
-            el.addClass(ON_CLASS);
+            el.removeClass(OFF_CLASS + " " + DISABLED_CLASS)
+                .addClass(ON_CLASS);
         },
         _off:function () {
             var el = this.get("el");
-            el.removeClass(ON_CLASS + " " + DISABLED_CLASS);
-            el.addClass(OFF_CLASS);
+            el.removeClass(ON_CLASS + " " + DISABLED_CLASS)
+                .addClass(OFF_CLASS);
         },
         _disabled:function () {
             var el = this.get("el");
-            el.removeClass(OFF_CLASS + " " + ON_CLASS);
-            el.addClass(DISABLED_CLASS);
+            el.removeClass(OFF_CLASS + " " + ON_CLASS)
+                .addClass(DISABLED_CLASS);
         }
     }, {
         ATTRS:{
@@ -129,64 +129,47 @@ KISSY.add("editor/plugin/button", function (S, KE, UIBase) {
 
     KE.TripleButton = TripleButton;
     /**
-     * 将button ui 和点击功能分离
-     * 按钮必须立刻显示出来，功能可以慢慢加载
+     * 将 button ui 和点击功能分离
      */
-    KE.prototype.addButton = function (name, btnCfg) {
+    KE.prototype.addButton = function (cfg, methods) {
         var self = this,
-            b = new TripleButton({
+            b = new TripleButton(S.mix({
                 render:self.toolBarEl,
                 autoRender:true,
-                title:btnCfg.title,
-                text:btnCfg.text,
-                contentCls:btnCfg.contentCls
-            }),
-            context = {
-                name:name,
-                btn:b,
-                editor:self,
-                cfg:btnCfg,
-                call:function () {
-                    var args = S.makeArray(arguments),
-                        method = args.shift();
-                    return btnCfg[method].apply(context, args);
-                },
-                /**
-                 * 依赖于其他模块，先出来占位！
-                 * @param cfg
-                 */
-                reload:function (cfg) {
-                    S.mix(btnCfg, cfg);
-                    b.enable();
-                    self.on("selectionChange", function () {
-                        if (self.getMode() == KE.SOURCE_MODE) return;
-                        btnCfg.selectionChange && btnCfg.selectionChange.apply(context, arguments);
-                    });
-                    b.on("click", function (ev) {
-                        var t = ev.TripleClickType;
-                        if (btnCfg[t]) btnCfg[t].apply(context, arguments);
-                        ev.halt();
-                    });
-                    if (btnCfg.mode == KE.WYSIWYG_MODE) {
-                        self.on("wysiwygmode", b.enable, b);
-                        self.on("sourcemode", b.disable, b);
-                    }
-                    btnCfg.init && btnCfg.init.call(context);
-                },
-                destroy:function () {
-                    if (btnCfg['destroy']) {
-                        btnCfg['destroy'].call(context);
-                    }
-                    b.destroy();
-                }
-            };
-        if (btnCfg.loading) {
-            b.disable();
-        } else {
-            //否则立即初始化，开始作用
-            context.reload(undefined);
+                editor:self
+            }, cfg));
+
+        S.mix(b, methods);
+
+        if (b.init) {
+            b.init();
         }
-        return context;
+
+        self.on("selectionChange", function () {
+            if (self.getMode() == KE.SOURCE_MODE) {
+                return;
+            }
+            b.selectionChange && b.selectionChange.apply(b, arguments);
+        });
+
+        b.on("click", function (ev) {
+            var t = ev.TripleClickType;
+            if (b[t]) {
+                b[t].apply(b, arguments);
+            }
+            ev.halt();
+        });
+
+        if (cfg.mode == KE.WYSIWYG_MODE) {
+            self.on("wysiwygmode", b.enable, b);
+            self.on("sourcemode", b.disable, b);
+        }
+
+        self.on("destroy",function(){
+           b.destroy();
+        });
+
+        return b;
     };
 
     return TripleButton;

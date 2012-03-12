@@ -2,7 +2,7 @@
  * select component for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/select", function (S, KE, Overlay) {
+KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
 
     var Node = S.Node,
         Event = S.Event,
@@ -465,66 +465,46 @@ KISSY.add("editor/plugin/select", function (S, KE, Overlay) {
     /**
      * 将button ui 和点击功能分离
      * 按钮必须立刻显示出来，功能可以慢慢加载
-     * @param name
-     * @param btnCfg
      */
-    KE.prototype.addSelect = function (name, btnCfg) {
-        var self = this,
-            editor = self;
-        btnCfg = S.mix({
+    KE.prototype.addSelect = function (cfg, methods) {
+        var self = this;
+
+        cfg.editor = self;
+
+        var s = new Select(S.mix({
             container:self.toolBarEl,
-            doc:editor.document,
-            menuContainer:new Node(document.body)
-        }, btnCfg);
+            doc:self.document
+        }, cfg));
 
-        var b = new Select(btnCfg),
-            context = {
-                name:name,
-                btn:b,
-                editor:self,
-                cfg:btnCfg,
-                call:function () {
-                    var args = S.makeArray(arguments),
-                        method = args.shift();
-                    return btnCfg[method].apply(context, args);
-                },
-                /**
-                 * 依赖于其他模块，先出来占位！
-                 * @param cfg
-                 */
-                reload:function (cfg) {
-                    S.mix(btnCfg, cfg);
-                    b.enable();
-                    self.on("selectionChange", function () {
-                        if (self.getMode() == KE.SOURCE_MODE) return;
-                        btnCfg.selectionChange && btnCfg.selectionChange.apply(context, arguments);
-                    });
-                    b.on("click", function (ev) {
-                        var t = ev.type;
-                        if (btnCfg[t]) btnCfg[t].apply(context, arguments);
-                        ev && ev.halt();
-                    });
-                    if (btnCfg.mode == KE.WYSIWYG_MODE) {
-                        editor.on("wysiwygmode", b.enable, b);
-                        editor.on("sourcemode", b.disable, b);
-                    }
-                    btnCfg.init && btnCfg.init.call(context);
+        S.mix(s, methods);
 
-                },
-                destroy:function () {
-                    if (btnCfg.destroy) {
-                        btnCfg.destroy.call(context);
-                    }
-                    b.destroy();
-                }
-            };
-        if (btnCfg.loading) {
-            b.disable();
-        } else {
-            //否则立即初始化，开始作用
-            context.reload(undefined);
+        self.on("selectionChange", function () {
+            if (self.getMode() == KE.SOURCE_MODE) {
+                return;
+            }
+            s.selectionChange && s.selectionChange.apply(s, arguments);
+        });
+
+        self.on("destroy", function () {
+            s.destroy();
+        });
+
+        s.on("click", function (ev) {
+            var t = ev.type;
+            if (s[t]) {
+                s[t].apply(s, arguments);
+            }
+            ev.halt();
+        });
+
+        if (cfg.mode == KE.WYSIWYG_MODE) {
+            self.on("wysiwygmode", s.enable, s);
+            self.on("sourcemode", s.disable, s);
         }
-        return context;
+
+        s.init && s.init();
+        return s;
+
     };
 
     return Select;

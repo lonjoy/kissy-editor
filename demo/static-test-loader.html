@@ -220,9 +220,9 @@ core
 <!--
 core plugins
 -->
-<script src="../src/editor/core/src/clipboard.js"></script>
-<script src="../src/editor/core/src/enterkey.js"></script>
-<script src="../src/editor/core/src/htmldataprocessor.js"></script>
+<script src="../src/editor/core/src/clipboard/index.js"></script>
+<script src="../src/editor/core/src/enterkey/index.js"></script>
+<script src="../src/editor/core/src/htmldataprocessor/index.js"></script>
 <!--
 other plugins
 -->
@@ -517,9 +517,13 @@ KISSY.ready(function (S) {
 
         });
 
-
         window.editor3 = KE("#editor2", S.clone(cfg))
-                .use("sourcearea,font"
+                .use("sourcearea,font-bold,font-italic,font-family,font-size," +
+                "font-strikeThrough," +
+                "font-underline," +
+                "checkbox-sourcearea," +
+                "image" +
+                ""
                 // +",separator,undo,elementpaths"
                 , function () {
                     this.on("selectionChange", function (e) {

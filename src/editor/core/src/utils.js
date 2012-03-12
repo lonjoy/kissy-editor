@@ -517,6 +517,10 @@ KISSY.add("editor/core/utils", function (S) {
                     );
             },
 
+            loadDialog:function(){
+
+            },
+
             addRes:function () {
                 this.__res = this.__res || [];
                 var res = this.__res;
