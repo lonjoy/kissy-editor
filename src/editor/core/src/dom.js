@@ -652,8 +652,8 @@ KISSY.add("editor/core/dom", function (S) {
 
                 // Only element nodes support contains and sourceIndex.
                 if (el.nodeType == KEN.NODE_ELEMENT && $other.nodeType == KEN.NODE_ELEMENT) {
-                    if ($.contains) {
-                        if ($.contains($other))
+                    if (el.contains) {
+                        if (el.contains($other))
                             return KEP.POSITION_CONTAINS + KEP.POSITION_PRECEDING;
 
                         if ($other.contains(el))

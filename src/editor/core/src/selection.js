@@ -992,39 +992,22 @@ KISSY.add("editor/core/selection", function (S) {
 
             // IE before version 8 will leave cursor blinking inside the document after
             // editor blurred unless we clean up the selection. (#4716)
-            // if (UA['ie'] < 8) {
-            editor.on('blur', function () {
-                // 把选择区域与光标清除
-                // Try/Catch to avoid errors if the editor is hidden. (#6375)
-                // S.log("blur");
-                try {
-                    var el = document.documentElement || document.body;
-                    var top = el.scrollTop, left = el.scrollLeft;
-                    doc && doc.selection.empty();
-                    //in case if window scroll to editor
-                    el.scrollTop = top;
-                    el.scrollLeft = left;
-                } catch (e) {
-                }
-            });
-            /*
-             Event.on(body, 'blur', function() {
-             S.log("body blur");
-             });
-
-             Event.on(DOM._4e_getWin(doc), 'focus', function() {
-             S.log("win focus");
-             });
-             Event.on(doc, 'click', function() {
-             S.log("doc click");
-             });
-             body.on('click', function() {
-             S.log("body click");
-             });
-             html.on('click', function() {
-             S.log("html click");
-             });*/
-            //}
+// http://yiminghe.github.com/lite-ext/playground/iframe_selection_ie/demo.html
+// 需要第一个 hack
+//            editor.on('blur', function () {
+//                // 把选择区域与光标清除
+//                // Try/Catch to avoid errors if the editor is hidden. (#6375)
+//                // S.log("blur");
+//                try {
+//                    var el = document.documentElement || document.body;
+//                    var top = el.scrollTop, left = el.scrollLeft;
+//                    doc && doc.selection.empty();
+//                    //in case if window scroll to editor
+//                    el.scrollTop = top;
+//                    el.scrollLeft = left;
+//                } catch (e) {
+//                }
+//            });
 
             // IE fires the "selectionchange" event when clicking
             // inside a selection. We don't want to capture that.

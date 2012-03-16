@@ -1,10 +1,11 @@
 /**
- * select component for kissy editor
+ * select component for kissy editor,need refactor to KISSY MenuButton
  * @author yiminghe@gmail.com
  */
 KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
 
     var Node = S.Node,
+        $ = Node.all,
         Event = S.Event,
         DOM = S.DOM,
         SELECT_ACTIVE_CLASS = "ke-select-active",
@@ -21,6 +22,7 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
             "</span>",
         MENU_ITEM_TPL = "<a " +
             "class='ke-select-menu-item' " +
+            "tabindex='-1' " +
             "href='javascript:void(\"{tip}\")' " +
             "data-value='{value}'>" +
             "{name}" +
@@ -68,7 +70,7 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                         return c;
                     c = c.parent();
                 }
-                return new Node(document.body);
+                return $(document.body);
             }
         },
         state:{
@@ -111,7 +113,7 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
             var self = this,
                 container = self.get("container"),
                 fakeEl = self.get("el"),
-                el = new Node(SELECT_MARKUP),
+                el = $(SELECT_MARKUP),
                 titleA = el.one("a"),
                 title = self.get("title") || "",
                 cls = self.get("cls"),
@@ -126,8 +128,7 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
             }
 
             text.css("width", self.get("width"));
-            //ie6,7 不失去焦点
-            el.unselectable();
+
             if (title) {
                 el.attr("title", title);
             }
@@ -141,13 +142,103 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                 el.appendTo(container);
             }
             el.on("click", self._click, self);
+            el.on("keydown", self._keydown, self);
             self.el = el;
             self.title = innerText;
             self._focusA = el.one("a.ke-select");
+            self._focusA.on("blur", function () {
+                if (self.menu) {
+                    self.menu.hide();
+                }
+            });
             KE.Utils.lazyRun(this, "_prepare", "_real");
             self.on("afterValueChange", self._valueChange, self);
             self.on("afterStateChange", self._stateChange, self);
         },
+
+        _keydown:function (e) {
+
+            var keyCode = e.keyCode,
+                self = this;
+
+            switch (keyCode) {
+                case Event.KeyCodes.DOWN:
+                    e.halt();
+                    if (!self._isShown()) {
+                        self._click();
+                        if (!self._findCurrent()) {
+                            $(self.as[0]).addClass(MENU_SELECTED_CLASS);
+                        }
+                        return;
+                    }
+                    var current = $(self._findCurrent()), next;
+                    current.removeClass(MENU_SELECTED_CLASS);
+                    if (next = current.next()) {
+                        next.addClass(MENU_SELECTED_CLASS);
+                    } else {
+                        $(self.as[0]).addClass(MENU_SELECTED_CLASS);
+                    }
+                    break;
+
+
+                case Event.KeyCodes.UP:
+                    e.halt();
+                    if (!self._isShown()) {
+                        return;
+                    }
+                    var current = $(self._findCurrent()), next;
+                    current.removeClass(MENU_SELECTED_CLASS);
+                    if (next = current.prev()) {
+                        next.addClass(MENU_SELECTED_CLASS);
+                    } else {
+                        $(self.as[self.as.length - 1]).addClass(MENU_SELECTED_CLASS);
+                    }
+                    break;
+
+
+                case Event.KeyCodes.ENTER:
+                    e.halt();
+                    if (!self._isShown()) {
+                        self._click();
+                        if (!self._findCurrent()) {
+                            $(self.as[0]).addClass(MENU_SELECTED_CLASS);
+                        }
+                        return;
+                    }
+                    var current = $(self._findCurrent());
+                    if (!current) {
+                        return;
+                    }
+                    self._select({
+                        target:current
+                    });
+                    break;
+
+                case Event.KeyCodes.ESC:
+                    e.halt();
+                    if (!self._isShown()) {
+                        return;
+                    }
+                    self.menu.hide();
+                    break;
+            }
+        },
+
+        _findCurrent:function () {
+            var as = this.as, ret;
+            as.each(function (a) {
+                if (a.hasClass(MENU_SELECTED_CLASS)) {
+                    ret = a;
+                    return false;
+                }
+            });
+            return ret;
+        },
+
+        _isShown:function () {
+            return this.menu && this.menu.get("visible");
+        },
+
         _findNameByV:function (v) {
             var self = this,
                 name = self.get("title") || "",
@@ -190,18 +281,18 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                             value:item.value,
                             name:item.name
                         }), item.attrs)
-                        .appendTo(_selectList)
-                        .unselectable();
+                        // make menu do not get focus in ie
+                        .unselectable()
+                        .appendTo(_selectList);
                 }
             } else if (empty = self.get("emptyText")) {
-                new Node(
+                $(
                     S.substitute(MENU_ITEM_TPL, {
                         tip:getTipText(empty),
                         value:"",
                         name:empty
                     }))
-                    .appendTo(_selectList)
-                    .unselectable();
+                    .appendTo(_selectList);
             }
             self.as = _selectList.all("a");
         },
@@ -241,6 +332,13 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
             addRes.call(self, menu);
             menuNode = menu.get("contentEl").one("div");
             self.menu = menu;
+
+            // make menu do not get focus in non-ie
+            menu.get("el").on("mousedown", function (e) {
+                e.halt();
+            });
+
+
             //缩放，下拉框跟随
             Event.on(window, "resize", self._resize, self);
 
@@ -249,12 +347,12 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
             });
 
             if (self.get("title")) {
-                new Node("<div " +
+                $("<div " +
                     "class='ke-menu-title ke-select-menu-item' " +
                     "style='margin-top:-6px;' " +
                     ">" + self.get("title") + "</div>").appendTo(menuNode);
             }
-            self._selectList = new Node("<div>").appendTo(menuNode);
+            self._selectList = $("<div>").appendTo(menuNode);
 
             self._itemsChange({
                 newVal:items
@@ -270,7 +368,7 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
 
             function deactivate(ev) {
                 //ev && ev.halt();
-                var t = new Node(ev.target);
+                var t = $(ev.target);
                 if (el.contains(t) || el.equals(t)) {
                     return;
                 }
@@ -316,11 +414,13 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
             this.set("state", DISABLED);
         },
         _select:function (ev) {
-            ev.halt();
+            if (ev && ev.halt) {
+                ev.halt();
+            }
             var self = this,
                 menu = self.menu,
                 menuNode = self.menuNode,
-                t = new Node(ev.target),
+                t = $(ev.target),
                 a = t._4e_ascendant(function (n) {
                     return menuNode.contains(n) && n._4e_name() == "a";
                 }, true);
@@ -422,15 +522,18 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
             self.menu.set("xy", [xy.left, xy.top]);
             self.menu.show();
         },
-        _click:function (ev) {
-            ev.preventDefault();
+        _click:function () {
+
 
             var self = this,
                 el = self.el,
                 v = self.get("value");
 
+            // chrome will make body focus !!
+            self._focusA[0].focus();
+
             if (el.hasClass(SELECT_DISABLED_CLASS)) {
-                return;
+                return false;
             }
 
             if (self._focusA.hasClass(SELECT_ACTIVE_CLASS)) {

@@ -515,6 +515,9 @@ KISSY.ready(function (S) {
                 ""
                 // +",separator,undo,elementpaths"
                 , function () {
+                    this.on("blur", function () {
+                        S.log("editor blur");
+                    });
                     this.on("selectionChange", function (e) {
                         S.log("selectionChange : " + e.path.toString());
                     });

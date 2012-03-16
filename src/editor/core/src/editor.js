@@ -194,7 +194,8 @@ KISSY.add("editor", function (S) {
             // 标准浏览器实际上不需要！range在iframe内保存着呢，选择高亮变灰而已
             // 2011-11-19 启用封装 preventFocus
             // 点击工具栏内任何东西都不会使得焦点转移
-            Utils.preventFocus(self.toolBarEl);
+            // 支持 select 键盘 : 2012-03-16
+            // Utils.preventFocus(self.toolBarEl);
 
             var tw = textarea.style(WIDTH),
                 th = textarea.style(HEIGHT);

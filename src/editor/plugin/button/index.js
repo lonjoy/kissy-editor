@@ -28,11 +28,15 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
         bindUI:function () {
             var self = this, el = self.get("el");
             el.on("click", self['_action'], self);
-            //添加鼠标点击视觉效果
-            el.on("mousedown", function () {
+            // make ie do not lose focus
+            el.unselectable();
+            // 添加鼠标点击视觉效果
+            el.on("mousedown", function (e) {
                 if (self.get("state") == OFF) {
                     el.addClass(ACTIVE_CLASS);
                 }
+                // make non-ie do not lose focus
+                e.halt();
             });
             el.on("mouseup mouseleave", function () {
                 if (self.get("state") == OFF &&
@@ -53,8 +57,8 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
             var self = this,
                 el = self.get("el");
             if (contentCls !== undefined) {
-                el.html("<span class='ke-toolbar-item " + contentCls + "' />")
-                    .unselectable();
+                el.html("<span class='ke-toolbar-item " + contentCls + "' />");
+                el.unselectable();
             }
         },
         _uiSetText:function (text) {
@@ -85,7 +89,6 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
             self.fire("click", {
                 TripleClickType:self.get("state") + "Click"
             });
-            ev.preventDefault();
         },
         bon:function () {
             this.set("state", ON);
@@ -109,6 +112,7 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
                 .addClass(DISABLED_CLASS);
         }
     }, {
+        name:"editor/plugin/button",
         ATTRS:{
             state:{value:OFF},
             elCls:{value:[BUTTON_CLASS, OFF_CLASS].join(" ")},
@@ -157,7 +161,6 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
             if (b[t]) {
                 b[t].apply(b, arguments);
             }
-            ev.halt();
         });
 
         if (cfg.mode == KE.WYSIWYG_MODE) {
@@ -165,8 +168,8 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
             self.on("sourcemode", b.disable, b);
         }
 
-        self.on("destroy",function(){
-           b.destroy();
+        self.on("destroy", function () {
+            b.destroy();
         });
 
         return b;
