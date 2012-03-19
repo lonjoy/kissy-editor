@@ -289,7 +289,9 @@ KISSY.add("editor/plugin/clipboard/index", function (S) {
 
     return {
         init:function (editor) {
-            new Paste(editor);
+            editor.docReady(function () {
+                new Paste(editor);
+            });
         }
     };
 }, {

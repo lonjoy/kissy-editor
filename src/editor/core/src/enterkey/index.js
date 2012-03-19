@@ -201,7 +201,9 @@ KISSY.add("editor/plugin/enterkey/index", function (S) {
             editor.addCommand("enterBlock", {
                 exec:enterBlock
             });
-            EnterKey(editor);
+            editor.docReady(function () {
+                EnterKey(editor);
+            });
         }
     };
 }, {

@@ -507,7 +507,8 @@ KISSY.add("editor/plugin/htmldataprocessor/index", function (S) {
                 dataFilter:dataFilter,
                 htmlFilter:htmlFilter,
                 //编辑器 html 到外部 html
-                toHtml:function (html, fixForBody) {
+                // fixForBody , <body>t</body> => <body><p>t</p></body>
+                toHtml:function (html) {
                     //fixForBody = fixForBody || "p";
                     // Now use our parser to make further fixes to the structure, as
                     // well as apply the filter.

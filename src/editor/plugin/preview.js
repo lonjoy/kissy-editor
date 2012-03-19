@@ -2,17 +2,17 @@
  * preview for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.Editor.add("preview", function(editor) {
+KISSY.Editor.add("preview", function (editor) {
 
-    editor.addPlugin("preview", function() {
+    editor.addPlugin("preview", function () {
         var context = editor.addButton("preview", {
             title:"预览",
             contentCls:"ke-toolbar-preview",
-            offClick:function() {
+            offClick:function () {
                 var self = this,
                     editor = self.editor,
-                    iWidth = 640,    // 800 * 0.8,
-                    iHeight = 420,    // 600 * 0.7,
+                    iWidth = 640, // 800 * 0.8,
+                    iHeight = 420, // 600 * 0.7,
                     iLeft = 80;	// (800 - 0.8 * 800) /2 = 800 * 0.1.
                 try {
                     var screen = window.screen;
@@ -21,15 +21,12 @@ KISSY.Editor.add("preview", function(editor) {
                     iLeft = Math.round(screen.width * 0.1);
                 } catch (e) {
                 }
-                var sHTML = editor._prepareIFrameHtml()
-                    .replace(/<body[^>]+>.+<\/body>/,
-                    "<body>\n"
-                        + editor.getData(true)
-                        + "\n</body>")
+                var sHTML = editor
+                    ._prepareIFrameHtml(undefined, editor.getData(true))
                     .replace(/\${title}/, "预览"),
                     sOpenUrl = '',
                     oWindow = window.open(sOpenUrl,
-                        //每次都弹出新窗口
+                        // 每次都弹出新窗口
                         '',
                         'toolbar=yes,' +
                             'location=no,' +
@@ -42,7 +39,7 @@ KISSY.Editor.add("preview", function(editor) {
                             ',height='
                             + iHeight
                             + ',left='
-                            + iLeft),winDoc = oWindow.document;
+                            + iLeft), winDoc = oWindow.document;
                 winDoc.open();
                 winDoc.write(sHTML);
                 winDoc.close();
@@ -52,7 +49,7 @@ KISSY.Editor.add("preview", function(editor) {
         });
 
 
-        this.destroy = function() {
+        this.destroy = function () {
             context.destroy();
         };
     });

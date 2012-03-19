@@ -5,7 +5,7 @@
 KISSY.add("editor/core/base", function (S, HtmlParser) {
     var PREFIX = "editor/plugin/",
         SUFFIX = "/",
-        BASIC = ["htmldataprocessor", "enterkey", "clipboard"];
+        BASIC = ["htmldataprocessor", "enterkey", "clipboard", "selection"];
 
     /**
      * 初始化编辑器
@@ -52,21 +52,10 @@ KISSY.add("editor/core/base", function (S, HtmlParser) {
                 }
             });
 
-            function useReady(modFns) {
-                //载入了插件的attach功能，现在按照顺序一个个attach
+            function useMods(modFns) {
+                // 载入了插件的attach功能，现在按照顺序一个个attach
                 for (var i = 0; i < modFns.length; i++) {
                     modFns[i].init(self);
-                }
-                //也用在窗口按需加载，只有在初始化时才进行内容设置
-                self.setData(self.textarea.val());
-                //是否自动focus
-                if (self.cfg["focus"]) {
-                    self.focus();
-                }
-                //否则清空选择区域
-                else {
-                    var sel = self.getSelection();
-                    sel && sel.removeAllRanges();
                 }
                 callback && callback.call(self);
             }
@@ -75,9 +64,7 @@ KISSY.add("editor/core/base", function (S, HtmlParser) {
             S.use(mods.join(","), function () {
                 var args = S.makeArray(arguments);
                 args.shift();
-                self.ready(function () {
-                    useReady(args);
-                });
+                useMods(args);
             });
 
             return self;
