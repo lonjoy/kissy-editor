@@ -160,7 +160,7 @@ KISSY.add("editor", function (S) {
         init:function () {
             var self = this,
                 textarea = self.textarea,
-                editorWrap;
+                editorEl;
 
             self.__commands = {};
             self.__dialogs = {};
@@ -176,16 +176,16 @@ KISSY.add("editor", function (S) {
             else if (UA['webkit']) {
                 DOM.addClass(DOC.body, "ke-webkit");
             }
-            editorWrap = new Node(editorHtml);
+            editorEl = new Node(editorHtml);
 
-            self.editorWrap = editorWrap;
+            self.el = editorEl;
             self._UUID = INSTANCE_ID++;
             //实例集中管理
             focusManager.register(self);
             var wrap;
-            wrap = self.wrap = editorWrap.one(KE_TEXTAREA_WRAP_CLASS);
-            self.toolBarEl = editorWrap.one(KE_TOOLBAR_CLASS);
-            self.statusBarEl = editorWrap.one(KE_STATUSBAR_CLASS);
+            wrap = self.iframeWrapEl = editorEl.one(KE_TEXTAREA_WRAP_CLASS);
+            self.toolBarEl = editorEl.one(KE_TOOLBAR_CLASS);
+            self.statusBarEl = editorEl.one(KE_STATUSBAR_CLASS);
 
             // 标准浏览器编辑器内焦点不失去,firefox?
             // 标准浏览器实际上不需要！range在iframe内保存着呢，选择高亮变灰而已
@@ -197,11 +197,11 @@ KISSY.add("editor", function (S) {
             var tw = textarea.style(WIDTH),
                 th = textarea.style(HEIGHT);
             if (tw) {
-                editorWrap.css(WIDTH, tw);
+                editorEl.css(WIDTH, tw);
                 textarea.css(WIDTH, "100%");
             }
             textarea.css(DISPLAY, NONE);
-            editorWrap.insertAfter(textarea);
+            editorEl.insertAfter(textarea);
             wrap.append(textarea);
 
             if (th) {
@@ -238,7 +238,7 @@ KISSY.add("editor", function (S) {
             if (textarea.hasAttr("tabindex")) {
                 iframe.attr("tabIndex", UA['webkit'] ? -1 : textarea.attr("tabIndex"));
             }
-            self.wrap.prepend(iframe);
+            self.iframeWrapEl.prepend(iframe);
             self.iframe = iframe;
             self.__docReady = 0;
             // With FF, it's better to load the data on iframe.load. (#3894,#4058)
@@ -255,7 +255,7 @@ KISSY.add("editor", function (S) {
 
         destroy:function () {
             var self = this,
-                editorWrap = self.editorWrap,
+                editorEl = self.el,
                 textarea = self.textarea,
                 doc = self.document,
                 win = self.iframe[0].contentWindow;
@@ -263,11 +263,11 @@ KISSY.add("editor", function (S) {
             KE.focusManager.remove(self);
             Event.remove([doc, doc.documentElement, doc.body, win]);
             self.fire("destroy");
-            textarea.insertBefore(editorWrap);
-            editorWrap.remove();
+            textarea.insertBefore(editorEl);
+            editorEl.remove();
             textarea.css({
-                width:editorWrap[0].style.width,
-                height:self.wrap.css("height")
+                width:editorEl[0].style.width,
+                height:self.iframeWrapEl.css("height")
             });
             textarea.show();
             self.detach();
@@ -317,8 +317,8 @@ KISSY.add("editor", function (S) {
             return this.__commands[name];
         },
         /**
-         *
          * @param name {string}
+         * TODO https://developer.mozilla.org/en/Rich-Text_Editing_in_Mozilla
          */
         execCommand:function (name) {
             var self = this,
@@ -355,7 +355,7 @@ KISSY.add("editor", function (S) {
                 html = self.textarea.val();
             }
             //如果不需要要格式化，例如提交数据给服务器
-            if (htmlDataProcessor = self.htmlDataProcessor) {
+            if (htmlDataProcessor = self.__htmlDataProcessor) {
                 if (format) {
                     html = htmlDataProcessor.toHtml(html);
                 } else {
@@ -366,7 +366,7 @@ KISSY.add("editor", function (S) {
             /*
              如果内容为空，对 parser 自动加的空行滤掉
              */
-            if (/^<p>((&nbsp;)|\s)*<\/p>$/.test(html)) {
+            if (/^(?:<(p)>)?(?:(?:&nbsp;)|\s)*(?:<\/\1>)?$/.test(html)) {
                 html = "";
             }
             return html;
@@ -390,7 +390,7 @@ KISSY.add("editor", function (S) {
             var self = this,
                 htmlDataProcessor,
                 afterData = data;
-            if (htmlDataProcessor = self.htmlDataProcessor) {
+            if (htmlDataProcessor = self.__htmlDataProcessor) {
                 afterData = htmlDataProcessor.toDataFormat(data, "p");
             }
             if (self.getMode() != WYSIWYG_MODE) {
@@ -561,8 +561,8 @@ KISSY.add("editor", function (S) {
                 if (selection && !selection.isInvalid) {
                     var startElement = selection.getStartElement(),
                         currentPath = new KE.ElementPath(startElement);
-                    if (!self.previousPath || !self.previousPath.compare(currentPath)) {
-                        self.previousPath = currentPath;
+                    if (!self.__previousPath || !self.__previousPath.compare(currentPath)) {
+                        self.__previousPath = currentPath;
                         self.fire("selectionChange",
                             {
                                 selection:selection,
@@ -578,7 +578,7 @@ KISSY.add("editor", function (S) {
          */
         notifySelectionChange:function () {
             var self = this;
-            self.previousPath = NULL;
+            self.__previousPath = NULL;
             self._monitor();
         },
         insertElement:function (element, init, callback) {
@@ -703,7 +703,7 @@ KISSY.add("editor", function (S) {
                 return;
             }
 
-            if (htmlDataProcessor = self.htmlDataProcessor) {
+            if (htmlDataProcessor = self.__htmlDataProcessor) {
                 data = htmlDataProcessor.toDataFormat(data, null, dataFilter);
             }
 
@@ -812,7 +812,7 @@ KISSY.add("editor", function (S) {
                     self.focus();
                 });
                 self.activateGecko = function () {
-                    if (UA['gecko'] && self.iframeFocus)
+                    if (UA['gecko'] && self.__iframeFocus)
                         focusGrabber[0].focus();
                 };
                 self.on('destroy', function () {
@@ -844,7 +844,7 @@ KISSY.add("editor", function (S) {
                  * firefox 焦点丢失后，再点编辑器区域焦点会移不过来，要点两下
                  */
                 Event.on(doc, "mousedown", function () {
-                    if (!self.iframeFocus) {
+                    if (!self.__iframeFocus) {
                         blinkCursor(doc, FALSE);
                     }
                 });

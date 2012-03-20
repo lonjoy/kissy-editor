@@ -1,23 +1,14 @@
-KISSY.add("editor/plugin/font-underline/index", function (S, KE, Button, common) {
+KISSY.add("editor/plugin/font-underline/index", function (S, KE, ui, cmd) {
     return {
         init:function (editor) {
+            cmd.init(editor);
             editor.addButton({
+                cmdType:"fontUnderline",
                 contentCls:"ke-toolbar-underline",
-                title:"下划线 ",
-                style:new KE.Style({
-                    element:'u',
-                    overrides:[
-                        {
-                            element:'span',
-                            attributes:{
-                                style:'text-decoration: underline;'
-                            }
-                        }
-                    ]
-                })
-            }, common.button);
+                title:"下划线 "
+            }, undefined, ui.Button);
         }
     };
 }, {
-    requires:['editor', '../button/', '../font/common']
+    requires:['editor', '../font/ui', './cmd']
 });

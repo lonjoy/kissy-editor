@@ -2,7 +2,7 @@
  * source editor for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/sourcearea/command", function (S, KE) {
+KISSY.add("editor/plugin/sourcearea/cmd", function (S, KE) {
 
     var UA = S.UA,
         SOURCE_MODE = KE.SOURCE_MODE ,
@@ -37,7 +37,7 @@ KISSY.add("editor/plugin/sourcearea/command", function (S, KE) {
             // ie textarea height:100%不起作用
             // resize also modify height wrongly
             textarea.css({
-                "height":editor.wrap.css("height"),
+                "height":editor.iframeWrapEl.css("height"),
                 "width":"100%"
             });
             //ie6 光标透出

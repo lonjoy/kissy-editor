@@ -59,7 +59,7 @@ KISSY.add("editor/core/focusmanager", function (S) {
 
     function focus() {
         var editor = this;
-        editor.iframeFocus = TRUE;
+        editor.__iframeFocus = TRUE;
         currentInstance = editor;
         if (timer) {
             clearTimeout(timer);
@@ -71,7 +71,7 @@ KISSY.add("editor/core/focusmanager", function (S) {
     }
     function blur() {
         var editor = this;
-        editor.iframeFocus = FALSE;
+        editor.__iframeFocus = FALSE;
         currentInstance = NULL;
         if (timer) {
             clearTimeout(timer);

@@ -4,7 +4,9 @@
 <meta charset="utf-8"/>
 <title>KISSY Editor Test</title>
 <link href="http://assets.taobaocdn.com/tbsp/reset-grids.css?t=20090602.css" rel="stylesheet"/>
-<link href="../build/editor/theme/cool/editor-pkg.css" rel="stylesheet" id="theme"/>
+<link href="../build/editor/theme/cool/editor-pkg.css" rel="stylesheet"/>
+<link href="../src/editor/theme/cool/tab.css" rel="stylesheet"/>
+<link href="../src/editor/theme/cool/overlay.css" rel="stylesheet"/>
 <script>
     //document.domain="taobao.net";
 </script>
@@ -508,11 +510,17 @@ KISSY.ready(function (S) {
         }
 
         window.editor3 = KE("#editor2", S.clone(cfg))
-                .use("sourcearea,font-bold,font-italic,font-family,font-size," +
+                .use("sourcearea" +
+                ",separator" +
+                ",font-bold,font-italic,font-family,font-size," +
                 "font-strikeThrough," +
                 "font-underline," +
-                "checkbox-sourcearea," +
-                "image" +
+                "separator" +
+                ",checkbox-sourcearea" +
+                ",image" +
+                ",link" +
+                ",forecolor" +
+                ",bgcolor" +
                 ""
                 // +",separator,undo,elementpaths"
                 , function () {

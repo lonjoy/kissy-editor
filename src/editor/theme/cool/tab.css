@@ -18,9 +18,10 @@
     position: relative;
     text-align: center;
     width: 120px;
+    outline: none;
 }
 
-li.ke-tab-selected {
+.ke-tabs li.ks-active {
     background-color: #FCFCFC;
     border-color: #CED5E0 #CED5E0 #FCFCFC;
     cursor: default;

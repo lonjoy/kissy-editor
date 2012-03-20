@@ -5,14 +5,13 @@
 KISSY.add("editor/plugin/image/index", function (S, KE, Button, BubbleView, ContextMenu, DialogLoader) {
 
     var UA = S.UA,
-        DOM = S.DOM,
         Node = S.Node,
         $ = S.all,
         Event = S.Event,
         checkImg = function (node) {
-            return node &&
-                DOM._4e_name(node) === 'img' &&
-                (!/(^|\s+)ke_/.test(node.className));
+            node = $(node);
+            return node._4e_name(node) === 'img' &&
+                (!/(^|\s+)ke_/.test(node[0].className)) && node;
         },
         tipHtml = '<a class="ke-bubbleview-url" target="_blank" href="#">在新窗口查看</a>  |  '
             + '<a class="ke-bubbleview-link ke-bubbleview-change" href="#">编辑</a>  |  '
@@ -39,14 +38,13 @@ KISSY.add("editor/plugin/image/index", function (S, KE, Button, BubbleView, Cont
 
             var handlers = {
                 "图片属性":function () {
-                    var img = checkImg(this.selectedEl[0]);
+                    var img = checkImg(this.selectedEl);
                     if (img) {
-                        showImageEditor(img);
+                        showImageEditor($(img));
                     }
                 },
                 "插入新行":function () {
-                    var editor = this.get("editor"),
-                        doc = editor.document,
+                    var doc = editor.document,
                         p = new Node(doc.createElement("p"));
                     if (!UA['ie']) {
                         p._4e_appendBogus();
@@ -67,11 +65,14 @@ KISSY.add("editor/plugin/image/index", function (S, KE, Button, BubbleView, Cont
                 handlers:handlers
             });
 
-            Event.on(editor.document, "dblclick", function (ev) {
-                ev.halt();
-                if (checkImg(ev.target)) {
-                    showImageEditor($(ev.target));
-                }
+            editor.docReady(function () {
+                Event.on(editor.document, "dblclick", function (ev) {
+                    ev.halt();
+                    var t = $(ev.target);
+                    if (checkImg(t)) {
+                        showImageEditor(t);
+                    }
+                });
             });
 
             BubbleView.register({
@@ -84,7 +85,7 @@ KISSY.add("editor/plugin/image/index", function (S, KE, Button, BubbleView, Cont
                     var tipurl = el.one(".ke-bubbleview-url"),
                         tipchange = el.one(".ke-bubbleview-change"),
                         tipremove = el.one(".ke-bubbleview-remove");
-                    el.unselectable();
+                    KE.Utils.preventFocus(el);
                     tipchange.on("click", function (ev) {
                         showImageEditor(bubble.selectedEl);
                         ev.halt();
@@ -102,9 +103,7 @@ KISSY.add("editor/plugin/image/index", function (S, KE, Button, BubbleView, Cont
                         editor.notifySelectionChange();
                         ev.halt();
                     });
-                    /*
-                     位置变化
-                     */
+
                     bubble.on("show", function () {
                         var a = bubble.selectedEl;
                         if (!a) {

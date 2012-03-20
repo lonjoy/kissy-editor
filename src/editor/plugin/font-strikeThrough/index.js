@@ -1,29 +1,14 @@
-KISSY.add("editor/plugin/font-strikeThrough/index", function (S, KE, Button, common) {
+KISSY.add("editor/plugin/font-strikeThrough/index", function (S, KE, ui,cmd) {
     return {
         init:function (editor) {
+            cmd.init(editor);
             editor.addButton({
+                cmdType:"fontStrikeThrough",
                 contentCls:"ke-toolbar-strikeThrough",
-                title:"删除线 ",
-                style:new KE.Style({
-                    element:'del',
-                    overrides:[
-                        {
-                            element:'span',
-                            attributes:{
-                                style:'text-decoration: line-through;'
-                            }
-                        },
-                        {
-                            element:'s'
-                        },
-                        {
-                            element:'strike'
-                        }
-                    ]
-                })
-            }, common.button);
+                title:"删除线 "
+            }, undefined, ui.Button);
         }
     };
 }, {
-    requires:['editor', '../button/', '../font/common']
+    requires:['editor', '../font/ui','./cmd']
 });

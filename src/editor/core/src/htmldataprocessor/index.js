@@ -20,9 +20,6 @@ KISSY.add("editor/plugin/htmldataprocessor/index", function (S) {
                 dataFilter = new HtmlParser.Filter(),
                 wordFilter = new HtmlParser.Filter(),
                 dtd = KE.XHTML_DTD;
-            //每个编辑器的规则独立
-            if (editor.htmlDataProcessor) return;
-
 
             /**
              * 常用的规则：
@@ -501,7 +498,7 @@ KISSY.add("editor/plugin/htmldataprocessor/index", function (S) {
             }
 
 
-            editor.htmlDataProcessor = {
+            editor.__htmlDataProcessor = {
                 //过滤 ms-word
                 wordFilter:wordFilter,
                 dataFilter:dataFilter,

@@ -31,8 +31,8 @@ KISSY.Editor.add("resize", function(editor) {
             width = 0,
             t_height = 0,
             t_width = 0,
-            heightEl = editor.wrap,
-            widthEl = editor.editorWrap;
+            heightEl = editor.iframeWrapEl,
+            widthEl = editor.el;
         d.on("dragstart", function() {
             height = heightEl.height();
             width = widthEl.width();

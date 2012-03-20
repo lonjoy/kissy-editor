@@ -30,5 +30,5 @@ KISSY.add("editor/plugin/sourcearea/index", function (S, KE, B, cmd) {
         }
     };
 }, {
-    requires:['editor', '../button/', './command']
+    requires:['editor', '../button/', './cmd']
 });

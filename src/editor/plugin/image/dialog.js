@@ -2,7 +2,7 @@
  * image dialog (support upload and remote)
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
+KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Switchable,Select) {
     var dtd = KE.XHTML_DTD,
         DOM = S.DOM,
         UA = S.UA,
@@ -13,19 +13,17 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
         AUTOMATIC_TIP = "自动",
         MARGIN_DEFAULT = 10,
         IMAGE_DIALOG_BODY_HTML = "<div class='ke-image-wrap'>" +
-            "<ul class='ke-tabs ks-clear'>" +
-            "<li " +
-            "rel='remote'>" +
+            "<ul class='ke-tabs ks-clear ks-switchable-nav'>" +
+            "<li hideFocus='hideFocus'>" +
             "网络图片" +
             "</li>" +
-            "<li " +
-            "rel='local'>" +
+            "<li hideFocus='hideFocus'>" +
             "本地上传" +
             "</li>" +
             "</ul>" +
             "<div style='" +
             "padding:12px 20px 5px 20px;'>" +
-            "<div class='ke-image-tabs-content-wrap' " +
+            "<div class='ke-image-tabs-content-wrap ks-switchable-content' " +
             ">" +
             "<div>" +
             "<label>" +
@@ -150,9 +148,13 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
             "</div>",
 
         IMAGE_DIALOG_FOOT_HTML = "<div style='padding:5px 20px 20px;'>" +
-            "<a class='ke-img-insert ke-button' " +
+            "<a " +
+            "href='javascript:void(\'确定\')' " +
+            "class='ke-img-insert ke-button' " +
             "style='margin-right:30px;'>确定</a> " +
-            "<a  class='ke-img-cancel ke-button'>取消</a></div>",
+            "<a  " +
+            "href='javascript:void(\'取消\')' " +
+            "class='ke-img-cancel ke-button'>取消</a></div>",
 
         warning = "请点击浏览上传图片",
 
@@ -204,16 +206,15 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
                 commonSettingTable = content.one(".ke-img-setting");
             self.uploadForm = content.one(".ke-img-upload-form");
             self.imgLocalUrl = content.one(".ke-img-local-url");
-            self.tab = new Tabs({
-                tabs:content.one("ul.ke-tabs"),
-                contents:content.one("div.ke-image-tabs-content-wrap")
+            self.tab = new Switchable.Tabs(self.d.get("body")[0], {
+                triggerType:"click"
             });
             self.imgLocalUrl.val(warning);
             self.imgUrl = content.one(".ke-img-url");
             self.imgHeight = content.one(".ke-img-height");
             self.imgWidth = content.one(".ke-img-width");
             self.imgRatio = content.one(".ke-img-ratio");
-            self.imgAlign = KE.Select.decorate(content.one(".ke-img-align"));
+            self.imgAlign = Select.decorate(content.one(".ke-img-align"));
             self.imgMargin = content.one(".ke-img-margin");
             self.imgLink = content.one(".ke-img-link");
             self.imgLinkBlank = content.one(".ke-img-link-blank");
@@ -291,7 +292,7 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
 
             ok.on("click", function (ev) {
                 ev.halt();
-                if (self.tab.activate() == "local" && self.cfg) {
+                if (self.tab.activeIndex == 1 && self.cfg) {
 
                     if (!verifyInputs(commonSettingTable.all("input"))) {
                         return;
@@ -405,11 +406,11 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
                 });
 
                 if (self.imageCfg['remote'] === false) {
-                    self.tab.remove("remote");
+                    self.tab.remove(0);
                 }
             }
             else {
-                self.tab.remove("local");
+                self.tab.remove(1);
             }
 
             self._prepare = S.noop;
@@ -509,7 +510,7 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
 
         _update:function (_selectedEl) {
             var self = this,
-                active = "remote",
+                active = 0,
                 resetInput = KE.Utils.resetInput;
             self.selectedEl = _selectedEl;
             if (self.selectedEl && self.imageCfg.remote !== false) {
@@ -533,8 +534,8 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
                     self.imgLinkBlank.attr("checked", true);
                 }
             } else {
-                if (self.tab.getTab("local")) {
-                    active = "local";
+                if (self.tab.panels.length == 2) {
+                    active = 1;
                 }
                 self.imgLinkBlank.attr("checked", true);
                 resetInput(self.imgUrl);
@@ -548,7 +549,7 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
             }
             self.uploadForm[0].reset();
             self.imgLocalUrl.val(warning);
-            self.tab.activate(active);
+            self.tab.switchTo(active);
         },
         show:function (_selectedEl) {
             var self = this;
@@ -564,5 +565,5 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Tabs) {
 
     return ImageDialog;
 }, {
-    requires:['editor', '../overlay/', '../tabs/']
+    requires:['editor', '../overlay/', 'switchable','../select/']
 });

@@ -1,12 +1,6 @@
-/**
- * color support for kissy editor
- * @author yiminghe@gmail.com
- */
-KISSY.add("editor/plugin/colorsupport", function() {
-    var S = KISSY,
-        KE = S.Editor,
-        Node = S.Node,
-        Event = S.Event,
+KISSY.add("editor/plugin/color/btn", function (S, KE, TripleButton, Overlay4E, DialogLoader) {
+
+    var Node = S.Node,
         DOM = S.DOM;
 
     DOM.addStyleSheet(".ke-color-panel a {" +
@@ -67,11 +61,10 @@ KISSY.add("editor/plugin/colorsupport", function() {
             "990000", "B45F06", "BF9000", "38761D", "134F5C", "0B5394", "351C75", "741B47",
             "660000", "783F04", "7F6000", "274E13", "0C343D", "073763", "20124D", "4C1130"
         ]
-    ],html;
+    ], html;
 
 
     function initHtml() {
-        if (html) return;
         html = "<div class='ke-color-panel'>" +
             "<a class='ke-color-remove' " +
             "href=\"javascript:void('清除');\">" +
@@ -79,7 +72,7 @@ KISSY.add("editor/plugin/colorsupport", function() {
             "</a>";
         for (var i = 0; i < 3; i++) {
             html += "<div class='ke-color-palette'><table>";
-            var c = COLORS[i],l = c.length / 8;
+            var c = COLORS[i], l = c.length / 8;
             for (var k = 0; k < l; k++) {
                 html += "<tr>";
                 for (var j = 0; j < 8; j++) {
@@ -104,120 +97,83 @@ KISSY.add("editor/plugin/colorsupport", function() {
             "</div>";
     }
 
-    var addRes = KE.Utils.addRes,destroyRes = KE.Utils.destroyRes;
-    KE.ColorSupport = {
-        offClick:function(ev) {
-            var self = this,
-                cfg = self.cfg;
-            KE.use("overlay", function() {
-                cfg._prepare.call(self, ev);
-            });
+    initHtml();
+
+    function ColorButton() {
+        ColorButton.superclass.constructor.apply(this, arguments);
+    }
+
+    S.extend(ColorButton, TripleButton, {
+        offClick:function () {
+            this._prepare();
         },
-        onClick:function() {
+
+        onClick:function () {
             this.colorWin && this.colorWin.hide();
         },
-        _prepare:function() {
+
+        _prepare:function () {
             var self = this,
-                cfg = self.cfg,
-                doc = document,
-                el = self.btn,
-                editor = self.editor,
+                editor = self.get("editor"),
                 colorPanel;
-            initHtml();
-            self.colorWin = new KE.Overlay({
-                elCls:"ks-popup",
+
+            self.colorWin = new Overlay4E({
+                // TODO 变成了 -1??
+                elAttrs:{
+                    tabindex:0
+                },
+                elCls:"ke-popup",
                 content:html,
-                focus4e:false,
                 autoRender:true,
-                width:"170px",
+                width:170,
                 zIndex:KE.baseZIndex(KE.zIndexManager.POPUP_MENU)
             });
 
             var colorWin = self.colorWin;
             colorPanel = colorWin.get("contentEl");
-            colorPanel.on("click", cfg._selectColor, self);
-            Event.on(doc, "click", cfg._hidePanel, self);
-            Event.on(editor.document, "click", cfg._hidePanel, self);
-            colorWin.on("show", el.bon, el);
-            colorWin.on("hide", el.boff, el);
+            colorPanel.on("click", self._selectColor, self);
+            colorWin.get("el").on("blur", function () {
+                colorWin.hide();
+            });
+            colorWin.on("show", self.bon, self);
+            colorWin.on("hide", self.boff, self);
             var others = colorPanel.one(".ke-color-others");
-            others.on("click", function(ev) {
+            others.on("click", function (ev) {
                 ev.halt();
                 colorWin.hide();
-                editor.showDialog("color/dialog", [self]);
+                DialogLoader.useDialog(editor, "color/colorpicker", self.get("cmdType"));
             });
-            cfg._prepare = cfg._show;
-            cfg._show.call(self);
-
-            addRes.call(self, colorPanel, colorWin, others);
-
+            self._prepare = self._show;
+            self._show();
         },
-        _show:function() {
+
+        _show:function () {
             var self = this,
-                el = self.btn.get("el"),
-                colorWin = self.colorWin,
-                panelWidth = parseInt(colorWin.get("width")),
-                margin = 30,
-                viewWidth = DOM.viewportWidth();
-            colorWin.align(el, ["bl","tl"], [0,2]);
-            if (colorWin.get("x") + panelWidth
-                > viewWidth - margin) {
-                colorWin.set("x", viewWidth - margin - panelWidth);
-            }
-            colorWin.show();
-        },
-        _hidePanel : function(ev) {
-            var self = this,
-                el = self.btn.get("el"),
-                t = new Node(ev.target),
+                el = self.get("el"),
                 colorWin = self.colorWin;
-            //当前按钮点击无效
-            if (el.equals(t)
-                || el.contains(t)) {
-                return;
-            }
-            colorWin.hide();
+            colorWin.align(el, ["bl", "tl"], [0, 2]);
+            colorWin.show();
+            colorWin.get("el")[0].focus();
         },
-        _selectColor : function(ev) {
+        _selectColor:function (ev) {
             ev.halt();
             var self = this,
-                cfg = self.cfg,
                 t = new Node(ev.target);
-            if (t._4e_name() == "a" && !t.hasClass("ke-button")) {
-                cfg._applyColor.call(self, t.style("background-color"));
-                self.colorWin.hide();
+            if (t.hasClass("ke-color-a")) {
+                self.get("editor").execCommand(self.get("cmdType"), t.style("background-color"));
             }
         },
-        _applyColor : function(c) {
-            var self = this,
-                editor = self.editor,
-                doc = editor.document,
-                styles = self.cfg.styles;
 
-            editor.fire("save");
-            if (c) {
-                new KE.Style(styles, {
-                    color:c
-                }).apply(doc);
-            } else {
-                // Value 'inherit'  is treated as a wildcard,
-                // which will match any value.
-                //清除已设格式
-                new KE.Style(styles, {
-                    color:"inherit"
-                }).remove(doc);
+        destroy:function () {
+            var self = this;
+            if (self.colorWin) {
+                self.colorWin.destroy();
             }
-            editor.fire("save");
-        },
-
-        destroy:function() {
-            destroyRes.call(this);
-            var self = this,
-                editor = self.editor,
-                cfg = self.cfg,
-                doc = document;
-            Event.remove(doc, "click", cfg._hidePanel, self);
-            editor.destroyDialog("color/dialog")
         }
-    };
+    });
+
+    return ColorButton;
+
+}, {
+    requires:['editor', '../button/', '../overlay/', '../dialog-loader/']
 });

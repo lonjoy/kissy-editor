@@ -325,9 +325,7 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                 content:SELECT_MENU_MARKUP,
                 elCls:"ke-menu",
                 width:popUpWidth ? popUpWidth : el.width(),
-                elStyle:{
-                    zIndex:KE.baseZIndex(KE.zIndexManager.SELECT)
-                }
+                zIndex:KE.baseZIndex(KE.zIndexManager.SELECT)
             }), items = self.get("items");
             addRes.call(self, menu);
             menuNode = menu.get("contentEl").one("div");
@@ -563,18 +561,19 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
         }
     });
 
-    KE.Select = Select;
-
     /**
      * 将button ui 和点击功能分离
      * 按钮必须立刻显示出来，功能可以慢慢加载
      */
-    KE.prototype.addSelect = function (cfg, methods) {
+    KE.prototype.addSelect = function (cfg, methods, SelectType) {
+
+        SelectType = SelectType || Select;
+
         var self = this;
 
         cfg.editor = self;
 
-        var s = new Select(S.mix({
+        var s = new SelectType(S.mix({
             container:self.toolBarEl,
             doc:self.document
         }, cfg));

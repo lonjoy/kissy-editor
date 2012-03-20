@@ -2,9 +2,11 @@
  * font formatting for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/font-family/index", function (S, KE, Select, common) {
+KISSY.add("editor/plugin/font-family/index", function (S, KE, ui,cmd) {
+
     return {
         init:function (editor) {
+            cmd.init(editor);
             var pluginConfig = editor.cfg.pluginConfig,
                 fontFamilies = pluginConfig["font-family"];
             fontFamilies = fontFamilies || {};
@@ -63,44 +65,22 @@ KISSY.add("editor/plugin/font-family/index", function (S, KE, Select, common) {
                 width:"130px"
             }, false);
 
-
-            var fontFamilyStyles = {},
-                fontFamilyStyle = {
-                    element:'span',
-                    styles:{
-                        'font-family':'#(family)'
-                    },
-                    overrides:[
-                        {
-                            element:'font',
-                            attributes:{
-                                'face':null
-                            }
-                        }
-                    ]
-                };
-
-
             S.each(fontFamilies.items, function (item) {
                 var attrs = item.attrs || {},
                     value = item.value;
                 attrs.style = attrs.style || "";
                 attrs.style += ";font-family:" + value;
-                fontFamilyStyles[value] = new KE.Style(fontFamilyStyle, {
-                    family:value
-                });
             });
 
             editor.addSelect({
+                cmdType:"fontFamily",
                 title:"字体",
                 width:"110px",
-                mode:KE.WYSIWYG_MODE,
                 defaultValue:fontFamilies.defaultValue,
                 popUpWidth:fontFamilies.width,
-                items:fontFamilies.items,
-                styles:fontFamilyStyles
-            }, common.select);
+                items:fontFamilies.items
+            }, undefined, ui.Select);
         }};
 }, {
-    requires:['editor', '../select/', '../font/common']
+    requires:['editor', '../font/ui','./cmd']
 });

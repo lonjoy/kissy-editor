@@ -456,14 +456,7 @@ KISSY.add("editor/core/utils", function (S) {
                 }
                 return frame;
             },
-//            /**
-//             * extern for closure compiler
-//             */
-//            extern:function(obj, cfg) {
-//                for (var i in cfg) {
-//                    obj[i] = cfg[i];
-//                }
-//            },
+
             map:function (arr, callback) {
                 for (var i = 0; i < arr.length; i++) {
                     arr[i] = callback(arr[i]);

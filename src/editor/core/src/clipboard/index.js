@@ -145,7 +145,7 @@ KISSY.add("editor/plugin/clipboard/index", function (S) {
 
                 // MS-WORD format sniffing.
                 if (/(class="?Mso|style="[^"]*\bmso\-|w:WordDocument)/.test(html)) {
-                    dataFilter = editor.htmlDataProcessor.wordFilter;
+                    dataFilter = editor.__htmlDataProcessor.wordFilter;
                 }
 
                 editor.insertHtml(html, dataFilter);

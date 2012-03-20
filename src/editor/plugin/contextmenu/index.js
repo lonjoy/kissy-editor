@@ -19,35 +19,45 @@ KISSY.add("editor/plugin/contextmenu/index", function (S, KE, Overlay) {
      */
     ContextMenu.register = function (cfg) {
         var cm = new ContextMenu(cfg),
-            editor = cfg.editor,
-            doc = editor.document;
+            editor = cfg.editor;
+
         cm.editor = editor;
         editor.on("destroy", function () {
             cm.destroy();
         });
-        Event.on(doc, "mousedown", cm.hide, cm);
-        editor.on("sourcemode", cm.hide, cm);
-        Event.delegate(doc, "contextmenu", cfg.filter, function (ev) {
-            ContextMenu.hide(editor);
-            var t = $(ev.target);
-            ev.halt();
-            // ie 右键作用中，不会发生焦点转移，光标移动
-            // 只能右键作用完后才能，才会发生光标移动,range变化
-            // 异步右键操作
-            // qc #3764,#3767
-            var x = ev.pageX,
-                y = ev.pageY;
-            if (!x) {
-                var xy = t._4e_getOffset();
-                x = xy.left;
-                y = xy.top;
-            }
-            setTimeout(function () {
-                cm.selectedEl = t;
-                cm.show(KE.Utils.getXY(x, y, doc, document));
-                ContextMenu.show(cm);
-            }, 30);
+
+        function hideContextMenu() {
+            cm.hide();
+        }
+
+        editor.on("sourcemode", hideContextMenu);
+
+        editor.docReady(function () {
+            var doc = editor.document;
+            Event.on(doc, "mousedown", hideContextMenu);
+            Event.delegate(doc, "contextmenu", cfg.filter, function (ev) {
+                ContextMenu.hide(editor);
+                var t = $(ev.target);
+                ev.halt();
+                // ie 右键作用中，不会发生焦点转移，光标移动
+                // 只能右键作用完后才能，才会发生光标移动,range变化
+                // 异步右键操作
+                // qc #3764,#3767
+                var x = ev.pageX,
+                    y = ev.pageY;
+                if (!x) {
+                    var xy = t._4e_getOffset();
+                    x = xy.left;
+                    y = xy.top;
+                }
+                setTimeout(function () {
+                    cm.selectedEl = t;
+                    cm.show(KE.Utils.getXY(x, y, doc, document));
+                    ContextMenu.show(cm);
+                }, 30);
+            });
         });
+
         return cm;
     };
 
@@ -67,7 +77,7 @@ KISSY.add("editor/plugin/contextmenu/index", function (S, KE, Overlay) {
         }
     };
 
-    ContextMenu.show = function (doc, cm) {
+    ContextMenu.show = function (cm) {
         visibleContextMenus[S.stamp(cm.editor)] = cm;
     };
 
@@ -83,7 +93,7 @@ KISSY.add("editor/plugin/contextmenu/index", function (S, KE, Overlay) {
                 width:self.get("width"),
                 elCls:"ke-menu"
             });
-            var el = self.el.get("contentEl");
+            var el = self.menu.get("contentEl");
             for (var f in handlers) {
                 var a = $("<a href='#'>" + f + "</a>");
                 el.append(a);

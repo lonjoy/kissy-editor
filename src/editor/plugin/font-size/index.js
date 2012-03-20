@@ -2,11 +2,13 @@
  * font formatting for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/font-size/index", function (S, KE, Select, common) {
+KISSY.add("editor/plugin/font-size/index", function (S, KE, ui,cmd) {
 
 
     return {
         init:function (editor) {
+
+            cmd.init(editor);
 
             function wrapFont(vs) {
                 var v = [];
@@ -19,8 +21,7 @@ KISSY.add("editor/plugin/font-size/index", function (S, KE, Select, common) {
                 return v;
             }
 
-            var KEStyle = KE.Style,
-                pluginConfig = editor.cfg.pluginConfig,
+            var pluginConfig = editor.cfg.pluginConfig,
                 fontSizes = pluginConfig["font-size"];
 
             fontSizes = fontSizes || {};
@@ -35,40 +36,16 @@ KISSY.add("editor/plugin/font-size/index", function (S, KE, Select, common) {
                 width:"55px"
             }, false);
 
-            var fontSizeStyles = {},
-                fontSizeStyle = {
-                    element:'span',
-                    styles:{
-                        'font-size':'#(size)'
-                    },
-                    overrides:[
-                        {
-                            element:'font',
-                            attributes:{
-                                'size':null
-                            }
-                        }
-                    ]
-                };
-
-            S.each(fontSizes.items, function (item) {
-                var size = item.value;
-                fontSizeStyles[size] = new KEStyle(fontSizeStyle, {
-                    size:size
-                });
-            });
-
             editor.addSelect({
+                cmdType:"fontSize",
                 title:"大小",
                 width:"30px",
-                mode:KE.WYSIWYG_MODE,
                 showValue:true,
                 defaultValue:fontSizes.defaultValue,
                 popUpWidth:fontSizes.width,
-                items:fontSizes.items,
-                styles:fontSizeStyles
-            }, common.select);
+                items:fontSizes.items
+            }, undefined, ui.Select);
         }};
 }, {
-    requires:['editor', '../select/', '../font/common']
+    requires:['editor', '../font/ui','./cmd']
 });

@@ -85,7 +85,7 @@ KISSY.Editor.add("maximize/support", function () {
             }
             //如果没有失去焦点，重新获得当前选取元素
             //self._saveEditorStatus();
-            editor.wrap.css({
+            editor.iframeWrapEl.css({
                 height:self.iframeHeight
             });
             DOM.css(doc.body, {
@@ -96,15 +96,15 @@ KISSY.Editor.add("maximize/support", function () {
             //documentElement 设置宽高，ie崩溃
             doc.documentElement.style.overflow = "";
 
-            var editorWrapStyle = editor.editorWrap[0].style;
-            editorWrapStyle.position = "static";
-            editorWrapStyle.width = self.editorWrapWidth;
+            var editorElStyle = editor.el[0].style;
+            editorElStyle.position = "static";
+            editorElStyle.width = self.el;
 
             /*
              iframe 中时假死！
-             editor.editorWrap.css({
+             editor.editorEl.css({
              position:"static",
-             width:self.editorWrapWidth
+             width:self.editorElWidth
              });*/
 
             iframe.css({
@@ -130,16 +130,16 @@ KISSY.Editor.add("maximize/support", function () {
             var self = this,
                 editor = self.editor,
                 _savedParents = [],
-                editorWrap = editor.editorWrap;
-            self.iframeHeight = editor.wrap.style("height");
-            self.editorWrapWidth = editorWrap.style("width");
+                editorEl = editor.el;
+            self.iframeHeight = editor.iframeWrapEl.style("height");
+            self.editorElWidth = editorEl.style("width");
             //主窗口滚动条也要保存哦
             self.scrollLeft = DOM.scrollLeft();
             self.scrollTop = DOM.scrollTop();
             window.scrollTo(0, 0);
 
             //将父节点的position都改成static并保存原状态 bugfix:最大化被父元素限制
-            var p = editorWrap.parent();
+            var p = editorEl.parent();
 
             while (p) {
                 var pre = p.css("position");
@@ -170,7 +170,7 @@ KISSY.Editor.add("maximize/support", function () {
             var self = this,
                 editor = self.editor;
             self.savedRanges = null;
-            if (!UA['gecko'] || !editor.iframeFocus) return;
+            if (!UA['gecko'] || !editor.__iframeFocus) return;
             var sel = editor.getSelection();
             //firefox 光标丢失bug,位置丢失，所以这里保存下
             self.savedRanges = sel && sel.getRanges();
@@ -199,7 +199,7 @@ KISSY.Editor.add("maximize/support", function () {
             }
 
             //firefox 有焦点时才重新聚焦
-            if (editor.iframeFocus && sel) {
+            if (editor.__iframeFocus && sel) {
                 var element = sel.getStartElement();
                 //使用原生不行的，会使主窗口滚动
                 //element[0] && element[0].scrollIntoView(true);
@@ -215,7 +215,7 @@ KISSY.Editor.add("maximize/support", function () {
             var self = this,
                 doc = document,
                 editor = self.editor,
-                editorWrap = editor.editorWrap,
+                editorEl = editor.el,
                 viewportHeight = DOM.viewportHeight(),
                 viewportWidth = DOM.viewportWidth(),
                 statusHeight = editor.statusBarEl ?
@@ -233,7 +233,7 @@ KISSY.Editor.add("maximize/support", function () {
             }
             doc.documentElement.style.overflow = "hidden";
 
-            editorWrap.css({
+            editorEl.css({
                 position:"absolute",
                 zIndex:KE.baseZIndex(KE.zIndexManager.MAXIMIZE),
                 width:viewportWidth + "px"
@@ -243,7 +243,7 @@ KISSY.Editor.add("maximize/support", function () {
                 height:viewportHeight + "px",
                 width:viewportWidth + "px"
             });
-            editorWrap.offset({
+            editorEl.offset({
                 left:0,
                 top:0
             });
@@ -252,7 +252,7 @@ KISSY.Editor.add("maximize/support", function () {
                 top:0
             });
 
-            editor.wrap.css({
+            editor.iframeWrapEl.css({
                 height:(viewportHeight - statusHeight - toolHeight ) + "px"
             });
             if (stop !== true) {

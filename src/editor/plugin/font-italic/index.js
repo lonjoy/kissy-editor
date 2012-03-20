@@ -1,26 +1,14 @@
-KISSY.add("editor/plugin/font-italic/index", function (S, KE, Button, common) {
+KISSY.add("editor/plugin/font-italic/index", function (S, KE, ui,cmd) {
     return {
         init:function (editor) {
+            cmd.init(editor);
             editor.addButton({
+                cmdType:'fontItalic',
                 contentCls:"ke-toolbar-italic",
-                title:"斜体 ",
-                style:new KE.Style({
-                    element:'em',
-                    overrides:[
-                        {
-                            element:'i'
-                        },
-                        {
-                            element:'span',
-                            attributes:{
-                                style:'font-style: italic;'
-                            }
-                        }
-                    ]
-                })
-            }, common.button);
+                title:"斜体 "
+            }, undefined, ui.Button);
         }
     };
 }, {
-    requires:['editor', '../button/', '../font/common']
+    requires:['editor', '../font/ui','./cmd']
 });

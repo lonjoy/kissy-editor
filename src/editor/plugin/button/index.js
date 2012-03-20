@@ -135,9 +135,10 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
     /**
      * 将 button ui 和点击功能分离
      */
-    KE.prototype.addButton = function (cfg, methods) {
+    KE.prototype.addButton = function (cfg, methods, ButtonType) {
+        ButtonType = ButtonType || TripleButton;
         var self = this,
-            b = new TripleButton(S.mix({
+            b = new ButtonType(S.mix({
                 render:self.toolBarEl,
                 autoRender:true,
                 editor:self

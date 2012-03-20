@@ -319,7 +319,7 @@ KISSY.add("editor/plugin/selection/index", function (S, KE) {
         // check based on other events, like clicks or keys
         // press.
         function monitor(e) {
-            S.log("fireSelectionChangeForNonIE in selection/index");
+            // S.log("fireSelectionChangeForNonIE in selection/index");
             editor._monitor();
         }
 
@@ -364,7 +364,7 @@ KISSY.add("editor/plugin/selection/index", function (S, KE) {
          * 如果选择了body下面的直接inline元素，则新建p
          */
         editor.on("selectionChange", function (ev) {
-            S.log("monitor selectionChange in selection/index.js");
+            // S.log("monitor selectionChange in selection/index.js");
             var path = ev.path,
                 body = new Node(editor.document.body),
                 selection = ev.selection,
@@ -456,7 +456,7 @@ KISSY.add("editor/plugin/selection/index", function (S, KE) {
     return {
         init:function (editor) {
             editor.docReady(function () {
-                S.log("editor docReady for fix selection");
+                // S.log("editor docReady for fix selection");
                 if (UA.ie) {
                     fixCursorForIE(editor);
                     fixSelectionForIEWhenDocReady(editor);

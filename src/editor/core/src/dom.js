@@ -575,7 +575,7 @@ KISSY.add("editor/core/dom", function (S) {
              * @param [includeSelf] {boolean}
              */
             _4e_ascendant:function (el, name, includeSelf) {
-
+                el = normalElDom(el);
                 if (!includeSelf) {
                     el = el.parentNode;
                 }
@@ -838,7 +838,6 @@ KISSY.add("editor/core/dom", function (S) {
             },
 
 
-
             /**
              * @param el {(Node)}
              * @param evaluator {function(KISSY.Node)}
@@ -976,7 +975,7 @@ KISSY.add("editor/core/dom", function (S) {
             _4e_isEditable:function (el) {
                 // Get the element DTD (defaults to span for unknown elements).
                 var name = DOM._4e_name(el),
-                    xhtml_dtd =KE.XHTML_DTD,
+                    xhtml_dtd = KE.XHTML_DTD,
                     dtd = !xhtml_dtd.$nonEditable[ name ]
                         && ( xhtml_dtd[ name ] || xhtml_dtd["span"] );
 
@@ -1006,6 +1005,6 @@ KISSY.add("editor/core/dom", function (S) {
     }
 
     Utils.injectDom(editorDom);
-},{
-    requires:['./base','./utils']
+}, {
+    requires:['./base', './utils']
 });

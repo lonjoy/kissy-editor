@@ -4,8 +4,7 @@
  */
 KISSY.add("editor/core/base", function (S, HtmlParser) {
     var PREFIX = "editor/plugin/",
-        SUFFIX = "/",
-        BASIC = ["htmldataprocessor", "enterkey", "clipboard", "selection"];
+        SUFFIX = "/";
 
     /**
      * 初始化编辑器
@@ -19,6 +18,7 @@ KISSY.add("editor/core/base", function (S, HtmlParser) {
         if (!(self instanceof Editor)) {
             return new Editor(textarea, cfg);
         }
+        self.__CORE_PLUGINS = ["htmldataprocessor", "enterkey", "clipboard", "selection"];
         textarea = S.one(textarea);
         cfg = cfg || {};
         cfg.pluginConfig = cfg.pluginConfig || {};
@@ -32,20 +32,23 @@ KISSY.add("editor/core/base", function (S, HtmlParser) {
 
     S.augment(Editor, S.EventTarget, {
         use:function (mods, callback) {
-            var self = this;
+            var self = this,
+                BASIC = self.__CORE_PLUGINS;
+
             mods = mods.split(",");
+
             for (var l = mods.length - 1; l >= 0; l--) {
                 if (!mods[l]) {
                     mods.splice(l, 1);
                 }
             }
+
             for (var i = 0; i < BASIC.length; i++) {
                 var b = BASIC[i];
                 if (!S.inArray(b, mods)) {
                     mods.unshift(b);
                 }
             }
-
             S.each(mods, function (m, i) {
                 if (mods[i]) {
                     mods[i] = PREFIX + m + SUFFIX;
@@ -66,6 +69,8 @@ KISSY.add("editor/core/base", function (S, HtmlParser) {
                 args.shift();
                 useMods(args);
             });
+
+            self.__CORE_PLUGINS = [];
 
             return self;
         }

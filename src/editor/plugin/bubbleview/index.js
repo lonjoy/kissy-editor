@@ -4,15 +4,14 @@
  */
 KISSY.add("editor/plugin/bubbleview/index", function (S, UIBase, Overlay, KE) {
     var Event = S.Event,
+        Node = S.Node,
         undefined = ("a" in {}),
         DOM = S.DOM;
 
     var BubbleView = UIBase.create(Overlay, [], {}, {
         ATTRS:{
-            elStyle:{
-                value:{
-                    value:KE.baseZIndex(KE.zIndexManager.BUBBLE_VIEW)
-                }
+            zIndex:{
+                value:KE.baseZIndex(KE.zIndexManager.BUBBLE_VIEW)
             },
             elCls:{
                 value:"ke-bubbleview-bubble"
@@ -153,7 +152,7 @@ KISSY.add("editor/plugin/bubbleview/index", function (S, UIBase, Overlay, KE) {
                 if (!lastElement) {
                     return;
                 }
-                a = filter(lastElement[0]);
+                a = filter(lastElement);
                 if (a) {
                     bubble.selectedEl = a;
                     // 重新触发 bubble show事件
