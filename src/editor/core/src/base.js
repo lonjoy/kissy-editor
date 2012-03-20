@@ -2,38 +2,49 @@
  * set up editor variable
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/core/base", function (S, HtmlParser) {
+KISSY.add("editor/core/base", function (S, HtmlParser, Component, UIBase) {
     var PREFIX = "editor/plugin/",
+        UA = S.UA,
         SUFFIX = "/";
 
-    /**
-     * 初始化编辑器
-     * @constructor
-     * @param textarea {(string)} 将要替换的 textarea
-     * @param cfg {Object} 编辑器配置
-     * @return {Editor} 返回编辑器实例
-     */
-    function Editor(textarea, cfg) {
-        var self = this;
-        if (!(self instanceof Editor)) {
-            return new Editor(textarea, cfg);
+    S.ready(function () {
+        var body = S.one("body");
+        if (UA.ie) {
+            body.addClass("ke-ie" + UA.ie);
+        } else if (UA['trident']) {
+            body.addClass("ke-trident" + UA.trident);
+        } else if (UA['gecko']) {
+            body.addClass("ke-gecko");
+        } else if (UA['webkit']) {
+            body.addClass("ke-webkit");
         }
-        self.__CORE_PLUGINS = ["htmldataprocessor", "enterkey", "clipboard", "selection"];
-        textarea = S.one(textarea);
-        cfg = cfg || {};
-        cfg.pluginConfig = cfg.pluginConfig || {};
-        self.cfg = cfg;
-        self.textarea = textarea;
-        self.init();
-        return undefined;
-    }
+    });
 
-    KISSY.Editor = Editor;
-
-    S.augment(Editor, S.EventTarget, {
+    var Editor = UIBase.create(Component.ModelControl, [UIBase.Box], {
+        initializer:function () {
+            var self = this, textarea;
+            self.__commands = {};
+            self.__dialogs = {};
+            if (textarea = self.get("textarea")) {
+                if (!self.get("render") && !self.get("elBefore")) {
+                    var next = textarea.next();
+                    if (next) {
+                        self.__set("elBefore", next);
+                    } else {
+                        self.__set("render", textarea.parent());
+                    }
+                }
+                if (!self.get("width")) {
+                    self.__set("width", textarea.style("width") || textarea.css("width"));
+                }
+                if (!self.get("height")) {
+                    self.__set("height", textarea.style("height") || textarea.css("height"));
+                }
+            }
+        },
         use:function (mods, callback) {
             var self = this,
-                BASIC = self.__CORE_PLUGINS;
+                BASIC = self.__CORE_PLUGINS || ["htmldataprocessor", "enterkey", "clipboard", "selection"];
 
             mods = mods.split(",");
 
@@ -49,6 +60,7 @@ KISSY.add("editor/core/base", function (S, HtmlParser) {
                     mods.unshift(b);
                 }
             }
+
             S.each(mods, function (m, i) {
                 if (mods[i]) {
                     mods[i] = PREFIX + m + SUFFIX;
@@ -74,15 +86,35 @@ KISSY.add("editor/core/base", function (S, HtmlParser) {
 
             return self;
         }
+    }, {
+        Config:{
+            base:S.Config.base + "editor/"
+        },
+        XHTML_DTD:HtmlParser['DTD'],
+        ATTRS:{
+            textarea:{},
+            handleMouseEvents:{
+                value:false
+            },
+            focusable:{
+                value:false
+            },
+            allowTextSelection_:{
+                value:true
+            },
+            prefixCls:{
+                value:"ke-"
+            }
+        }
     });
+
+    Editor.DefaultRender = UIBase.create(Component.Render, [UIBase.Box.Render]);
 
     S.mix(Editor, S.EventTarget);
 
-    Editor.Config = {
-        base:S.Config.base + "editor/"
-    };
+    Editor.name = "Editor";
 
-    Editor.XHTML_DTD = HtmlParser['DTD'];
+    KISSY.Editor = Editor;
 }, {
-    requires:['htmlparser', 'core']
+    requires:['htmlparser', 'component', 'uibase', 'core']
 });

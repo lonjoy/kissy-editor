@@ -509,28 +509,31 @@ KISSY.ready(function (S) {
             });
         }
 
-        window.editor3 = KE("#editor2", S.clone(cfg))
-                .use("sourcearea" +
-                ",separator" +
-                ",font-bold,font-italic,font-family,font-size," +
-                "font-strikeThrough," +
-                "font-underline," +
-                "separator" +
-                ",checkbox-sourcearea" +
-                ",image" +
-                ",link" +
-                ",forecolor" +
-                ",bgcolor" +
-                ""
-                // +",separator,undo,elementpaths"
-                , function () {
-                    this.on("blur", function () {
-                        S.log("editor blur");
-                    });
-                    this.on("selectionChange", function (e) {
-                        S.log("selectionChange : " + e.path.toString());
-                    });
-                });
+        var cfg3 = S.clone(cfg);
+        cfg3.textarea = S.one("#editor2");
+        window.editor3 = new KE(cfg3);
+        window.editor3.render();
+//                .use("sourcearea" +
+//                ",separator" +
+//                ",font-bold,font-italic,font-family,font-size," +
+//                "font-strikeThrough," +
+//                "font-underline," +
+//                "separator" +
+//                ",checkbox-sourcearea" +
+//                ",image" +
+//                ",link" +
+//                ",forecolor" +
+//                ",bgcolor" +
+//                ""
+//                // +",separator,undo,elementpaths"
+//                , function () {
+//                    this.on("blur", function () {
+//                        S.log("editor blur");
+//                    });
+//                    this.on("selectionChange", function (e) {
+//                        S.log("selectionChange : " + e.path.toString());
+//                    });
+//                });
 
 
     });

@@ -7,6 +7,7 @@
  */
 KISSY.add("editor", function (S) {
     var TRUE = true,
+        $ = S.all,
         FALSE = false,
         NULL = null,
         DOC = document,
@@ -143,12 +144,11 @@ KISSY.add("editor", function (S) {
             ' allowTransparency="true">' +
             '</iframe>' ,
 
-        editorHtml = '<div  class="ke-editor-wrap">' +
-            '<div class="' + KE_TOOLBAR_CLASS.substring(1) + '"></div>' +
+        editorHtml = '<div class="' + KE_TOOLBAR_CLASS.substring(1) + '"></div>' +
             '<div class="' + KE_TEXTAREA_WRAP_CLASS.substring(1) + '">' +
             '</div>' +
-            "<div class='" + KE_STATUSBAR_CLASS.substring(1) + "'></div>" +
-            "</div>";
+            "<div class='" + KE_STATUSBAR_CLASS.substring(1) + "'></div>";
+
 
     var SOURCE_MODE, WYSIWYG_MODE;
     SOURCE_MODE = KE.SOURCE_MODE = 0;
@@ -156,34 +156,30 @@ KISSY.add("editor", function (S) {
     KE["SOURCE_MODE"] = SOURCE_MODE;
     KE["WYSIWYG_MODE"] = WYSIWYG_MODE;
 
+
     S.augment(KE, {
-        init:function () {
+        createDom:function () {
             var self = this,
-                textarea = self.textarea,
+                textarea = self.get("textarea"),
                 editorEl;
 
-            self.__commands = {};
-            self.__dialogs = {};
-            if (IS_IE) {
-                DOM.addClass(DOC.body, "ke-ie" + IS_IE);
+            if (!textarea) {
+                self.set("textarea", textarea = $("<textarea></textarea>"));
             }
-            if (UA['trident']) {
-                DOM.addClass(DOC.body, "ke-trident" + UA.trident);
-            }
-            else if (UA['gecko']) {
-                DOM.addClass(DOC.body, "ke-gecko");
-            }
-            else if (UA['webkit']) {
-                DOM.addClass(DOC.body, "ke-webkit");
-            }
-            editorEl = new Node(editorHtml);
+
+            self.textarea = textarea;
+
+            editorEl = self.get("el");
 
             self.el = editorEl;
+
+            editorEl.addClass(self.get("prefixCls") + "editor-wrap");
+
+            editorEl.html(editorHtml);
+
             self._UUID = INSTANCE_ID++;
-            //实例集中管理
-            focusManager.register(self);
-            var wrap;
-            wrap = self.iframeWrapEl = editorEl.one(KE_TEXTAREA_WRAP_CLASS);
+
+            var wrap = self.iframeWrapEl = editorEl.one(KE_TEXTAREA_WRAP_CLASS);
             self.toolBarEl = editorEl.one(KE_TOOLBAR_CLASS);
             self.statusBarEl = editorEl.one(KE_STATUSBAR_CLASS);
 
@@ -194,22 +190,22 @@ KISSY.add("editor", function (S) {
             // 支持 select 键盘 : 2012-03-16
             // Utils.preventFocus(self.toolBarEl);
 
-            var tw = textarea.style(WIDTH),
-                th = textarea.style(HEIGHT);
-            if (tw) {
-                editorEl.css(WIDTH, tw);
-                textarea.css(WIDTH, "100%");
-            }
+            var tw = self.get("width"),
+                th = self.get("height");
+            editorEl.css(WIDTH, tw);
+            textarea.css(WIDTH, "100%");
             textarea.css(DISPLAY, NONE);
-            editorEl.insertAfter(textarea);
             wrap.append(textarea);
 
-            if (th) {
-                wrap.css(HEIGHT, th);
-                textarea.css(HEIGHT, "100%");
-            }
+            wrap.css(HEIGHT, th);
+            textarea.css(HEIGHT, "100%");
+        },
 
-            if (self.cfg['attachForm'] && textarea[0].form) {
+        renderUI:function () {
+            var self = this,
+                textarea = self.get("textarea");
+
+            if (self.get("attachForm") && textarea[0].form) {
                 self._attachForm();
             }
 
@@ -218,7 +214,7 @@ KISSY.add("editor", function (S) {
             function docReady() {
                 self.detach("docReady", docReady);
                 //是否自动focus
-                if (self.cfg["focus"]) {
+                if (self.get("focus")) {
                     self.focus();
                 }
                 //否则清空选择区域
@@ -228,8 +224,13 @@ KISSY.add("editor", function (S) {
                 }
             }
 
-            self.on("docReady", docReady)
+            self.on("docReady", docReady);
+
+            //实例集中管理
+            focusManager.register(self);
+
         },
+
 
         _createIframe:function (afterData) {
             var self = this,
@@ -425,8 +426,8 @@ KISSY.add("editor", function (S) {
         },
 
         _prepareIFrameHtml:function (id, data) {
-            var cfg = this.cfg;
-            return prepareIFrameHtml(id, cfg['customStyle'], cfg['customLink'], data);
+            var self = this;
+            return prepareIFrameHtml(id, self.get('customStyle'), self.get('customLink'), data);
         },
 
         getSelection:function () {
@@ -463,19 +464,18 @@ KISSY.add("editor", function (S) {
          */
         addCustomStyle:function (cssText) {
             var self = this,
-                cfg = self.cfg,
-                customStyle = cfg.customStyle || "";
+                customStyle = self.get("customStyle") || "";
             customStyle += "\n" + cssText;
-            cfg.customStyle = customStyle;
+            self.set("customStyle", customStyle);
             DOM.addStyleSheet(self.iframe[0].contentWindow, customStyle);
         },
 
         addCustomLink:function (link) {
             var self = this,
-                cfg = self.cfg,
-                customLink = cfg['customLink'],
+                customLink = self.get('customLink') || [],
                 doc = self.document;
             customLink.push(link);
+            self.set("customLink", customLink);
             var elem = doc.createElement("link");
             elem.rel = "stylesheet";
             doc.getElementsByTagName("head")[0].appendChild(elem);
@@ -484,7 +484,6 @@ KISSY.add("editor", function (S) {
 
         removeCustomLink:function (link) {
             var self = this,
-                cfg = self.cfg,
                 doc = self.document,
                 links = DOM.query("link", doc);
             for (var i = 0; i < links.length; i++) {
@@ -492,7 +491,7 @@ KISSY.add("editor", function (S) {
                     DOM.remove(links[i]);
                 }
             }
-            var cls = cfg['customLink'] || [],
+            var cls = self.get('customLink') || [],
                 ind = S.indexOf(link, cls);
             if (ind != -1) {
                 cls.splice(ind, 1);
@@ -960,7 +959,6 @@ KISSY.add("editor", function (S) {
 
         var self = focusManager.getInstance(id),
             doc = self.document,
-            cfg = self.cfg,
             // Remove bootstrap script from the DOM.
             script = doc.getElementById("ke_actscript");
 
@@ -1080,8 +1078,8 @@ KISSY.add("editor", function (S) {
             /*
              some break for firefox ，不能立即设置
              */
-            var disableObjectResizing = cfg['disableObjectResizing'],
-                disableInlineTableEditing = cfg['disableInlineTableEditing'];
+            var disableObjectResizing = self.get('disableObjectResizing'),
+                disableInlineTableEditing = self.get('disableInlineTableEditing');
             if (disableObjectResizing || disableInlineTableEditing) {
                 // IE, Opera and Safari may not support it and throw errors.
                 try {
@@ -1110,7 +1108,8 @@ KISSY.add("editor", function (S) {
     };
     return KE;
 }, {
-    requires:['editor/core/styles',
+    requires:[
+        'editor/core/styles',
         'editor/core/zindexmanager',
         'editor/core/focusmanager',
         'editor/core/meta'
