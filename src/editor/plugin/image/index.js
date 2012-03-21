@@ -44,7 +44,7 @@ KISSY.add("editor/plugin/image/index", function (S, KE, Button, BubbleView, Cont
                     }
                 },
                 "插入新行":function () {
-                    var doc = editor.document,
+                    var doc = editor.get("document")[0],
                         p = new Node(doc.createElement("p"));
                     if (!UA['ie']) {
                         p._4e_appendBogus();
@@ -66,7 +66,7 @@ KISSY.add("editor/plugin/image/index", function (S, KE, Button, BubbleView, Cont
             });
 
             editor.docReady(function () {
-                Event.on(editor.document, "dblclick", function (ev) {
+                Event.on(editor.get("document")[0], "dblclick", function (ev) {
                     ev.halt();
                     var t = $(ev.target);
                     if (checkImg(t)) {

@@ -2,13 +2,13 @@
  * table base functionality
  * @author yiminghe@gmail.com
  */
-KISSY.Editor.add("table/support", function() {
+KISSY.Editor.add("table/support", function () {
     var S = KISSY,
         UA = S.UA,
         Node = S.Node,
         KE = S.Editor,
         KEN = KE.NODE,
-        tableRules = ["tr","th","td","tbody","table"];
+        tableRules = ["tr", "th", "td", "tbody", "table"];
     var addRes = KE.Utils.addRes,
         destroyRes = KE.Utils.destroyRes;
 
@@ -16,13 +16,15 @@ KISSY.Editor.add("table/support", function() {
         var self = this,
             myContexts = {};
         for (var f in contextMenu) {
-            (function(f) {
-                myContexts[f] = function() {
-                    editor.fire("save");
-                    contextMenu[f](self);
-                    editor.fire("save");
-                }
-            })(f);
+            if (contextMenu.hasOwnProperty(f)) {
+                (function (f) {
+                    myContexts[f] = function () {
+                        editor.execCommand("save");
+                        contextMenu[f](self);
+                        editor.execCommand("save");
+                    }
+                })(f);
+            }
         }
         var c = KE.ContextMenu.register({
             editor:editor,
@@ -36,11 +38,11 @@ KISSY.Editor.add("table/support", function() {
     }
 
     S.augment(TableUI, {
-        _tableShow:function(ev, selectedTable, td) {
+        _tableShow:function (ev, selectedTable, td) {
             var editor = this.editor;
             editor.showDialog("table/dialog", [selectedTable, td]);
         },
-        destroy:function() {
+        destroy:function () {
             destroyRes.call(this);
             this.editor.destroyDialog("table/dialog");
         }
@@ -223,16 +225,16 @@ KISSY.Editor.add("table/support", function() {
     function getFocusElementAfterDelCols(cells) {
         var cellIndexList = [],
             table = cells[ 0 ] && cells[ 0 ]._4e_ascendant('table'),
-            i,length,
-            targetIndex,targetCell;
+            i, length,
+            targetIndex, targetCell;
 
         // get the cellIndex list of delete cells
-        for (i = 0,length = cells.length; i < length; i++)
+        for (i = 0, length = cells.length; i < length; i++)
             cellIndexList.push(cells[i][0].cellIndex);
 
         // get the focusable column index
         cellIndexList.sort();
-        for (i = 1,length = cellIndexList.length;
+        for (i = 1, length = cellIndexList.length;
              i < length; i++) {
             if (cellIndexList[ i ] - cellIndexList[ i - 1 ] > 1) {
                 targetIndex = cellIndexList[ i - 1 ] + 1;
@@ -246,7 +248,7 @@ KISSY.Editor.add("table/support", function() {
 
         // scan row by row to get the target cell
         var rows = table[0].rows;
-        for (i = 0,length = rows.length;
+        for (i = 0, length = rows.length;
              i < length; i++) {
             targetCell = rows[ i ].cells[ targetIndex ];
             if (targetCell)
@@ -321,11 +323,11 @@ KISSY.Editor.add("table/support", function() {
             table = startElement && startElement._4e_ascendant('table', true);
         if (!table)
             return undefined;
-        var td = startElement._4e_ascendant(function(n) {
+        var td = startElement._4e_ascendant(function (n) {
             var name = n._4e_name();
             return table.contains(n) && (name == "td" || name == "th");
         }, true);
-        var tr = startElement._4e_ascendant(function(n) {
+        var tr = startElement._4e_ascendant(function (n) {
             var name = n._4e_name();
             return table.contains(n) && name == "tr";
         }, true);
@@ -350,25 +352,25 @@ KISSY.Editor.add("table/support", function() {
     }
 
     var statusChecker = {
-        "表格属性" :getSel,
-        "删除表格" :ensureTd,
-        "删除列" :ensureTd,
-        "删除行" :ensureTr,
-        '在上方插入行': ensureTr,
-        '在下方插入行' : ensureTr,
-        '在左侧插入列' : ensureTd,
-        '在右侧插入列' : ensureTd
+        "表格属性":getSel,
+        "删除表格":ensureTd,
+        "删除列":ensureTd,
+        "删除行":ensureTr,
+        '在上方插入行':ensureTr,
+        '在下方插入行':ensureTr,
+        '在左侧插入列':ensureTd,
+        '在右侧插入列':ensureTd
     };
 
     var contextMenu = {
 
-        "表格属性" : function(cmd) {
-            var editor = cmd.editor,info = getSel(editor);
+        "表格属性":function (cmd) {
+            var editor = cmd.editor, info = getSel(editor);
             if (!info) return;
             cmd._tableShow(null, info.table, info.td);
         },
 
-        "删除表格" : function(cmd) {
+        "删除表格":function (cmd) {
             var editor = cmd.editor,
                 selection = editor.getSelection(),
                 startElement = selection &&
@@ -394,33 +396,33 @@ KISSY.Editor.add("table/support", function() {
                 table._4e_remove();
         },
 
-        '删除行 ': function(cmd) {
+        '删除行 ':function (cmd) {
             var selection = cmd.editor.getSelection();
             placeCursorInCell(deleteRows(selection), undefined);
         },
 
-        '删除列 ' : function(cmd) {
+        '删除列 ':function (cmd) {
             var selection = cmd.editor.getSelection(),
                 element = deleteColumns(selection);
             element && placeCursorInCell(element, true);
         },
 
-        '在上方插入行': function(cmd) {
+        '在上方插入行':function (cmd) {
             var selection = cmd.editor.getSelection();
             insertRow(selection, true);
         },
 
-        '在下方插入行' : function(cmd) {
+        '在下方插入行':function (cmd) {
             var selection = cmd.editor.getSelection();
             insertRow(selection, undefined);
         },
 
-        '在左侧插入列' : function(cmd) {
+        '在左侧插入列':function (cmd) {
             var selection = cmd.editor.getSelection();
             insertColumn(selection, true);
         },
 
-        '在右侧插入列' : function(cmd) {
+        '在右侧插入列':function (cmd) {
             var selection = cmd.editor.getSelection();
             insertColumn(selection, undefined);
         }
@@ -429,5 +431,5 @@ KISSY.Editor.add("table/support", function() {
     KE.TableUI = TableUI;
 }, {
     attach:false,
-    "requires": ["contextmenu"]
+    "requires":["contextmenu"]
 });

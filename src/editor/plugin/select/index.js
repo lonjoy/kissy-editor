@@ -11,7 +11,8 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
         SELECT_ACTIVE_CLASS = "ke-select-active",
         MENU_SELECTED_CLASS = "ke-menu-selected",
         SELECT_MARKUP = "<span class='ke-select-wrap'>" +
-            "<a class='ke-select'>" +
+            // 设置 tabindex=0 ，否则 click 会导致 blur->focus 事件触发
+            "<a class='ke-select' hidefocus='hidefocus' tabindex='0'>" +
             "<span class='ke-select-text'>" +
             "<span class='ke-select-text-inner'></span>" +
             "</span>" +
@@ -127,6 +128,8 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                 innerText.html(title);
             }
 
+            el.unselectable();
+
             text.css("width", self.get("width"));
 
             if (title) {
@@ -159,6 +162,8 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
         _keydown:function (e) {
 
             var keyCode = e.keyCode,
+                current,
+                next,
                 self = this;
 
             switch (keyCode) {
@@ -171,7 +176,7 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                         }
                         return;
                     }
-                    var current = $(self._findCurrent()), next;
+                    current = $(self._findCurrent());
                     current.removeClass(MENU_SELECTED_CLASS);
                     if (next = current.next()) {
                         next.addClass(MENU_SELECTED_CLASS);
@@ -186,7 +191,7 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                     if (!self._isShown()) {
                         return;
                     }
-                    var current = $(self._findCurrent()), next;
+                    current = $(self._findCurrent());
                     current.removeClass(MENU_SELECTED_CLASS);
                     if (next = current.prev()) {
                         next.addClass(MENU_SELECTED_CLASS);
@@ -205,7 +210,7 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                         }
                         return;
                     }
-                    var current = $(self._findCurrent());
+                    current = $(self._findCurrent());
                     if (!current) {
                         return;
                     }
@@ -315,8 +320,8 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
         _prepare:function () {
             var self = this,
                 el = self.el,
-                popUpWidth = self.get("popUpWidth"),
                 focusA = self._focusA,
+                popUpWidth = self.get("popUpWidth"),
                 menuNode;
             //要在适当位置插入 !!!
             var menu = new Overlay({
@@ -327,6 +332,15 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                 width:popUpWidth ? popUpWidth : el.width(),
                 zIndex:KE.baseZIndex(KE.zIndexManager.SELECT)
             }), items = self.get("items");
+
+            menu.on("hide", function () {
+                focusA.removeClass(SELECT_ACTIVE_CLASS);
+            });
+
+            menu.on("show", function () {
+                focusA.addClass(SELECT_ACTIVE_CLASS);
+            });
+
             addRes.call(self, menu);
             menuNode = menu.get("contentEl").one("div");
             self.menu = menu;
@@ -356,37 +370,11 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                 newVal:items
             });
 
-            menu.on("show", function () {
-                focusA.addClass(SELECT_ACTIVE_CLASS);
-            });
-
-            menu.on("hide", function () {
-                focusA.removeClass(SELECT_ACTIVE_CLASS);
-            });
-
-            function deactivate(ev) {
-                //ev && ev.halt();
-                var t = $(ev.target);
-                if (el.contains(t) || el.equals(t)) {
-                    return;
-                }
-                menu.hide();
-            }
-
-            Event.on(document, "click", deactivate);
-
-            addRes.call(self, function () {
-                Event.remove(document, "click", deactivate);
-            });
-
-            if (self.get("doc"))
-                Event.on(self.get("doc"), "click", deactivate);
-
             menuNode.on("click", self._select, self);
 
             self.as = self._selectList.all("a");
 
-            Event.on(menuNode[0], 'mouseenter', function () {
+            menuNode.on('mouseenter', function () {
                 self.as.removeClass(MENU_SELECTED_CLASS);
             });
 
@@ -520,12 +508,19 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
             self.menu.set("xy", [xy.left, xy.top]);
             self.menu.show();
         },
-        _click:function () {
-
-
+        _click:function (e) {
+            if (e) {
+                e.halt();
+            }
             var self = this,
                 el = self.el,
+                menu = self.menu,
                 v = self.get("value");
+
+            if (menu && menu.get("visible")) {
+                menu.hide();
+                return;
+            }
 
             // chrome will make body focus !!
             self._focusA[0].focus();
@@ -534,17 +529,12 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
                 return false;
             }
 
-            if (self._focusA.hasClass(SELECT_ACTIVE_CLASS)) {
-                self.menu && self.menu.hide();
-                return;
-            }
-
             self.fire("select");
 
             self._prepare();
 
             //可能的话当显示层时，高亮当前值对应option
-            if (v && self.menu) {
+            if (v && menu) {
                 var as = self.as;
                 as.each(function (a) {
                     if (a.attr("data-value") == v) {
@@ -574,14 +564,14 @@ KISSY.add("editor/plugin/select/index", function (S, KE, Overlay) {
         cfg.editor = self;
 
         var s = new SelectType(S.mix({
-            container:self.toolBarEl,
-            doc:self.document
+            container:self.get("toolBarEl"),
+            doc:self.get("document")[0]
         }, cfg));
 
         S.mix(s, methods);
 
         self.on("selectionChange", function () {
-            if (self.getMode() == KE.SOURCE_MODE) {
+            if (self.get("mode") == KE.SOURCE_MODE) {
                 return;
             }
             s.selectionChange && s.selectionChange.apply(s, arguments);

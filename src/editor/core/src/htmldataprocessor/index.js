@@ -14,12 +14,10 @@ KISSY.add("editor/plugin/htmldataprocessor/index", function (S) {
                 KE = S.Editor,
                 Node = S.Node,
                 UA = S.UA,
-                KEN = KE.NODE,
                 HtmlParser = S.require("htmlparser"),
                 htmlFilter = new HtmlParser.Filter(),
                 dataFilter = new HtmlParser.Filter(),
-                wordFilter = new HtmlParser.Filter(),
-                dtd = KE.XHTML_DTD;
+                wordFilter = new HtmlParser.Filter();
 
             /**
              * 常用的规则：

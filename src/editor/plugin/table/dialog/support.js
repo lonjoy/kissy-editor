@@ -372,7 +372,7 @@ KISSY.Editor.add("table/dialog/support", function() {
             html += "</tbody>";
             html += "</table>";
 
-            var table = new Node(html, null, editor.document);
+            var table = new Node(html, null, editor.get("document")[0]);
             editor.insertElement(table);
         },
         _fillTableDialog:function() {

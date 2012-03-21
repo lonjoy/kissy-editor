@@ -19,7 +19,7 @@ KISSY.add("editor/core/focusmanager", function (S) {
             refreshAll:function () {
                 for (var i in INSTANCES) {
                     if (INSTANCES.hasOwnProperty(i)) {
-                        var e = INSTANCES[i], doc = e.document;
+                        var e = INSTANCES[i], doc = e.get("document")[0];
                         doc.designMode = "off";
                         doc.designMode = "on";
                     }
@@ -39,7 +39,7 @@ KISSY.add("editor/core/focusmanager", function (S) {
                 return INSTANCES[id];
             },
             add:function (editor) {
-                var win = DOM._4e_getWin(editor.document);
+                var win = DOM._4e_getWin(editor.get("document")[0]);
                 Event.on(win, "focus", focus, editor);
                 Event.on(win, "blur", blur, editor);
             },
@@ -48,7 +48,7 @@ KISSY.add("editor/core/focusmanager", function (S) {
             },
             remove:function (editor) {
                 delete INSTANCES[editor._UUID];
-                var win = DOM._4e_getWin(editor.document);
+                var win = DOM._4e_getWin(editor.get("document")[0]);
                 Event.remove(win, "focus", focus, editor);
                 Event.remove(win, "blur", blur, editor);
             }

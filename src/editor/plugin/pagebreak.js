@@ -43,7 +43,7 @@ KISSY.Editor.add("pagebreak", function(editor) {
             contentCls:"ke-toolbar-pagebreak",
             offClick:function() {
                 var editor = this.editor,
-                    real = new Node(mark_up, null, editor.document),
+                    real = new Node(mark_up, null, editor.get("document")[0]),
                     substitute = editor.createFakeElement ?
                         editor.createFakeElement(real,
                             CLS,
@@ -55,7 +55,7 @@ KISSY.Editor.add("pagebreak", function(editor) {
                 var sel = editor.getSelection(),
                     range = sel && sel.getRanges()[0];
                 if (!range) return;
-                editor.fire("save");
+                editor.execCommand("save");
                 var start = range.startContainer,pre = start;
                 while (start._4e_name() !== "body") {
                     pre = start;
@@ -64,7 +64,7 @@ KISSY.Editor.add("pagebreak", function(editor) {
                 range.collapse(true);
                 range.splitElement(pre);
                 substitute.insertAfter(pre);
-                editor.fire("save");
+                editor.execCommand("save");
             }
         });
 

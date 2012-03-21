@@ -358,7 +358,7 @@ KISSY.Editor.add("list/support", function() {
                     && !( boundaryNode[0].nodeType == KEN.NODE_ELEMENT &&
                     siblingNode._4e_isBlockBoundary({ br : 1 }) ))
 
-                    DOM[ isStart ? 'insertBefore' : 'insertAfter' ](editor.document.createElement('br'),
+                    DOM[ isStart ? 'insertBefore' : 'insertAfter' ](editor.get("document")[0].createElement('br'),
                         DOM._4e_unwrap(boundaryNode));
             }
 
@@ -566,10 +566,10 @@ KISSY.Editor.add("list/support", function() {
             var self = this,
                 editor = self.editor,
                 el = self.btn;
-            editor.fire("save");
+            editor.execCommand("save");
             self.listCommand.state = el.get("state");
             self.listCommand.exec(editor);
-            editor.fire("save");
+            editor.execCommand("save");
             editor.notifySelectionChange();
         }
     };

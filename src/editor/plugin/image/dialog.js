@@ -179,7 +179,7 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Switchable,S
     function ImageDialog(editor) {
         var self = this;
         self.editor = editor;
-        self.imageCfg = self.editor.cfg["pluginConfig"]["image"] || {};
+        self.imageCfg = editor.get("pluginConfig")["image"] || {};
         self.cfg = self.imageCfg["upload"] || null;
         self.suffix = self.cfg && self.cfg["suffix"] || "png,jpg,jpeg,gif";
         // 不要加g：http://yiminghe.javaeye.com/blog/581347
@@ -448,7 +448,7 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Switchable,S
              */
             if (self.selectedEl) {
                 img = self.selectedEl;
-                self.editor.fire("save");
+                self.editor.execCommand("save");
                 self.selectedEl.attr({
                     "src":url,
                     //注意设置，取的话要从 _ke_saved_src 里取
@@ -465,7 +465,7 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Switchable,S
                     "' " +
                     "_ke_saved_src='" +
                     url +
-                    "' alt='' />", null, self.editor.document);
+                    "' alt='' />", null, self.editor.get("document")[0]);
                 self.editor.insertElement(img);
             }
 
@@ -503,7 +503,7 @@ KISSY.add("editor/plugin/image/dialog", function (S, KE, Overlay4E, Switchable,S
                 }
 
                 if (self.selectedEl) {
-                    self.editor.fire("save");
+                    self.editor.execCommand("save");
                 }
             }, 100);
         },

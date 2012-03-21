@@ -54,14 +54,14 @@ KISSY.Editor.add("format", function(editor) {
                 var self = this,
                     v = ev.newVal,
                     pre = ev.prevVal;
-                editor.fire("save");
+                editor.execCommand("save");
                 if (v != pre) {
-                    FORMAT_STYLES[v].apply(editor.document);
+                    FORMAT_STYLES[v].apply(editor.get("document")[0]);
                 } else {
-                    FORMAT_STYLES["p"].apply(editor.document);
+                    FORMAT_STYLES["p"].apply(editor.get("document")[0]);
                     self.btn.set("value", "p");
                 }
-                editor.fire("save");
+                editor.execCommand("save");
             },
             selectionChange:function(ev) {
                 var self = this,

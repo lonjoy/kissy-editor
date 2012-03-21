@@ -8,7 +8,7 @@ KISSY.add("editor/plugin/separator/index", function (S, KE) {
             var s = new S.Node('<span ' +
                 'class="ke-toolbar-separator">&nbsp;' +
                 '</span>')
-                .appendTo(editor.toolBarEl);
+                .appendTo(editor.get("toolBarEl"));
             editor.on("destroy", function () {
                 s.remove();
             });

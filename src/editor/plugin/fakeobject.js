@@ -132,7 +132,7 @@ KISSY.Editor.add("fakeobjects", function(editor) {
 
                 if (isResizable)
                     attributes._ke_resizable = isResizable;
-                return new Node("<img/>", attributes, self.document);
+                return new Node("<img/>", attributes, self.get("document")[0]);
             },
 
             restoreRealElement:function(fakeElement) {
@@ -140,7 +140,7 @@ KISSY.Editor.add("fakeobjects", function(editor) {
                     return null;
                 var html = (decodeURIComponent(fakeElement.attr('_ke_realelement')));
 
-                var temp = new Node('<div>', null, this.document);
+                var temp = new Node('<div>', null, this.get("document")[0]);
                 temp.html(html);
                 // When returning the node, remove it from its parent to detach it.
                 return temp._4e_first(

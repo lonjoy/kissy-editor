@@ -210,24 +210,6 @@ KISSY.add("editor/core/utils", function (S) {
                 return domain != hostname &&
                     domain != ( '[' + hostname + ']' );	// IPv6 IP support (#5434)
             },
-            /**
-             *
-             * @param fn {function()}
-             * @param scope {Object}
-             * @param ms {number}
-             * @return {function()}
-             */
-            buffer:function (fn, scope, ms) {
-                ms = ms || 0;
-                var timer = NULL;
-                return (function () {
-                    timer && clearTimeout(timer);
-                    var args = arguments;
-                    timer = setTimeout(function () {
-                        return fn.apply(scope, args);
-                    }, ms);
-                });
-            },
 
             isNumber:function (n) {
                 return /^\d+(.\d+)?$/.test(S.trim(n));

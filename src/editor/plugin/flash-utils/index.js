@@ -2,20 +2,15 @@
  * flash utilities
  * @author yiminghe@gmail.com
  */
-KISSY.Editor.add("flashutils", function() {
-    var S = KISSY,KE = S.Editor,flashUtils = KE.Utils.flash;
-    if (flashUtils) {
-        S.log("flashUtils attach more");
-        return;
-    }
-    var DOM = S.DOM,Node = S.Node,UA = S.UA;
-    flashUtils = {
-        getUrl: function (r) {
-            var url = "",KEN = KE.NODE;
+KISSY.add("editor/plugin/flash-utils/index", function (S) {
+    var DOM = S.DOM, Node = S.Node, UA = S.UA;
+    var flashUtils = {
+        getUrl:function (r) {
+            var url = "";
             if (r._4e_name() == "object") {
                 var params = r[0].childNodes;
                 for (var i = 0; i < params.length; i++) {
-                    if (params[i].nodeType != KEN.NODE_ELEMENT)continue;
+                    if (params[i].nodeType != 1)continue;
                     if ((DOM.attr(params[i], "name") || "").toLowerCase() == "movie") {
                         url = DOM.attr(params[i], "value");
                     } else if (DOM._4e_name(params[i]) == "embed") {
@@ -29,7 +24,7 @@ KISSY.Editor.add("flashutils", function() {
             }
             return url;
         },
-        createSWF:function(movie, cfg, doc) {
+        createSWF:function (movie, cfg, doc) {
             var attrs = cfg.attrs || {},
                 flashVars = cfg.flashVars,
                 attrs_str = "",
@@ -92,7 +87,7 @@ KISSY.Editor.add("flashutils", function() {
                 html:outerHTML
             };
         },
-        createSWFRuntime2:function(movie, cfg, doc) {
+        createSWFRuntime2:function (movie, cfg, doc) {
             doc = doc || document;
             var holder = new Node(
                 "<div " +
@@ -107,7 +102,7 @@ KISSY.Editor.add("flashutils", function() {
             return el[0];
 
         },
-        createSWFRuntime:function(movie, cfg, doc) {
+        createSWFRuntime:function (movie, cfg, doc) {
             var attrs = cfg.attrs || {},
                 flashVars = cfg.flashVars || {},
                 params = cfg.params || {},
@@ -167,15 +162,15 @@ KISSY.Editor.add("flashutils", function() {
                                 "position:absolute;" +
                                 //"left:" + DOM.scrollLeft() + "px;" +
                                 //"top:" + DOM.scrollTop() + "px;"
-                                + "overflow:hidden;"
+                                +"overflow:hidden;"
                             ))
                         +
                         "'>", null, doc
-                    ).
+                ).
                     appendTo(doc.body);
                 //不能初始化时设置，防止刷新,scrollLeft 一开始为0，等会,wait is virtue
-                setTimeout(function() {
-                    holder.offset({left:DOM.scrollLeft(),top:DOM.scrollTop()})
+                setTimeout(function () {
+                    holder.offset({left:DOM.scrollLeft(), top:DOM.scrollTop()})
                 }, 100);
             }
             holder.html(outerHTML);
@@ -183,7 +178,6 @@ KISSY.Editor.add("flashutils", function() {
         }
 
     };
-    KE.Utils.flash = flashUtils;
-},{
-    attach:false
+
+    return flashUtils;
 });

@@ -85,7 +85,7 @@ KISSY.Editor.add("maximize/support", function () {
             }
             //如果没有失去焦点，重新获得当前选取元素
             //self._saveEditorStatus();
-            editor.iframeWrapEl.css({
+            editor.get("iframeWrapEl").css({
                 height:self.iframeHeight
             });
             DOM.css(doc.body, {
@@ -96,7 +96,7 @@ KISSY.Editor.add("maximize/support", function () {
             //documentElement 设置宽高，ie崩溃
             doc.documentElement.style.overflow = "";
 
-            var editorElStyle = editor.el[0].style;
+            var editorElStyle = editor.get("el")[0].style;
             editorElStyle.position = "static";
             editorElStyle.width = self.el;
 
@@ -120,7 +120,7 @@ KISSY.Editor.add("maximize/support", function () {
                 .addClass(MAXIMIZE_CLASS)
                 .attr("title", MAXIMIZE_TIP);
 
-            ie < 8 && self.editor.toolBarEl.removeClass(MAXIMIZE_TOOLBAR_CLASS);
+            ie < 8 && self.editor.get("toolBarEl").removeClass(MAXIMIZE_TOOLBAR_CLASS);
         },
         /**
          * 保存最大化前的外围状态信息到内存，
@@ -130,8 +130,8 @@ KISSY.Editor.add("maximize/support", function () {
             var self = this,
                 editor = self.editor,
                 _savedParents = [],
-                editorEl = editor.el;
-            self.iframeHeight = editor.iframeWrapEl.style("height");
+                editorEl = editor.get("el");
+            self.iframeHeight = editor.get("iframeWrapEl").style("height");
             self.editorElWidth = editorEl.style("width");
             //主窗口滚动条也要保存哦
             self.scrollLeft = DOM.scrollLeft();
@@ -159,7 +159,7 @@ KISSY.Editor.add("maximize/support", function () {
                 .addClass(RESTORE_CLASS);
             bel.attr("title", RESTORE_TIP);
             //ie6,7 图标到了窗口边界，不可点击，给个padding
-            ie < 8 && self.editor.toolBarEl.addClass(MAXIMIZE_TOOLBAR_CLASS);
+            ie < 8 && self.editor.get("toolBarEl").addClass(MAXIMIZE_TOOLBAR_CLASS);
         },
 
         /**
@@ -215,12 +215,12 @@ KISSY.Editor.add("maximize/support", function () {
             var self = this,
                 doc = document,
                 editor = self.editor,
-                editorEl = editor.el,
+                editorEl = editor.get("el"),
                 viewportHeight = DOM.viewportHeight(),
                 viewportWidth = DOM.viewportWidth(),
-                statusHeight = editor.statusBarEl ?
-                    editor.statusBarEl[0].offsetHeight : 0,
-                toolHeight = editor.toolBarEl[0].offsetHeight;
+                statusHeight = editor.get("statusBarEl") ?
+                    editor.get("statusBarEl")[0].offsetHeight : 0,
+                toolHeight = editor.get("toolBarEl")[0].offsetHeight;
 
             if (!ie) {
                 DOM.css(doc.body, {
@@ -252,7 +252,7 @@ KISSY.Editor.add("maximize/support", function () {
                 top:0
             });
 
-            editor.iframeWrapEl.css({
+            editor.get("iframeWrapEl").css({
                 height:(viewportHeight - statusHeight - toolHeight ) + "px"
             });
             if (stop !== true) {
@@ -270,7 +270,7 @@ KISSY.Editor.add("maximize/support", function () {
             self.call("_saveSate");
             self.call("_maximize");
             if (!self._resize) {
-                var _maximize = KE.Utils.buffer(self.cfg._maximize, self, 100);
+                var _maximize = S.buffer(self.cfg._maximize, 100,self);
                 self['_resize'] = function () {
                     _maximize();
                     editor.fire("maximizeWindow");

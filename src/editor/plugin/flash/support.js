@@ -69,7 +69,7 @@ KISSY.Editor.add("flash/support", function () {
                 pluginContext:self
             });
             //注册双击，双击时检测
-            Event.on(editor.document, "dblclick", self._dbclick, self);
+            Event.on(editor.get("document")[0], "dblclick", self._dbclick, self);
         },
 
         /**
@@ -116,7 +116,7 @@ KISSY.Editor.add("flash/support", function () {
                 editor = self.editor;
             self._contextMenu.destroy();
             BubbleView.destroy(self._type);
-            Event.remove(editor.document, "dblclick", self._dbclick, self);
+            Event.remove(editor.get("document")[0], "dblclick", self._dbclick, self);
             editor.destroyDialog(self._type + "/dialog");
         }
     });
@@ -223,7 +223,7 @@ KISSY.Editor.add("flash/support", function () {
     Flash.Insert = function (editor, src, attrs, _cls, _type, callback) {
         var nodeInfo = flashUtils.createSWF(src, {
             attrs:attrs
-        }, editor.document),
+        }, editor.get("document")[0]),
             real = nodeInfo.el,
             substitute = editor.createFakeElement ?
                 editor.createFakeElement(real,

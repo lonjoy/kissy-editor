@@ -7,6 +7,7 @@
 <link href="../build/editor/theme/cool/editor-pkg.css" rel="stylesheet"/>
 <link href="../src/editor/theme/cool/tab.css" rel="stylesheet"/>
 <link href="../src/editor/theme/cool/overlay.css" rel="stylesheet"/>
+<link href="../src/editor/theme/cool/resize-plugin.css" rel="stylesheet"/>
 <script>
     //document.domain="taobao.net";
 </script>
@@ -187,11 +188,15 @@
 </form>
 -->
 <a href="http://www.g.cn"> leave </a>
-<div style="width: 60%; margin: 50px auto;position:relative;overflow:hidden;">
+<div style="width: 60%; margin: 50px auto;position:relative;overflow:hidden;" id="container2">
     <label for="editor2">Editor Instance 2:</label>
-    <textarea id="editor2" style="width:99%;height:400px;margin:0 auto;"></textarea>
+    <textarea id="editor2" style="width:80%;height:400px;margin:0 auto;"></textarea>
 </div>
 <script src="../../kissy/build/kissy.js"></script>
+<script src="../../kissy/build/uibase.js"></script>
+<script src="../../kissy/build/component.js"></script>
+<script src="../../kissy/build/dd.js"></script>
+<script src="../../kissy/build/overlay.js"></script>
 <!--
 core
 -->
@@ -236,7 +241,7 @@ KISSY.ready(function (S) {
         var KE = KISSY.Editor;
         KE.Config.base = "../src/editor/";
         var cfg = {
-
+            autoRender:true,
             attachForm:true,
             baseZIndex:10000,
             //自定义样式
@@ -438,7 +443,7 @@ KISSY.ready(function (S) {
                             "请选择恢复编辑历史</div></div>"
                 },
                 "resize":{
-                    direction:["y"]
+                    //direction:["y"]
                 },
 
                 dragupload:{
@@ -510,30 +515,39 @@ KISSY.ready(function (S) {
         }
 
         var cfg3 = S.clone(cfg);
-        cfg3.textarea = S.one("#editor2");
-        window.editor3 = new KE(cfg3);
-        window.editor3.render();
-//                .use("sourcearea" +
-//                ",separator" +
-//                ",font-bold,font-italic,font-family,font-size," +
-//                "font-strikeThrough," +
-//                "font-underline," +
-//                "separator" +
-//                ",checkbox-sourcearea" +
-//                ",image" +
-//                ",link" +
-//                ",forecolor" +
-//                ",bgcolor" +
-//                ""
-//                // +",separator,undo,elementpaths"
-//                , function () {
-//                    this.on("blur", function () {
-//                        S.log("editor blur");
-//                    });
-//                    this.on("selectionChange", function (e) {
-//                        S.log("selectionChange : " + e.path.toString());
-//                    });
-//                });
+
+//        cfg3.textarea = S.one("#editor2");
+
+        S.one("#editor2").remove();
+        cfg3.render = S.one("#container2");
+        cfg3.width = "80%";
+        cfg3.height = "400px";
+
+        window.editor3 = new KE(cfg3)
+                .use("sourcearea" +
+                ",separator" +
+                ",font-bold,font-italic,font-family,font-size," +
+                "font-strikeThrough," +
+                "font-underline," +
+                "separator" +
+                ",checkbox-sourcearea" +
+                ",image" +
+                ",link" +
+                ",forecolor" +
+                ",bgcolor" +
+                ",resize" +
+                ",draft" +
+                ",undo" +
+                ""
+                // +",separator,undo,elementpaths"
+                , function () {
+                    this.on("blur", function () {
+                        S.log("editor blur");
+                    });
+                    this.on("selectionChange", function (e) {
+                        S.log("selectionChange : " + e.path.toString());
+                    });
+                });
 
 
     });

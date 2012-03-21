@@ -2,12 +2,9 @@
  * undo,redo manager for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.Editor.add("undo/support", function() {
-    var S = KISSY,
-        KE = S.Editor,
-        arrayCompare = KE.Utils.arrayCompare,
+KISSY.add("editor/plugin/undo/cmd", function (S, KE) {
+    var arrayCompare = KE.Utils.arrayCompare,
         UA = S.UA,
-        Event = S.Event,
         LIMIT = 30;
 
     /**
@@ -27,13 +24,12 @@ KISSY.Editor.add("undo/support", function() {
         self.bookmarks = selection && selection.createBookmarks2(true);
     }
 
-
     S.augment(Snapshot, {
         /**
          * 编辑状态间是否相等
          * @param otherImage
          */
-        equals:function(otherImage) {
+        equals:function (otherImage) {
             var self = this,
                 thisContents = self.contents,
                 otherContents = otherImage.contents;
@@ -69,7 +65,7 @@ KISSY.Editor.add("undo/support", function() {
      * @param editor
      */
     function UndoManager(editor) {
-        //redo undo history stack
+        // redo undo history stack
         /**
          * 编辑器状态历史保存
          */
@@ -79,14 +75,14 @@ KISSY.Editor.add("undo/support", function() {
         self.index = -1;
         self.editor = editor;
         //键盘输入做延迟处理
-        self.bufferRunner = KE.Utils.buffer(self.save, self, 500);
+        self.bufferRunner = S.buffer(self.save, 500,self);
         self._init();
     }
 
     var //editingKeyCodes = { /*Backspace*/ 8:1, /*Delete*/ 46:1 },
         modifierKeyCodes = { /*Shift*/ 16:1, /*Ctrl*/ 17:1, /*Alt*/ 18:1 },
         // Arrows: L, T, R, B
-        navigationKeyCodes = { 37:1, 38:1, 39:1, 40:1,33:1,34:1 },
+        navigationKeyCodes = { 37:1, 38:1, 39:1, 40:1, 33:1, 34:1 },
         zKeyCode = 90,
         yKeyCode = 89;
 
@@ -95,60 +91,46 @@ KISSY.Editor.add("undo/support", function() {
         /**
          * 监控键盘输入，buffer处理
          */
-        _keyMonitor:function() {
+        _keyMonitor:function () {
             var self = this,
-                editor = self.editor,
-                doc = editor.document;
-            //也要监控源码下的按键，便于实时统计
-            Event.on([doc,editor.textarea], "keydown", function(ev) {
+                editor = self.editor;
+
+            editor.get("document").on("keydown", function (ev) {
                 var keycode = ev.keyCode;
                 if (keycode in navigationKeyCodes
-                    || keycode in modifierKeyCodes
-                    )
+                    || keycode in modifierKeyCodes) {
                     return;
-                //ctrl+z，撤销
+                }
+                // ctrl+z，撤销
                 if (keycode === zKeyCode && (ev.ctrlKey || ev.metaKey)) {
-                    editor.fire("restore", {d:-1});
+                    if (false !== editor.fire("restore", {direction:-1})) {
+                        editor.restore(-1);
+                    }
                     ev.halt();
                     return;
                 }
-                //ctrl+y，重做
+                // ctrl+y，重做
                 if (keycode === yKeyCode && (ev.ctrlKey || ev.metaKey)) {
-                    editor.fire("restore", {d:1});
+                    if (false !== editor.fire("restore", {direction:1})) {
+                        editor.restore(1);
+                    }
                     ev.halt();
                     return;
                 }
-                editor.fire("save", {buffer:1});
+                if (editor.fire("save", {buffer:1}) !== false) {
+                    self.save(1);
+                }
             });
         },
 
-        _init:function() {
-            var self = this,
-                editor = self.editor;
-            //外部通过editor触发save|restore,管理器捕获事件处理
-            editor.on("save", function(ev) {
-                //代码模式下不和可视模式下混在一起
-                if (editor.getMode() != KE.WYSIWYG_MODE) return;
-                if (ev.buffer) {
-                    //键盘操作需要缓存
-                    self.bufferRunner();
-                } else {
-                    //其他立即save
-                    self.save();
-                }
-            });
-            editor.on("restore", function(ev) {
-                //代码模式下不和可视模式下混在一起
-                if (editor.getMode() != KE.WYSIWYG_MODE) return;
-                self.restore(ev);
-            });
-
+        _init:function () {
+            var self = this;
             self._keyMonitor();
             //先save一下,why??
             //初始状态保存，异步，必须等use中已经 set 了编辑器中初始代码
             //必须在从 textarea 复制到编辑区域前，use所有plugin，为了过滤插件生效
             //而这段代码必须在从 textarea 复制到编辑区域后运行，所以设个延迟
-            setTimeout(function() {
+            setTimeout(function () {
                 self.save();
             }, 0);
         },
@@ -156,11 +138,21 @@ KISSY.Editor.add("undo/support", function() {
         /**
          * 保存历史
          */
-        save:function() {
+        save:function (buffer) {
+            // 代码模式下不和可视模式下混在一起
+            if (this.editor.get("mode") != KE.WYSIWYG_MODE) {
+                return;
+            }
+
+            if (buffer) {
+                this.bufferRunner();
+                return;
+            }
+
             var self = this,
                 history = self.history,
                 index = self.index;
-            //debugger
+
             //前面的历史抛弃
             if (history.length > index + 1)
                 history.splice(index + 1, history.length - index - 1);
@@ -175,21 +167,25 @@ KISSY.Editor.add("undo/support", function() {
                 }
                 history.push(current);
                 self.index = index = history.length - 1;
-                editor.fire("afterSave", {history:history,index:index});
+                editor.fire("afterSave", {history:history, index:index});
             }
         },
 
         /**
-         *
-         * @param ev
-         * ev.d ：1.向前撤销 ，-1.向后重做
+         * @param d 1.向前撤销 ，-1.向后重做
          */
-        restore:function(ev) {
-            var d = ev.d,
-                self = this,
+        restore:function (d) {
+
+            // 代码模式下不和可视模式下混在一起
+            if (this.editor.get("mode") != KE.WYSIWYG_MODE) {
+                return;
+            }
+
+            var self = this,
                 history = self.history,
                 editor = self.editor,
                 snapshot = history[self.index + d];
+
             if (snapshot) {
                 editor._setRawData(snapshot.contents);
                 if (snapshot.bookmarks)
@@ -198,12 +194,12 @@ KISSY.Editor.add("undo/support", function() {
                     // IE BUG: If I don't set the selection to *somewhere* after setting
                     // document contents, then IE would create an empty paragraph at the bottom
                     // the next time the document is modified.
-                    var $range = editor.document.body.createTextRange();
+                    var $range = editor.get("document")[0].body.createTextRange();
                     $range.collapse(true);
                     $range.select();
                 }
                 var selection = editor.getSelection();
-                //将当前光标，选择区域滚动到可视区域
+                // 将当前光标，选择区域滚动到可视区域
                 if (selection) {
                     selection.scrollIntoView();
                 }
@@ -214,9 +210,34 @@ KISSY.Editor.add("undo/support", function() {
                 });
                 editor.notifySelectionChange();
             }
+
+            return snapshot;
         }
     });
-    KE.UndoManager = UndoManager;
-},{
-    attach:false
+
+
+    return {
+        init:function (editor) {
+            if (!editor.hasCommand("save")) {
+                var undoRedo = new UndoManager(editor);
+                editor.addCommand("save", {
+                    exec:function (_, buffer) {
+                        undoRedo.save(buffer);
+                    }
+                });
+                editor.addCommand("undo", {
+                    exec:function () {
+                        undoRedo.restore(-1);
+                    }
+                });
+                editor.addCommand("redo", {
+                    exec:function () {
+                        undoRedo.restore(1);
+                    }
+                });
+            }
+        }
+    };
+}, {
+    requires:['editor']
 });

@@ -2,33 +2,30 @@
  * source editor for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/sourcearea/index", function (S, KE, B, cmd) {
+KISSY.add("editor/plugin/sourcearea/index", function (S, KE, B) {
 
-    var UA = S.UA,
-        SOURCE_MODE = KE.SOURCE_MODE ,
+    var SOURCE_MODE = KE.SOURCE_MODE ,
         WYSIWYG_MODE = KE.WYSIWYG_MODE;
     return {
-        command:cmd,
         init:function (editor) {
-            cmd.init(editor);
             editor.addButton({
                 title:"源码",
                 contentCls:"ke-toolbar-source"
             }, {
                 init:function () {
                     var self = this;
-                    editor.on("wysiwygmode", self.boff, self);
-                    editor.on("sourcemode", self.bon, self);
+                    editor.on("wysiwygMode", self.boff, self);
+                    editor.on("sourceMode", self.bon, self);
                 },
                 offClick:function () {
-                    editor.execCommand("sourceArea", SOURCE_MODE);
+                    editor.set("mode", SOURCE_MODE);
                 },
                 onClick:function () {
-                    editor.execCommand("sourceArea", WYSIWYG_MODE);
+                    editor.set("mode", WYSIWYG_MODE);
                 }
             });
         }
     };
 }, {
-    requires:['editor', '../button/', './cmd']
+    requires:['editor', '../button/']
 });

@@ -7,7 +7,7 @@ KISSY.add("editor/plugin/font-family/index", function (S, KE, ui,cmd) {
     return {
         init:function (editor) {
             cmd.init(editor);
-            var pluginConfig = editor.cfg.pluginConfig,
+            var pluginConfig = editor.get("pluginConfig"),
                 fontFamilies = pluginConfig["font-family"];
             fontFamilies = fontFamilies || {};
             S.mix(fontFamilies, {

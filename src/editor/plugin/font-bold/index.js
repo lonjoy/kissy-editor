@@ -4,7 +4,6 @@ KISSY.add("editor/plugin/font-bold/index", function (S, KE, ui,cmd) {
             cmd.init(editor);
             editor.addButton({
                 cmdType:'fontBold',
-                mode:KE.WYSIWYG_MODE,
                 contentCls:"ke-toolbar-bold",
                 title:"粗体 "
             }, undefined, ui.Button);

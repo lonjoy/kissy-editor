@@ -139,7 +139,7 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
         ButtonType = ButtonType || TripleButton;
         var self = this,
             b = new ButtonType(S.mix({
-                render:self.toolBarEl,
+                render:self.get("toolBarEl"),
                 autoRender:true,
                 editor:self
             }, cfg));
@@ -151,7 +151,7 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
         }
 
         self.on("selectionChange", function () {
-            if (self.getMode() == KE.SOURCE_MODE) {
+            if (self.get("mode") == KE.SOURCE_MODE) {
                 return;
             }
             b.selectionChange && b.selectionChange.apply(b, arguments);
@@ -164,7 +164,7 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
             }
         });
 
-        if (cfg.mode == KE.WYSIWYG_MODE) {
+        if (b.get("mode") == KE.WYSIWYG_MODE) {
             self.on("wysiwygmode", b.enable, b);
             self.on("sourcemode", b.disable, b);
         }

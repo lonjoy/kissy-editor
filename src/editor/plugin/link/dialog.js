@@ -102,7 +102,7 @@ KISSY.add("editor/plugin/link/dialog", function (S, KE, Overlay4E, Utils) {
 
         _real:function () {
             var self = this,
-                cfg = self.editor.cfg.pluginConfig["link"] || {},
+                cfg = self.editor.get("pluginConfig")["link"] || {},
                 d = self.dialog,
                 _selectedEl = self._selectedEl;
             //是修改行为

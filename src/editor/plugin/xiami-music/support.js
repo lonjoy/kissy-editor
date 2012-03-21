@@ -11,7 +11,7 @@ KISSY.Editor.add("xiami-music/support", function () {
         //只能ie能用？，目前只有firefox,ie支持图片缩放
         var disableObjectResizing = editor.cfg['disableObjectResizing'];
         if (!disableObjectResizing) {
-            Event.on(editor.document.body,
+            Event.on(editor.get("document")[0].body,
                 UA['ie'] ? 'resizestart' : 'resize',
                 function (evt) {
                     var t = new S.Node(evt.target);

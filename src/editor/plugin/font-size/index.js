@@ -21,7 +21,7 @@ KISSY.add("editor/plugin/font-size/index", function (S, KE, ui,cmd) {
                 return v;
             }
 
-            var pluginConfig = editor.cfg.pluginConfig,
+            var pluginConfig = editor.get("pluginConfig"),
                 fontSizes = pluginConfig["font-size"];
 
             fontSizes = fontSizes || {};

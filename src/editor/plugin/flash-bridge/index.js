@@ -2,12 +2,7 @@
  * simplified flash bridge for yui swf
  * @author yiminghe@gmail.com
  */
-KISSY.Editor.add("flashbridge", function() {
-    var S = KISSY,KE = S.Editor;
-    if (KE.FlashBridge) {
-        S.log("KE.FlashBridge attach more", "warn");
-        return;
-    }
+KISSY.add("editor/plugin/flash-bridge/index", function (S, KE, flashUtils) {
 
     var instances = {};
 
@@ -16,7 +11,7 @@ KISSY.Editor.add("flashbridge", function() {
     }
 
     S.augment(FlashBridge, S.EventTarget, {
-        _init:function(cfg) {
+        _init:function (cfg) {
             var self = this,
                 id = S.guid("flashbridge-"),
                 callback = "KISSY.Editor.FlashBridge.EventHandler";
@@ -41,7 +36,7 @@ KISSY.Editor.add("flashbridge", function() {
                 scale:'noScale'
             }, false);
             S.mix(flashVars, {
-                shareData: false,
+                shareData:false,
                 useCompression:false
             }, false);
             var swfCore = {
@@ -57,15 +52,15 @@ KISSY.Editor.add("flashbridge", function() {
             S.mix(flashVars, swfCore);
             instances[id] = self;
             self.id = id;
-            self.swf = KE.Utils.flash.createSWFRuntime(cfg.movie, cfg);
+            self.swf = flashUtils.createSWFRuntime(cfg.movie, cfg);
             self._expose(cfg.methods);
         },
-        _expose:function(methods) {
+        _expose:function (methods) {
             var self = this;
             for (var i = 0; i < methods.length; i++) {
                 var m = methods[i];
-                (function(m) {
-                    self[m] = function() {
+                (function (m) {
+                    self[m] = function () {
                         return self._callSWF(m, S.makeArray(arguments));
                     };
                 })(m);
@@ -76,7 +71,7 @@ KISSY.Editor.add("flashbridge", function() {
          * @param func {String} the name of the function to call
          * @param args {Array} the set of arguments to pass to the function.
          */
-        _callSWF: function (func, args) {
+        _callSWF:function (func, args) {
             var self = this;
             args = args || [];
             try {
@@ -85,7 +80,7 @@ KISSY.Editor.add("flashbridge", function() {
                 }
             }
                 // some version flash function is odd in ie: property or method not supported by object
-            catch(e) {
+            catch (e) {
                 var params = "";
                 if (args.length !== 0) {
                     params = "'" + args.join("', '") + "'";
@@ -94,7 +89,7 @@ KISSY.Editor.add("flashbridge", function() {
                 return (new Function('self', 'return self.swf.' + func + '(' + params + ');'))(self);
             }
         },
-        _eventHandler:function(event) {
+        _eventHandler:function (event) {
             var self = this,
                 type = event.type;
 
@@ -104,25 +99,32 @@ KISSY.Editor.add("flashbridge", function() {
                 self.fire(type, event);
             }
         },
-        _destroy:function() {
+        ready:function (fn) {
+            var self = this;
+            if (self._ready) {
+                fn.call(this);
+            } else {
+                self.on("contentReady", fn);
+            }
+        },
+        destroy:function () {
             delete instances[this.id];
         }
     });
 
-    FlashBridge.EventHandler = function(id, event) {
+    FlashBridge.EventHandler = function (id, event) {
         S.log("flash fire event : " + event.type);
         var instance = instances[id];
         if (instance) {
             //防止ie同步触发事件，后面还没on呢，另外给 swf 喘息机会
             //否则同步后触发事件，立即调用swf方法会出错
-            setTimeout(function() {
+            setTimeout(function () {
                 instance._eventHandler.call(instance, event);
             }, 100);
         }
     };
 
     KE.FlashBridge = FlashBridge;
-
 
     /**
      * @module   Flash UA 探测
@@ -146,7 +148,7 @@ KISSY.Editor.add("flashbridge", function() {
         else if (window.ActiveXObject) {
             try {
                 ver = new ActiveXObject(SF + '.' + SF)['GetVariable']('$version');
-            } catch(ex) {
+            } catch (ex) {
                 //S.log('getFlashVersion failed via ActiveXObject');
                 // nothing to do, just return undefined
             }
@@ -197,7 +199,7 @@ KISSY.Editor.add("flashbridge", function() {
      * 返回数据 [M, S, R] 若未安装，则返回 undefined
      * fpv 全称是 flash player version
      */
-    UA.fpv = function(force) {
+    UA.fpv = function (force) {
         // 考虑 new ActiveX 和 try catch 的 性能损耗，延迟初始化到第一次调用时
         if (force || firstRun) {
             firstRun = false;
@@ -215,28 +217,13 @@ KISSY.Editor.add("flashbridge", function() {
      *    if(S.UA.fpvGEQ('9.9.2')) { ... }
      * </code>
      */
-    UA.fpvGEQ = function(ver, force) {
+    UA.fpvGEQ = function (ver, force) {
         if (firstRun) UA.fpv(force);
         return !!fpvF && (fpvF >= numerify(ver));
     };
 
-    /*
-     if (!UA.fpvGEQ("11.0.0")) {
-
-     var alertWin = new KE.SimpleOverlay({
-     focusMgr:false,
-     mask:true,
-     title:"Flash 警告"
-     });
-
-     alertWin.body.html("您的Flash插件版本过低，" +
-     "可能不能支持上传功能，" +
-     "<a href='http://get.adobe.com/cn/flashplayer/' " +
-     "target='_blank'>请点击此处更新</a>");
-
-     }
-     */
+    return FlashBridge;
 
 }, {
-    attach:false
+    requires:['editor', '../flash-utils/']
 });

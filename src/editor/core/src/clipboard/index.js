@@ -25,12 +25,12 @@ KISSY.add("editor/plugin/clipboard/index", function (S) {
             // paste fire too later in ie ,cause error
             // 奇怪哦
             // refer : http://stackoverflow.com/questions/2176861/javascript-get-clipboard-data-on-paste-event-cross-browser
-            Event.on(editor.document.body,
+            Event.on(editor.get("document")[0].body,
                 UA['webkit'] ? 'paste' : (UA.gecko ? 'paste' : 'beforepaste'),
                 self._paste, self);
 
             // Dismiss the (wrong) 'beforepaste' event fired on context menu open. (#7953)
-            Event.on(editor.document.body, 'contextmenu', function () {
+            Event.on(editor.get("document")[0].body, 'contextmenu', function () {
                 depressBeforeEvent = 1;
                 setTimeout(function () {
                     depressBeforeEvent = 0;
@@ -53,7 +53,7 @@ KISSY.add("editor/plugin/clipboard/index", function (S) {
 
             var self = this,
                 editor = self.editor,
-                doc = editor.document;
+                doc = editor.get("document")[0];
 
             // Avoid recursions on 'paste' event or consequent paste too fast. (#5730)
             if (doc.getElementById('ke_pastebin')) {
@@ -157,7 +157,7 @@ KISSY.add("editor/plugin/clipboard/index", function (S) {
     // Tries to execute any of the paste, cut or copy commands in IE. Returns a
     // boolean indicating that the operation succeeded.
     var execIECommand = function (editor, command) {
-        var doc = editor.document,
+        var doc = editor.get("document")[0],
             body = new Node(doc.body);
 
         var enabled = false;
@@ -188,7 +188,7 @@ KISSY.add("editor/plugin/clipboard/index", function (S) {
         function (editor, type) {
             try {
                 // Other browsers throw an error if the command is disabled.
-                return editor.document.execCommand(type);
+                return editor.get("document")[0].execCommand(type);
             }
             catch (e) {
                 return false;
@@ -221,14 +221,14 @@ KISSY.add("editor/plugin/clipboard/index", function (S) {
     var KES = KE.Selection;
     // Cutting off control type element in IE standards breaks the selection entirely. (#4881)
     function fixCut(editor) {
-        if (!UA['ie'] || editor.document.compatMode == 'BackCompat')
+        if (!UA['ie'] || editor.get("document")[0].compatMode == 'BackCompat')
             return;
 
         var sel = editor.getSelection();
         var control;
         if (( sel.getType() == KES.SELECTION_ELEMENT ) && ( control = sel.getSelectedElement() )) {
             var range = sel.getRanges()[ 0 ];
-            var dummy = new Node(editor.document.createTextNode(''));
+            var dummy = new Node(editor.get("document")[0].createTextNode(''));
             dummy.insertBefore(control);
             range.setStartBefore(dummy);
             range.setEndAfter(control);

@@ -18,9 +18,9 @@ KISSY.add("editor/plugin/bgcolor/cmd", function (S, cmd) {
             if (!editor.hasCommand("bgcolor")) {
                 editor.addCommand("bgcolor", {
                     exec:function (editor, c) {
-                        editor.fire("save");
+                        editor.execCommand("save");
                         cmd.applyColor(editor, c, BACKCOLOR_STYLE);
-                        editor.fire("save");
+                        editor.execCommand("save");
                     }
                 });
             }

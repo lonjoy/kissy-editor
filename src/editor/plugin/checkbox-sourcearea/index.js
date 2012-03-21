@@ -2,7 +2,7 @@
  * checkbox source editor for kissy editor
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/checkbox-sourcearea/index", function (S, KE, sourceArea) {
+KISSY.add("editor/plugin/checkbox-sourcearea/index", function (S, KE) {
     var Node = S.Node;
 
     var SOURCE_MODE = KE.SOURCE_MODE ,
@@ -12,14 +12,13 @@ KISSY.add("editor/plugin/checkbox-sourcearea/index", function (S, KE, sourceArea
         var self = this;
         self.editor = editor;
         self._init();
-        sourceArea.command.init(editor);
     }
 
     S.augment(CheckboxSourceArea, {
         _init:function () {
             var self = this,
                 editor = self.editor,
-                statusBarEl = editor.statusBarEl;
+                statusBarEl = editor.get("statusBarEl");
             self.holder = new Node("<span " +
                 "style='zoom:1;display:inline-block;height:22px;line-height:22px;'>" +
                 "<input style='margin:0 5px;vertical-align:middle;' " +
@@ -28,8 +27,8 @@ KISSY.add("editor/plugin/checkbox-sourcearea/index", function (S, KE, sourceArea
                 .appendTo(statusBarEl);
             var el = self.el = self.holder.one("input");
             el.on("click", self._check, self);
-            editor.on("wysiwygmode", self._wysiwygmode, self);
-            editor.on("sourcemode", self._sourcemode, self);
+            editor.on("wysiwygMode", self._wysiwygmode, self);
+            editor.on("sourceMode", self._sourcemode, self);
         },
         _sourcemode:function () {
             this.el.attr("checked", true);
@@ -39,20 +38,14 @@ KISSY.add("editor/plugin/checkbox-sourcearea/index", function (S, KE, sourceArea
         },
         _check:function () {
             var self = this,
+                editor = self.editor,
                 el = self.el;
             if (el.attr("checked")) {
-                self._show();
+                editor.set("mode", SOURCE_MODE);
             } else {
-                self._hide();
+                editor.set("mode", WYSIWYG_MODE);
             }
         },
-        _show:function () {
-            this.editor.execCommand("sourceArea", SOURCE_MODE);
-        },
-        _hide:function () {
-            this.editor.execCommand("sourceArea", WYSIWYG_MODE);
-        },
-
         destroy:function () {
             this.holder.remove();
         }
@@ -67,5 +60,5 @@ KISSY.add("editor/plugin/checkbox-sourcearea/index", function (S, KE, sourceArea
         }
     }
 }, {
-    requires:["editor", "../sourcearea/"]
+    requires:["editor"]
 });

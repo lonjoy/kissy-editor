@@ -22,7 +22,7 @@ KISSY.Editor.add("preview", function (editor) {
                 } catch (e) {
                 }
                 var sHTML = editor
-                    ._prepareIFrameHtml(undefined, editor.getData(true))
+                    ._prepareIFrameHtml(undefined, editor.get("formatData"))
                     .replace(/\${title}/, "预览"),
                     sOpenUrl = '',
                     oWindow = window.open(sOpenUrl,

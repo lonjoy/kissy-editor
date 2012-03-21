@@ -149,13 +149,11 @@ KISSY.add("editor", function (S) {
             '</div>' +
             "<div class='" + KE_STATUSBAR_CLASS.substring(1) + "'></div>";
 
+    var SOURCE_MODE,
+        WYSIWYG_MODE;
 
-    var SOURCE_MODE, WYSIWYG_MODE;
-    SOURCE_MODE = KE.SOURCE_MODE = 0;
-    WYSIWYG_MODE = KE.WYSIWYG_MODE = 1;
-    KE["SOURCE_MODE"] = SOURCE_MODE;
-    KE["WYSIWYG_MODE"] = WYSIWYG_MODE;
-
+    SOURCE_MODE = KE.SOURCE_MODE;
+    WYSIWYG_MODE = KE.WYSIWYG_MODE;
 
     S.augment(KE, {
         createDom:function () {
@@ -167,11 +165,7 @@ KISSY.add("editor", function (S) {
                 self.set("textarea", textarea = $("<textarea></textarea>"));
             }
 
-            self.textarea = textarea;
-
             editorEl = self.get("el");
-
-            self.el = editorEl;
 
             editorEl.addClass(self.get("prefixCls") + "editor-wrap");
 
@@ -179,9 +173,12 @@ KISSY.add("editor", function (S) {
 
             self._UUID = INSTANCE_ID++;
 
-            var wrap = self.iframeWrapEl = editorEl.one(KE_TEXTAREA_WRAP_CLASS);
-            self.toolBarEl = editorEl.one(KE_TOOLBAR_CLASS);
-            self.statusBarEl = editorEl.one(KE_STATUSBAR_CLASS);
+            var wrap = editorEl.one(KE_TEXTAREA_WRAP_CLASS);
+            self.__set("iframeWrapEl", wrap);
+            var toolBarEl = editorEl.one(KE_TOOLBAR_CLASS);
+            self.__set("toolBarEl", toolBarEl);
+            var statusBarEl = editorEl.one(KE_STATUSBAR_CLASS);
+            self.__set("statusBarEl", statusBarEl);
 
             // 标准浏览器编辑器内焦点不失去,firefox?
             // 标准浏览器实际上不需要！range在iframe内保存着呢，选择高亮变灰而已
@@ -198,18 +195,48 @@ KISSY.add("editor", function (S) {
             wrap.append(textarea);
 
             wrap.css(HEIGHT, th);
-            textarea.css(HEIGHT, "100%");
+            // ie textarea 100% 不起作用
+            textarea.css(HEIGHT, th);
+
+            // 高度由内层决定，工具条会变化
+            editorEl.css("height", "");
+        },
+
+        _uiSetHeight:function (v) {
+            S.log("_uiSetHeight : " + v);
+            var self = this;
+            self.get("iframeWrapEl").css("height", v);
+            self.get("textarea").css("height", v);
+        },
+
+        _uiSetMode:function (v) {
+            var self = this,
+                textarea = self.get("textarea");
+            if (v) {
+                self.execCommand("save");
+                self._setData(textarea.val());
+                self.execCommand("save");
+            } else {
+                textarea.val(self._getData(1, WYSIWYG_MODE));
+                textarea[0].focus();
+            }
+            textarea[v ? "hide" : "show"]();
+            self.get("iframe")[v ? "show" : "hide"]();
+            self.fire((v ? "wysiwyg" : "source") + "Mode")
         },
 
         renderUI:function () {
             var self = this,
                 textarea = self.get("textarea");
 
+            // 实例集中管理
+            focusManager.register(self);
+
             if (self.get("attachForm") && textarea[0].form) {
                 self._attachForm();
             }
 
-            self.setData(textarea.val());
+            self._setData(textarea.val());
 
             function docReady() {
                 self.detach("docReady", docReady);
@@ -225,22 +252,18 @@ KISSY.add("editor", function (S) {
             }
 
             self.on("docReady", docReady);
-
-            //实例集中管理
-            focusManager.register(self);
-
         },
 
 
         _createIframe:function (afterData) {
             var self = this,
                 iframe = new Node(iframeHtml),
-                textarea = self.textarea;
+                textarea = self.get("textarea");
             if (textarea.hasAttr("tabindex")) {
                 iframe.attr("tabIndex", UA['webkit'] ? -1 : textarea.attr("tabIndex"));
             }
-            self.iframeWrapEl.prepend(iframe);
-            self.iframe = iframe;
+            self.get("iframeWrapEl").prepend(iframe);
+            self.set("iframe", iframe);
             self.__docReady = 0;
             // With FF, it's better to load the data on iframe.load. (#3894,#4058)
             if (UA['gecko'] && !iframe.__loaded) {
@@ -254,32 +277,28 @@ KISSY.add("editor", function (S) {
         },
 
 
-        destroy:function () {
+        destructor:function () {
             var self = this,
-                editorEl = self.el,
-                textarea = self.textarea,
-                doc = self.document,
-                win = self.iframe[0].contentWindow;
+                editorEl = self.get("el"),
+                textarea = self.get("textarea"),
+                doc = self.get("document")[0],
+                win = self.get("iframe")[0].contentWindow;
             self.sync();
             KE.focusManager.remove(self);
             Event.remove([doc, doc.documentElement, doc.body, win]);
-            self.fire("destroy");
             textarea.insertBefore(editorEl);
-            editorEl.remove();
             textarea.css({
-                width:editorEl[0].style.width,
-                height:self.iframeWrapEl.css("height")
+                width:self.get("width"),
+                height:self.get("height")
             });
             textarea.show();
-            self.detach();
-            //其他可能处理
         },
         /**
          *
          */
         _attachForm:function () {
             var self = this,
-                textarea = self.textarea,
+                textarea = self.get("textarea"),
                 form = new Node(textarea[0].form);
             form.on("submit", self.sync, self);
             self.on("destroy", function () {
@@ -327,41 +346,45 @@ KISSY.add("editor", function (S) {
                 args = S.makeArray(arguments);
             args.shift();
             args.unshift(self);
-            return cmd.exec.apply(cmd, args);
-        },
-        /**
-         *
-         * @return {number}
-         */
-        getMode:function () {
-            return this.textarea.css("display") == "none" ?
-                WYSIWYG_MODE :
-                SOURCE_MODE;
-        },
-        /**
-         *
-         * @param [format] {boolean}
-         */
-        getData:function (format) {
-            var self = this,
-                htmlDataProcessor,
-                html;
-            if (self.getMode() == WYSIWYG_MODE) {
-                if (self.document && self.document.body)
-                    html = self.document.body.innerHTML;
-                else
-                    html = "";
+            if (cmd) {
+                return cmd.exec.apply(cmd, args);
             } else {
-                //代码模式下不需过滤
-                html = self.textarea.val();
+                S.log(name + ": command not found");
             }
-            //如果不需要要格式化，例如提交数据给服务器
-            if (htmlDataProcessor = self.__htmlDataProcessor) {
-                if (format) {
-                    html = htmlDataProcessor.toHtml(html);
-                } else {
-                    html = htmlDataProcessor.toServer(html);
-                }
+        },
+
+        _clearIframeDocContent:function () {
+            if (!this.get("iframe")) {
+                return;
+            }
+            var self = this,
+                iframe = self.get("iframe"),
+                win = iframe[0].contentWindow,
+                doc = self.get("document")[0],
+                documentElement = doc.documentElement,
+                body = doc.body;
+            Event.remove([doc, documentElement, body, win]);
+            iframe.remove();
+        },
+
+
+        _getData:function (format, mode) {
+            var self = this,
+                htmlDataProcessor = self.__htmlDataProcessor,
+                html;
+            if (mode == undefined) {
+                mode = self.get("mode");
+            }
+            if (mode == WYSIWYG_MODE) {
+                html = self.get("document")[0].body.innerHTML;
+            } else {
+                html = htmlDataProcessor.toDataFormat(self.get("textarea").val());
+            }
+            //如果不需要要格式化，例如提交数据给服务器          
+            if (format) {
+                html = htmlDataProcessor.toHtml(html);
+            } else {
+                html = htmlDataProcessor.toServer(html);
             }
             html = S.trim(html);
             /*
@@ -373,31 +396,17 @@ KISSY.add("editor", function (S) {
             return html;
         },
 
-        _clearIframeDocContent:function () {
-            if (!this.iframe) {
-                return;
-            }
-            var self = this,
-                iframe = self.iframe,
-                win = iframe[0].contentWindow,
-                doc = self.document,
-                documentElement = doc.documentElement,
-                body = doc.body;
-            Event.remove([doc, documentElement, body, win]);
-            iframe.remove();
-        },
-
-        setData:function (data) {
+        _setData:function (data) {
             var self = this,
                 htmlDataProcessor,
                 afterData = data;
+            if (self.get("mode") != WYSIWYG_MODE) {
+                // 代码模式下不需过滤
+                self.get("textarea").val(data);
+                return;
+            }
             if (htmlDataProcessor = self.__htmlDataProcessor) {
                 afterData = htmlDataProcessor.toDataFormat(data, "p");
-            }
-            if (self.getMode() != WYSIWYG_MODE) {
-                // 代码模式下不需过滤
-                self.textarea.val(afterData);
-                return;
             }
             // https://github.com/kissyteam/kissy-editor/issues/17, 重建最保险
             self._clearIframeDocContent();
@@ -406,14 +415,14 @@ KISSY.add("editor", function (S) {
 
         sync:function () {
             var self = this;
-            self.textarea.val(self.getData());
+            self.get("textarea").val(self._getData());
         },
 
         /**
          * 撤销重做时，不需要格式化代码，直接取自身
          */
         _getRawData:function () {
-            return this.document.body.innerHTML;
+            return this.get("document")[0].body.innerHTML;
         },
 
         /**
@@ -422,7 +431,7 @@ KISSY.add("editor", function (S) {
          * @param data {string}
          */
         _setRawData:function (data) {
-            this.document.body.innerHTML = data;
+            this.get("document")[0].body.innerHTML = data;
         },
 
         _prepareIFrameHtml:function (id, data) {
@@ -431,12 +440,12 @@ KISSY.add("editor", function (S) {
         },
 
         getSelection:function () {
-            return KE.Selection.getSelection(this.document);
+            return KE.Selection.getSelection(this.get("document")[0]);
         },
 
         focus:function () {
             var self = this,
-                doc = self.document,
+                doc = self.get("document")[0],
                 win = DOM._4e_getWin(doc);
             // firefox7 need this
             if (!UA['ie']) {
@@ -454,9 +463,9 @@ KISSY.add("editor", function (S) {
 
         blur:function () {
             var self = this,
-                win = DOM._4e_getWin(self.document);
+                win = DOM._4e_getWin(self.get("document")[0]);
             win.blur();
-            self.document.body.blur();
+            self.get("document")[0].body.blur();
         },
 
         /**
@@ -467,13 +476,13 @@ KISSY.add("editor", function (S) {
                 customStyle = self.get("customStyle") || "";
             customStyle += "\n" + cssText;
             self.set("customStyle", customStyle);
-            DOM.addStyleSheet(self.iframe[0].contentWindow, customStyle);
+            DOM.addStyleSheet(self.get("iframe")[0].contentWindow, customStyle);
         },
 
         addCustomLink:function (link) {
             var self = this,
                 customLink = self.get('customLink') || [],
-                doc = self.document;
+                doc = self.get("document")[0];
             customLink.push(link);
             self.set("customLink", customLink);
             var elem = doc.createElement("link");
@@ -484,7 +493,7 @@ KISSY.add("editor", function (S) {
 
         removeCustomLink:function (link) {
             var self = this,
-                doc = self.document,
+                doc = self.get("document")[0],
                 links = DOM.query("link", doc);
             for (var i = 0; i < links.length; i++) {
                 if (links[i].href == link) {
@@ -500,7 +509,7 @@ KISSY.add("editor", function (S) {
 
         _setUpIFrame:function (data) {
             var self = this,
-                iframe = self.iframe,
+                iframe = self.get("iframe"),
                 html = self._prepareIFrameHtml(self._UUID, data),
                 win = iframe[0].contentWindow,
                 doc;
@@ -531,7 +540,8 @@ KISSY.add("editor", function (S) {
             run();
             function run() {
                 doc = win.document;
-                self.document = doc;
+                self.__set("document", new Node(doc));
+                self.__set("window", new Node(win));
                 iframe.detach();
                 // Don't leave any history log in IE. (#5657)
                 doc.open("text/html", "replace");
@@ -584,7 +594,7 @@ KISSY.add("editor", function (S) {
 
             var self = this;
 
-            if (self.getMode() !== WYSIWYG_MODE) {
+            if (self.get("mode") !== WYSIWYG_MODE) {
                 return;
             }
 
@@ -610,7 +620,7 @@ KISSY.add("editor", function (S) {
                 return;
             }
 
-            self.fire("save");
+            self.execCommand("save")
             for (var i = ranges.length - 1; i >= 0; i--) {
                 range = ranges[ i ];
                 // Remove the original contents.
@@ -652,7 +662,7 @@ KISSY.add("editor", function (S) {
             }
 
             var next = lastElement._4e_nextSourceNode(TRUE), p,
-                doc = self.document;
+                doc = self.get("document")[0];
             dtd = KE.XHTML_DTD;
 
             //行内元素不用加换行
@@ -698,7 +708,7 @@ KISSY.add("editor", function (S) {
         insertHtml:function (data, dataFilter) {
             var self = this, htmlDataProcessor;
 
-            if (self.getMode() !== WYSIWYG_MODE) {
+            if (self.get("mode") !== WYSIWYG_MODE) {
                 return;
             }
 
@@ -707,9 +717,9 @@ KISSY.add("editor", function (S) {
             }
 
             self.focus();
-            self.fire("save");
+            self.execCommand("save");
 
-            var editorDoc = self.document,
+            var editorDoc = self.get("document")[0],
                 saveInterval = 0;
             // ie9 仍然需要这样！
             // ie9 标准 selection 有问题，连续插入不能定位光标到插入内容后面
@@ -765,16 +775,16 @@ KISSY.add("editor", function (S) {
                 self.__saveTimer = null;
             }
             self.__saveTimer = setTimeout(function () {
-                self.fire("save");
+                self.execCommand("save");
             }, saveInterval || 0);
         },
 
         _fixByBindIframeDoc:function () {
-            var self = this;
-            var iframe = self.iframe,
-                textarea = self.textarea[0],
+            var self = this,
+                iframe = self.get("iframe"),
+                textarea = self.get("textarea")[0],
                 win = iframe[0].contentWindow,
-                doc = self.document;
+                doc = self.get("document")[0];
 
             // Gecko need a key event to 'wake up' the editing
             // ability when document is empty.(#3864)
@@ -958,7 +968,7 @@ KISSY.add("editor", function (S) {
     KE["_initIFrame"] = function (id) {
 
         var self = focusManager.getInstance(id),
-            doc = self.document,
+            doc = self.get("document")[0],
             // Remove bootstrap script from the DOM.
             script = doc.getElementById("ke_actscript");
 

@@ -51,7 +51,7 @@ KISSY.Editor.add("removeformat", function(editor) {
                 editor.focus();
                 tagsRegex['lastIndex'] = 0;
                 var ranges = editor.getSelection().getRanges();
-                editor.fire("save");
+                editor.execCommand("save");
                 for (var i = 0, range;
                      range = ranges[ i ];
                      i++) {
@@ -126,7 +126,7 @@ KISSY.Editor.add("removeformat", function(editor) {
                     range.moveToBookmark(bookmark);
                 }
                 editor.getSelection().selectRanges(ranges);
-                editor.fire("save");
+                editor.execCommand("save");
             }
         });
 

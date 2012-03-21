@@ -78,9 +78,9 @@ KISSY.add("editor/plugin/bubbleview/index", function (S, UIBase, Overlay, KE) {
             return undefined;
         }
 
-        var editorWin = editor.iframe[0].contentWindow;
+        var editorWin = editor.get("iframe")[0].contentWindow;
 
-        var iframeXY = editor.iframe.offset(),
+        var iframeXY = editor.get("iframe").offset(),
             top = iframeXY.top,
             left = iframeXY.left,
             right = left + DOM.width(editorWin),
@@ -176,7 +176,7 @@ KISSY.add("editor/plugin/bubbleview/index", function (S, UIBase, Overlay, KE) {
 
         editor.on("sourcemode", onHide);
 
-        var editorWin = editor.iframe[0].contentWindow;
+        var editorWin = editor.get("iframe")[0].contentWindow;
 
         function showImmediately() {
             var xy = getXy(bubble);
@@ -195,7 +195,7 @@ KISSY.add("editor/plugin/bubbleview/index", function (S, UIBase, Overlay, KE) {
             }
         }
 
-        var bufferScroll = KE.Utils.buffer(showImmediately, undefined, 350);
+        var bufferScroll = S.buffer(showImmediately, 350);
 
         function onScroll() {
             if (!bubble.selectedEl) {

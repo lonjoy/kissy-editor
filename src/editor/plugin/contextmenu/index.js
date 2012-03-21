@@ -33,7 +33,7 @@ KISSY.add("editor/plugin/contextmenu/index", function (S, KE, Overlay) {
         editor.on("sourcemode", hideContextMenu);
 
         editor.docReady(function () {
-            var doc = editor.document;
+            var doc = editor.get("document")[0];
             Event.on(doc, "mousedown", hideContextMenu);
             Event.delegate(doc, "contextmenu", cfg.filter, function (ev) {
                 ContextMenu.hide(editor);

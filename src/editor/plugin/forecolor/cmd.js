@@ -18,9 +18,9 @@ KISSY.add("editor/plugin/forecolor/cmd", function (S, cmd) {
             if (!editor.hasCommand("foreColor")) {
                 editor.addCommand("foreColor", {
                     exec:function (editor, c) {
-                        editor.fire("save");
+                        editor.execCommand("save");
                         cmd.applyColor(editor, c, COLOR_STYLES);
-                        editor.fire("save");
+                        editor.execCommand("save");
                     }
                 });
             }

@@ -27,7 +27,7 @@ KISSY.Editor.add("elementpaths", function(editor) {
                     var self = this,cfg = self.cfg,
                         editor = cfg.editor;
                     self.holder = new Node("<span>");
-                    self.holder.appendTo(editor.statusBarEl);
+                    self.holder.appendTo(editor.get("statusBarEl"));
                     editor.on("selectionChange", self._selectionChange, self);
                     KE.Utils.sourceDisable(editor, self);
                 },

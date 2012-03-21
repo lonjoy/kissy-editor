@@ -8,14 +8,14 @@ KISSY.add("editor/plugin/font/cmd", function (S, KE, Utils) {
             if (!editor.hasCommand(cmdType)) {
                 editor.addCommand(cmdType, {
                     exec:function (editor, effect) {
-                        var doc = editor.document;
-                        editor.fire("save");
+                        var doc = editor.get("document")[0];
+                        editor.execCommand("save");
                         if (effect || effect === undefined) {
                             style.apply(doc);
                         } else {
                             style.remove(doc);
                         }
-                        editor.fire("save");
+                        editor.execCommand("save");
                         editor.notifySelectionChange();
                     }
                 });
@@ -36,14 +36,14 @@ KISSY.add("editor/plugin/font/cmd", function (S, KE, Utils) {
                         var style = new KE.Style(styleObj, {
                             value:value
                         }),
-                            doc = editor.document;
-                        editor.fire("save");
+                            doc = editor.get("document")[0];
+                        editor.execCommand("save");
                         if (apply === undefined || apply) {
                             style.apply(doc);
                         } else {
                             style.remove(doc);
                         }
-                        editor.fire("save");
+                        editor.execCommand("save");
                     }
                 });
                 editor.addCommand(queryCmd, {

@@ -55,7 +55,7 @@ KISSY.Editor.add("smiley/support", function() {
                 var img = new S.Node("<img " +
                     "alt='' src='" +
                     icon + "'/>", null,
-                    editor.document);
+                    editor.get("document")[0]);
                 editor.insertElement(img);
                 this.smileyWin.hide();
             }
@@ -92,11 +92,11 @@ KISSY.Editor.add("smiley/support", function() {
             smileyWin.on("hide", el.boff, el);
             self.smileyPanel.on("click", cfg._selectSmiley, self);
             Event.on(document, "click", cfg._hidePanel, self);
-            Event.on(editor.document, "click", cfg._hidePanel, self);
+            Event.on(editor.get("document")[0], "click", cfg._hidePanel, self);
             self.cfg._prepare = self.cfg._real;
             addRes.call(self, self.smileyWin, self.smileyPanel, function() {
                 Event.remove(document, "click", cfg._hidePanel, self);
-                Event.remove(editor.document, "click", cfg._hidePanel, self);
+                Event.remove(editor.get("document")[0], "click", cfg._hidePanel, self);
             });
             self.call("_real");
         },

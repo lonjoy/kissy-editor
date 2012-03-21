@@ -258,10 +258,10 @@ KISSY.Editor.add("indent/support", function() {
             var self = this,
                 editor = self.editor;
             //ie要等会才能获得焦点窗口的选择区域
-            editor.fire("save");
+            editor.execCommand("save");
             setTimeout(function() {
                 self.indentCommand.exec(editor);
-                editor.fire("save");
+                editor.execCommand("save");
                 editor.notifySelectionChange();
             }, 10);
         },

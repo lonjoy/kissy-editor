@@ -170,6 +170,12 @@ KISSY.add("editor/plugin/color/btn", function (S, KE, TripleButton, Overlay4E, D
                 self.colorWin.destroy();
             }
         }
+    }, {
+        ATTRS:{
+            mode:{
+                value:KE.WYSIWYG_MODE
+            }
+        }
     });
 
     return ColorButton;

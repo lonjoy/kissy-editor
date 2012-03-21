@@ -44,7 +44,7 @@ KISSY.add("editor/plugin/overlay/focus", function (S, KE) {
                 window['focus']();
                 document.body.focus();
 
-                var $selection = editor.document.selection,
+                var $selection = editor.get("document")[0].selection,
                     $range = $selection.createRange();
                 if ($range) {
                     if (
@@ -54,7 +54,7 @@ KISSY.add("editor/plugin/overlay/focus", function (S, KE) {
                     //||
                     //缩放图片那个框在ie下会突出浮动层来
                         $range.item
-                            && $range.item(0).ownerDocument == editor.document) {
+                            && $range.item(0).ownerDocument == editor.get("document")[0]) {
                         var $myRange = document.body.createTextRange();
                         $myRange.moveToElementText(self.get("el")._4e_first()[0]);
                         $myRange.collapse(true);

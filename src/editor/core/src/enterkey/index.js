@@ -39,9 +39,9 @@ KISSY.add("editor/plugin/enterkey/index", function (S) {
 
                 ) {
                 if (editor.hasCommand('outdent')) {
-                    editor.fire("save");
+                    editor.execCommand("save");
                     editor.execCommand('outdent');
-                    editor.fire("save");
+                    editor.execCommand("save");
                     return true;
                 } else {
                     return false;
@@ -179,15 +179,15 @@ KISSY.add("editor/plugin/enterkey/index", function (S) {
     }
 
     function EnterKey(editor) {
-        var doc = editor.document;
+        var doc = editor.get("document")[0];
         Event.on(doc, "keydown", function (ev) {
             var keyCode = ev.keyCode;
             if (keyCode === 13) {
                 if (ev.shiftKey || ev.ctrlKey || ev.metaKey) {
                 } else {
-                    editor.fire("save");
+                    editor.execCommand("save");
                     var re = editor.execCommand("enterBlock");
-                    editor.fire("save");
+                    editor.execCommand("save");
                     if (re !== false) {
                         ev.preventDefault();
                     }

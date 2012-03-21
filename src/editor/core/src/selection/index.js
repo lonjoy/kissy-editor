@@ -24,8 +24,8 @@ KISSY.add("editor/plugin/selection/index", function (S, KE) {
      */
     function fixCursorForIE(editor) {
         var started,
-            win = editor.iframe[0].contentWindow,
-            doc = editor.document,
+            win = editor.get("iframe")[0].contentWindow,
+            doc = editor.get("document")[0],
             startRng;
 
         // Return range from point or NULL if it failed
@@ -109,7 +109,7 @@ KISSY.add("editor/plugin/selection/index", function (S, KE) {
 
 
     function fixSelectionForIEWhenDocReady(editor) {
-        var doc = editor.document,
+        var doc = editor.get("document")[0],
             body = new Node(doc.body),
             html = new Node(doc.documentElement);
         //ie 焦点管理不行 (ie9 也不行) ,编辑器 iframe 失去焦点，选择区域/光标位置也丢失了
@@ -314,7 +314,7 @@ KISSY.add("editor/plugin/selection/index", function (S, KE) {
     }
 
     function fireSelectionChangeForNonIE(editor) {
-        var doc = editor.document;
+        var doc = editor.get("document")[0];
         // In other browsers, we make the selection change
         // check based on other events, like clicks or keys
         // press.
@@ -331,7 +331,7 @@ KISSY.add("editor/plugin/selection/index", function (S, KE) {
      * @param editor
      */
     function monitorSelectionChange(editor) {
-        var doc = editor.document;
+        var doc = editor.get("document")[0];
 
         // Matching an empty paragraph at the end of document.
         // 注释也要排除掉
@@ -366,7 +366,7 @@ KISSY.add("editor/plugin/selection/index", function (S, KE) {
         editor.on("selectionChange", function (ev) {
             // S.log("monitor selectionChange in selection/index.js");
             var path = ev.path,
-                body = new Node(editor.document.body),
+                body = new Node(editor.get("document")[0].body),
                 selection = ev.selection,
                 range = selection && selection.getRanges()[0],
                 blockLimit = path.blockLimit;

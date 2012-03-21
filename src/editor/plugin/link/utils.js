@@ -35,7 +35,7 @@ KISSY.add("editor/plugin/link/utils", function (S, KE) {
 
 
     function removeLink(editor, a) {
-        editor.fire("save");
+        editor.execCommand("save");
         var sel = editor.getSelection(),
             range = sel.getRanges()[0];
         if (range && range.collapsed) {
@@ -45,9 +45,9 @@ KISSY.add("editor/plugin/link/utils", function (S, KE) {
             sel.selectBookmarks(bs);
         } else if (range) {
             var attrs = getAttributes(a[0]);
-            new KEStyle(link_Style, attrs).remove(editor.document);
+            new KEStyle(link_Style, attrs).remove(editor.get("document")[0]);
         }
-        editor.fire("save");
+        editor.execCommand("save");
         editor.notifySelectionChange();
     }
 
@@ -56,7 +56,7 @@ KISSY.add("editor/plugin/link/utils", function (S, KE) {
         attr[_ke_saved_href] = attr.href;
         // 是修改行为
         if (_selectedEl) {
-            editor.fire("save");
+            editor.execCommand("save");
             _selectedEl.attr(attr);
         } else {
             var sel = editor.getSelection(),
@@ -64,15 +64,15 @@ KISSY.add("editor/plugin/link/utils", function (S, KE) {
             //编辑器没有焦点或没有选择区域时直接插入链接地址
             if (!range || range.collapsed) {
                 var a = new Node("<a>" + attr.href + "</a>",
-                    attr, editor.document);
+                    attr, editor.get("document")[0]);
                 editor.insertElement(a);
             } else {
-                editor.fire("save");
+                editor.execCommand("save");
                 var linkStyle = new KEStyle(link_Style, attr);
-                linkStyle.apply(editor.document);
+                linkStyle.apply(editor.get("document")[0]);
             }
         }
-        editor.fire("save");
+        editor.execCommand("save");
         editor.notifySelectionChange();
     }
 

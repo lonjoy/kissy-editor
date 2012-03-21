@@ -32,7 +32,7 @@ KISSY.Editor.add("justify", function(editor) {
                     ranges = selection.getRanges(),
                     iterator,
                     block;
-                editor.fire("save");
+                editor.execCommand("save");
                 for (var i = ranges.length - 1;
                      i >= 0;
                      i--) {
@@ -48,7 +48,7 @@ KISSY.Editor.add("justify", function(editor) {
                 }
                 editor.notifySelectionChange();
                 selection.selectBookmarks(bookmarks);
-                editor.fire("save");
+                editor.execCommand("save");
             },
             selectionChange:function(ev) {
                 var self = this,

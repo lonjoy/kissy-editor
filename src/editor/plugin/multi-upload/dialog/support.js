@@ -273,7 +273,7 @@ KISSY.Editor.add("multi-upload/dialog/support", function () {
                         // chrome refer empty in empty src iframe
                         new Image().src = url;
                         editor.insertElement(new Node("<p>&nbsp;<img src='" +
-                            url + "'/>&nbsp;</p>", null, editor.document));
+                            url + "'/>&nbsp;</p>", null, editor.get("document")[0]));
                         self._removeTrFile(tr);
                     }
                 }
@@ -304,7 +304,7 @@ KISSY.Editor.add("multi-upload/dialog/support", function () {
                     var url = tr.attr("url");
                     new Image().src = url;
                     editor.insertElement(new Node("<img src='" +
-                        url + "'/>", null, editor.document));
+                        url + "'/>", null, editor.get("document")[0]));
                 }
                 if (
                     target.hasClass("ke-upload-delete")

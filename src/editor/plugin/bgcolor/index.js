@@ -5,7 +5,6 @@ KISSY.add("editor/plugin/bgcolor/index", function (S, KE, Button, cmd) {
             cmd.init(editor);
             editor.addButton({
                 cmdType:'bgcolor',
-                mode:KE.WYSIWYG_MODE,
                 title:"背景颜色",
                 contentCls:"ke-toolbar-bgcolor"
             }, undefined, Button);
