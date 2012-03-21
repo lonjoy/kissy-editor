@@ -2,7 +2,7 @@ KISSY.add("editor/plugin/font-size/cmd", function (S, KE, Cmd) {
     var fontSizeStyle = {
         element:'span',
         styles:{
-            'font-size':'#(size)'
+            'font-size':'#(value)'
         },
         overrides:[
             {
