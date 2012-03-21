@@ -203,7 +203,7 @@ KISSY.add("editor", function (S) {
         },
 
         _uiSetHeight:function (v) {
-            S.log("_uiSetHeight : " + v);
+            // S.log("_uiSetHeight : " + v);
             var self = this;
             self.get("iframeWrapEl").css("height", v);
             self.get("textarea").css("height", v);
