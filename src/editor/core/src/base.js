@@ -26,7 +26,7 @@ KISSY.add("editor/core/base", function (S, HtmlParser, Component, UIBase) {
      * @extends Component.ModelControl
      * @name Editor
      */
-    var Editor = UIBase.create(Component.ModelControl, [UIBase.Box],
+    var Editor = UIBase.create(Component.Controller, [UIBase.Box],
         /**
          * @lends Editor#
          */
