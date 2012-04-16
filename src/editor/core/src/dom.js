@@ -269,10 +269,10 @@ KISSY.add("editor/core/dom", function (S) {
 
                 if (toStart) {
                     while (( child = thisElement.lastChild ))
-                        target.insertBefore($.removeChild(child), target.firstChild);
+                        target.insertBefore(thisElement.removeChild(child), target.firstChild);
                 } else {
                     while (( child = thisElement.firstChild ))
-                        target.appendChild($.removeChild(child));
+                        target.appendChild(thisElement.removeChild(child));
                 }
             },
 
@@ -295,24 +295,24 @@ KISSY.add("editor/core/dom", function (S) {
                         var pendingNodes = [];
 
                         while (sibling.attr('_ke_bookmark')
-                            || sibling._4e_isEmptyInlineRemoveable()) {
+                            || sibling._4e_isEmptyInlineRemoveable(undefined)) {
                             pendingNodes.push(sibling);
                             sibling = isNext ? new Node(sibling[0].nextSibling) : new Node(sibling[0].previousSibling);
                             if (!sibling[0] || sibling[0].nodeType != KEN.NODE_ELEMENT)
                                 return;
                         }
 
-                        if (element._4e_isIdentical(sibling)) {
+                        if (element._4e_isIdentical(sibling, undefined)) {
                             // Save the last child to be checked too, to merge things like
                             // <b><i></i></b><b><i></i></b> => <b><i></i></b>
                             var innerSibling = isNext ? element[0].lastChild : element[0].firstChild;
 
                             // Move pending nodes first into the target element.
                             while (pendingNodes.length)
-                                pendingNodes.shift()._4e_move(element, !isNext);
+                                pendingNodes.shift()._4e_move(element, !isNext, undefined);
 
-                            sibling._4e_moveChildren(element, !isNext);
-                            sibling._4e_remove();
+                            sibling._4e_moveChildren(element, !isNext, undefined);
+                            sibling.remove();
 
                             // Now check the last inner child (see two comments above).
                             if (innerSibling[0] && innerSibling[0].nodeType == KEN.NODE_ELEMENT)
@@ -680,8 +680,8 @@ KISSY.add("editor/core/dom", function (S) {
                 // For nodes that don't support compareDocumentPosition, contains
                 // or sourceIndex, their "address" is compared.
 
-                var addressOfThis = DOM._4e_address(el),
-                    addressOfOther = DOM._4e_address($other),
+                var addressOfThis = DOM._4e_address(el, undefined),
+                    addressOfOther = DOM._4e_address($other, undefined),
                     minLevel = Math.min(addressOfThis.length, addressOfOther.length);
 
                 // Determinate preceed/follow relationship.
@@ -782,7 +782,7 @@ KISSY.add("editor/core/dom", function (S) {
                             continue;
                         }
                         else if (trimmed.length < originalLength) {
-                            new Node(child)._4e_splitText(originalLength - trimmed.length);
+                            new Node(child)._4e_splitText(originalLength - trimmed.length, undefined);
                             // IE BUG: child.remove() may raise JavaScript errors here. (#81)
                             el.removeChild(el.firstChild);
                         }
@@ -804,7 +804,7 @@ KISSY.add("editor/core/dom", function (S) {
                             el.removeChild(child);
                             continue;
                         } else if (trimmed.length < originalLength) {
-                            new Node(child)._4e_splitText(trimmed.length);
+                            new Node(child)._4e_splitText(trimmed.length, undefined);
                             // IE BUG: child.getNext().remove() may raise JavaScript errors here.
                             // (#81)
                             el.removeChild(el.lastChild);
@@ -1001,16 +1001,6 @@ KISSY.add("editor/core/dom", function (S) {
                 elem.scrollIntoView(doc, false);
             }
         };
-
-    /**
-     *
-     * @param styleName {string}
-     */
-    function normalizeStyle(styleName) {
-        return styleName.replace(/-(\w)/g, function (m, g1) {
-            return g1.toUpperCase();
-        })
-    }
 
     Utils.injectDom(editorDom);
 }, {

@@ -1,5 +1,8 @@
 KISSY.add('editor/plugin/list-utils/index', function (S, KE) {
     var listNodeNames = {ol:1, ul:1},
+        Node = S.Node,
+        DOM = S.DOM,
+        UA = S.UA,
         KEN = KE.NODE,
         list = {
             /*

@@ -747,7 +747,7 @@ KISSY.add("editor", function (S) {
                         if (self.getSelection().getRanges().length == 0) {
                             var r = new KE.Range(editorDoc);
                             var node = DOM._4e_first(editorDoc.body, function (el) {
-                                return el[0].nodeType == 1 && el._4e_name() != "br";
+                                return el.nodeType == 1 && DOM._4e_name(el) != "br";
                             });
                             if (!node) {
                                 node = new Node(editorDoc.createElement("p"));

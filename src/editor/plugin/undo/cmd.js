@@ -75,7 +75,7 @@ KISSY.add("editor/plugin/undo/cmd", function (S, KE) {
         self.index = -1;
         self.editor = editor;
         //键盘输入做延迟处理
-        self.bufferRunner = S.buffer(self.save, 500,self);
+        self.bufferRunner = S.buffer(self.save, 500, self);
         self._init();
     }
 
@@ -104,7 +104,7 @@ KISSY.add("editor/plugin/undo/cmd", function (S, KE) {
                 // ctrl+z，撤销
                 if (keycode === zKeyCode && (ev.ctrlKey || ev.metaKey)) {
                     if (false !== editor.fire("restore", {direction:-1})) {
-                        editor.restore(-1);
+                        self.restore(-1);
                     }
                     ev.halt();
                     return;
@@ -112,7 +112,7 @@ KISSY.add("editor/plugin/undo/cmd", function (S, KE) {
                 // ctrl+y，重做
                 if (keycode === yKeyCode && (ev.ctrlKey || ev.metaKey)) {
                     if (false !== editor.fire("restore", {direction:1})) {
-                        editor.restore(1);
+                        self.restore(1);
                     }
                     ev.halt();
                     return;

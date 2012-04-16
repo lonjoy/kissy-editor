@@ -8,6 +8,7 @@
 <link href="../src/editor/theme/cool/tab.css" rel="stylesheet"/>
 <link href="../src/editor/theme/cool/overlay.css" rel="stylesheet"/>
 <link href="../src/editor/theme/cool/resize-plugin.css" rel="stylesheet"/>
+<link href="../src/editor/theme/cool/elementpath.css" rel="stylesheet"/>
 <script>
     //document.domain="taobao.net";
 </script>
@@ -538,7 +539,11 @@ KISSY.ready(function (S) {
                 ",resize" +
                 ",draft" +
                 ",undo" +
-                ",indent"
+                ",indent" +
+                ",list" +
+                ",elementpath" +
+                ",pagebreak" +
+                ",preview"
                 // +",separator,undo,elementpaths"
                 , function () {
                     this.on("blur", function () {

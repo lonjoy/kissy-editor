@@ -410,7 +410,7 @@ KISSY.Editor.add("table/dialog/support", function() {
             }
             d.tcaption.val(c);
             var head = selectedTable._4e_first(function(n) {
-                return n._4e_name() == "thead";
+                return DOM._4e_name(n) == "thead";
             });
             var rowLenth = (selectedTable.one("tbody") ?
                 selectedTable.one("tbody").children().length : 0)

@@ -347,7 +347,8 @@ KISSY.add("editor/core/walker", function (S) {
             // 2. Empty inline elements, e.g. <b></b> we're checking here
             // 'offsetHeight' instead of 'offsetWidth' for properly excluding
             // all sorts of empty paragraph, e.g. <br />.
-            var isInvisible = whitespace(node) || node[0].nodeType == KEN.NODE_ELEMENT && !node[0].offsetHeight;
+            var isInvisible = whitespace(node) ||
+                node.nodeType == KEN.NODE_ELEMENT && !node.offsetHeight;
             return isReject ^ isInvisible;
         };
     };

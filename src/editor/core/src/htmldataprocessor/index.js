@@ -96,8 +96,8 @@ KISSY.add("editor/plugin/htmldataprocessor/index", function (S) {
                                         newValue = styles[ i ][ 2 ];
                                         newName = styles[ i ][ 3 ];
 
-                                        if (name.match(namePattern)
-                                            && ( !valuePattern || value.match(valuePattern) )) {
+                                        if (name.match(namePattern) &&
+                                            ( !valuePattern || value.match(valuePattern) )) {
                                             name = newName || name;
                                             whitelist && ( newValue = newValue || value );
 
@@ -182,19 +182,6 @@ KISSY.add("editor/plugin/htmldataprocessor/index", function (S) {
                                     el.setTagName("");
                                 }
                             }
-
-                            /*
-                             太激进，只做span*/
-                            //span也不做了，可能设置class，模板用来占位展示
-//                    var style = el.attributes.style;
-//                    //没有属性的inline去掉了
-//                    if (//tagName in dtd.$inline
-//                        tagName == "span"
-//                            && (!style || !filterStyle(style))
-//                        ) {
-//                        //el.filterChildren();
-//                        delete el.name;
-//                    }
                         }
                     },
 

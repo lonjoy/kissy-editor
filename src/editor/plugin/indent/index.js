@@ -1,4 +1,7 @@
-
+/**
+ * Add indent button.
+ * @author yiminghe@gmail.com
+ */
 KISSY.add("editor/plugin/indent/index", function (S, KE, indexCmd) {
 
     return {
