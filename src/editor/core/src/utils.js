@@ -476,6 +476,11 @@ KISSY.add("editor/core/utils", function (S) {
                                 if (ret && ret.nodeType) {
                                     return new Node(ret);
                                 } else {
+                                    if (S.isArray(ret)) {
+                                        if (ret[0] && ret[0].nodeType) {
+                                            return new Node(ret);
+                                        }
+                                    }
                                     return ret;
                                 }
                             };
@@ -492,7 +497,7 @@ KISSY.add("editor/core/utils", function (S) {
                     );
             },
 
-            loadDialog:function(){
+            loadDialog:function () {
 
             },
 
@@ -518,6 +523,12 @@ KISSY.add("editor/core/utils", function (S) {
                     }
                 }
                 this.__res = [];
+            },
+
+            getQueryCmd:function (cmd) {
+                return "query" + ("-" + cmd).replace(/-(\w)/g, function (m, m1) {
+                    return m1.toUpperCase()
+                }) + "Active";
             }
         };
 

@@ -307,20 +307,16 @@ KISSY.add("editor/core/walker", function (S) {
      */
     Walker.bookmark = function (contentOnly, isReject) {
         function isBookmarkNode(node) {
-            node = new Node(node);
-            return  node &&
-                node._4e_name() == 'span' &&
-                node.attr('_ke_bookmark');
+            return  DOM._4e_name(node) == 'span' &&
+                DOM.attr(node, '_ke_bookmark');
         }
 
         return function (node) {
             var isBookmark, parent;
             // Is bookmark inner text node?
-            isBookmark = ( node &&
-                node[0] &&
-                node[0].nodeType == KEN.NODE_TEXT &&
-                ( parent = node.parent() )
-                && isBookmarkNode(parent) );
+            isBookmark = ( node.nodeType == KEN.NODE_TEXT &&
+                ( parent = node.parentNode ) &&
+                isBookmarkNode(parent) );
             // Is bookmark node?
             isBookmark = contentOnly ? isBookmark : isBookmark || isBookmarkNode(node);
             return isReject ^ isBookmark;

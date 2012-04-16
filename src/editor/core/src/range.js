@@ -1247,15 +1247,17 @@ KISSY.add("editor/core/range", function (S) {
                         // Record the encountered 'blockBoundary' for later use.
                         boundaryGuard = function (node) {
                             var retval = defaultGuard(node);
-                            if (!retval)
-                                blockBoundary = node;
+                            if (!retval) {
+                                blockBoundary = new Node(node);
+                            }
                             return retval;
                         },
                         // Record the encounted 'tailBr' for later use.
                         tailBrGuard = function (node) {
                             var retval = boundaryGuard(node);
-                            if (!retval && node[0] && node._4e_name() == 'br')
-                                tailBr = node;
+                            if (!retval && DOM._4e_name(node) == 'br') {
+                                tailBr = new Node(node);
+                            }
                             return retval;
                         };
 
@@ -1711,6 +1713,6 @@ KISSY.add("editor/core/range", function (S) {
 
 
     KE.Range = KERange;
-},{
-    requires:['./base','./utils','./walker','./elementpath','./dom']
+}, {
+    requires:['./base', './utils', './walker', './elementpath', './dom']
 });

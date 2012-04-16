@@ -1,6 +1,6 @@
-KISSY.add("editor/plugin/font/cmd", function (S, KE, Utils) {
+KISSY.add("editor/plugin/font/cmd", function (S, KE) {
 
-    var getQueryCmd = Utils.getQueryCmd;
+    var getQueryCmd = KE.Utils.getQueryCmd;
 
     return {
         addButtonCmd:function (editor, cmdType, style) {
@@ -58,5 +58,5 @@ KISSY.add("editor/plugin/font/cmd", function (S, KE, Utils) {
         }
     };
 }, {
-    requires:['editor', './utils']
+    requires:['editor']
 });

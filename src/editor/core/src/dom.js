@@ -150,10 +150,10 @@ KISSY.add("editor/core/dom", function (S) {
              */
             _4e_first:function (el, evaluator) {
                 var first = el.firstChild,
-                    retval = first && new Node(first);
-                if (retval && evaluator && !evaluator(retval))
-                    retval = retval._4e_next(evaluator);
-
+                    retval = first;
+                if (retval && evaluator && !evaluator(retval)) {
+                    retval = DOM._4e_next(retval, evaluator);
+                }
                 return retval;
             },
             /**
@@ -457,41 +457,45 @@ KISSY.add("editor/core/dom", function (S) {
             _4e_nextSourceNode:function (el, startFromSibling, nodeType, guard) {
                 // If "guard" is a node, transform it in a function.
                 if (guard && !guard.call) {
-                    var guardNode = guard[0] || guard;
+                    var guardNode = normalElDom(guard);
                     guard = function (node) {
-                        node = node[0] || node;
                         return node !== guardNode;
                     };
                 }
 
                 var node = !startFromSibling && el.firstChild ,
-                    parent = new Node(el);
+                    parent = el;
 
                 // Guarding when we're skipping the current element( no children or 'startFromSibling' ).
                 // send the 'moving out' signal even we don't actually dive into.
                 if (!node) {
-                    if (el.nodeType == KEN.NODE_ELEMENT && guard && guard(el, TRUE) === FALSE)
+                    if (el.nodeType == KEN.NODE_ELEMENT &&
+                        guard && guard(el, TRUE) === FALSE) {
                         return NULL;
+                    }
                     node = el.nextSibling;
                 }
 
-                while (!node && ( parent = parent.parent())) {
+                while (!node && ( parent = parent.parentNode)) {
                     // The guard check sends the "TRUE" paramenter to indicate that
                     // we are moving "out" of the element.
-                    if (guard && guard(parent, TRUE) === FALSE)
+                    if (guard && guard(parent, TRUE) === FALSE) {
                         return NULL;
-
-                    node = parent[0].nextSibling;
+                    }
+                    node = parent.nextSibling;
                 }
 
-                if (!node)
+                if (!node) {
                     return NULL;
-                node = DOM._4e_wrap(node);
-                if (guard && guard(node) === FALSE)
-                    return NULL;
+                }
 
-                if (nodeType && nodeType != node[0].nodeType)
-                    return node._4e_nextSourceNode(FALSE, nodeType, guard);
+                if (guard && guard(node) === FALSE) {
+                    return NULL;
+                }
+
+                if (nodeType && nodeType != node.nodeType) {
+                    return DOM._4e_nextSourceNode(node, FALSE, nodeType, guard);
+                }
 
                 return node;
             },
@@ -505,40 +509,44 @@ KISSY.add("editor/core/dom", function (S) {
              */
             _4e_previousSourceNode:function (el, startFromSibling, nodeType, guard) {
                 if (guard && !guard.call) {
-                    var guardNode = guard[0] || guard;
+                    var guardNode = normalElDom(guard);
                     guard = function (node) {
-                        node = node[0] || node;
                         return node !== guardNode;
                     };
                 }
 
                 var node = ( !startFromSibling && el.lastChild),
-                    parent = new Node(el);
+                    parent = el;
 
                 // Guarding when we're skipping the current element( no children or 'startFromSibling' ).
                 // send the 'moving out' signal even we don't actually dive into.
                 if (!node) {
-                    if (el.nodeType == KEN.NODE_ELEMENT && guard && guard(el, TRUE) === FALSE)
+                    if (el.nodeType == KEN.NODE_ELEMENT &&
+                        guard && guard(el, TRUE) === FALSE) {
                         return NULL;
+                    }
                     node = el.previousSibling;
                 }
 
-                while (!node && ( parent = parent.parent() )) {
+                while (!node && ( parent = parent.parentNode )) {
                     // The guard check sends the "TRUE" paramenter to indicate that
                     // we are moving "out" of the element.
                     if (guard && guard(parent, TRUE) === FALSE)
                         return NULL;
-                    node = parent[0].previousSibling;
+                    node = parent.previousSibling;
                 }
 
-                if (!node)
+                if (!node) {
                     return NULL;
-                node = DOM._4e_wrap(node);
-                if (guard && guard(node) === FALSE)
-                    return NULL;
+                }
 
-                if (nodeType && node[0].nodeType != nodeType)
-                    return node._4e_previousSourceNode(FALSE, nodeType, guard);
+                if (guard && guard(node) === FALSE) {
+                    return NULL;
+                }
+
+                if (nodeType && node.nodeType != nodeType) {
+                    return DOM._4e_previousSourceNode(node, FALSE, nodeType, guard);
+                }
 
                 return node;
             },

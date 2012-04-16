@@ -1,31 +1,30 @@
+/**
+ * Add indent and outdent command identifier for KISSY Editor.Modified from CKEditor
+ * @author yiminghe@gmail.com
+ */
 /*
  Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
  For licensing, see LICENSE.html or http://ckeditor.com/license
  */
-KISSY.Editor.add("indent/support", function() {
-    var KE = KISSY.Editor,
-        listNodeNames = {ol:1,ul:1},
-        S = KISSY,
+KISSY.add("editor/plugin/indent/cmd", function (S, KE, ListUtils) {
+
+    var listNodeNames = {ol:1, ul:1},
         Walker = KE.Walker,
         DOM = S.DOM,
         Node = S.Node,
         UA = S.UA,
-        KEN = KE.NODE;
-    var isNotWhitespaces = Walker.whitespaces(true),
+        KEN = KE.NODE,
+        isNotWhitespaces = Walker.whitespaces(true),
+        INDENT_CSS_PROPERTY = "margin-left",
+        INDENT_OFFSET = 40,
+        INDENT_UNIT = "px",
         isNotBookmark = Walker.bookmark(false, true);
-
-    function IndentCommand(type) {
-        this.type = type;
-        this.indentCssProperty = "margin-left";
-        this.indentOffset = 40;
-        this.indentUnit = "px";
-    }
 
     function isListItem(node) {
         return node[0].nodeType == KEN.NODE_ELEMENT && node._4e_name() == 'li';
     }
 
-    function indentList(range, listNode) {
+    function indentList(range, listNode, type) {
         // Our starting and ending points of the range might be inside some blocks under a list item...
         // So before playing with the iterator, we need to expand the block to include the list items.
 
@@ -58,20 +57,20 @@ KISSY.Editor.add("indent/support", function() {
         // list's DOM tree itself. The array model demands that it knows as much as
         // possible about the surrounding lists, we need to feed it the further
         // ancestor node that is still a list.
-        var listParents = listNode._4e_parents(true);
+        var listParents = listNode._4e_parents(true, undefined);
         for (var i = 0; i < listParents.length; i++) {
             if (listNodeNames[ listParents[i]._4e_name() ]) {
                 listNode = listParents[i];
                 break;
             }
         }
-        var indentOffset = this.type == 'indent' ? 1 : -1,
+        var indentOffset = type == 'indent' ? 1 : -1,
             startItem = itemsToMove[0],
             lastItem = itemsToMove[ itemsToMove.length - 1 ],
             database = {};
 
         // Convert the list DOM tree into a one dimensional array.
-        var listArray = KE.ListUtils.listToArray(listNode, database);
+        var listArray = ListUtils.listToArray(listNode, database);
 
         // Apply indenting or outdenting on the array.
         // listarray_index 为 item 在数组中的下标，方便计算
@@ -103,7 +102,7 @@ KISSY.Editor.add("indent/support", function() {
 
         // Convert the array back to a DOM forest (yes we might have a few subtrees now).
         // And replace the old list with the new forest.
-        var newList = KE.ListUtils.arrayToList(listArray,
+        var newList = ListUtils.arrayToList(listArray,
             database, null,
             "p",
             0);
@@ -111,12 +110,12 @@ KISSY.Editor.add("indent/support", function() {
         // Avoid nested <li> after outdent even they're visually same,
         // recording them for later refactoring.(#3982)
         var pendingList = [];
-        if (this.type == 'outdent') {
+        if (type == 'outdent') {
             var parentLiElement;
             if (( parentLiElement = listNode.parent() ) &&
                 parentLiElement._4e_name() == 'li') {
                 var children = newList.listNode.childNodes
-                    ,count = children.length,
+                    , count = children.length,
                     child;
 
                 for (i = count - 1; i >= 0; i--) {
@@ -128,9 +127,9 @@ KISSY.Editor.add("indent/support", function() {
         }
 
         if (newList) {
-            DOM.insertBefore(newList.listNode[0]||newList.listNode,
-                listNode[0]||listNode);
-            listNode._4e_remove();
+            DOM.insertBefore(newList.listNode[0] || newList.listNode,
+                listNode[0] || listNode);
+            listNode.remove();
         }
         // Move the nested <li> to be appeared after the parent.
         if (pendingList && pendingList.length) {
@@ -144,11 +143,11 @@ KISSY.Editor.add("indent/support", function() {
                     followingList._4e_name() in listNodeNames) {
                     // IE requires a filler NBSP for nested list inside empty list item,
                     // otherwise the list item will be inaccessiable. (#4476)
-                    if (UA['ie'] && !li._4e_first(function(node) {
+                    if (UA['ie'] && !li._4e_first(function (node) {
                         return isNotWhitespaces(node) && isNotBookmark(node);
-                    }))
+                    }, undefined)) {
                         li[0].appendChild(range.document.createTextNode('\u00a0'));
-
+                    }
                     li[0].appendChild(followingList[0]);
                 }
                 DOM.insertAfter(li[0], parentLiElement[0]);
@@ -159,133 +158,131 @@ KISSY.Editor.add("indent/support", function() {
         KE.Utils.clearAllMarkers(database);
     }
 
-    function indentBlock(range) {
-        var iterator = range.createIterator();
+    function indentBlock(range, type) {
+        var iterator = range.createIterator(),
+            block;
         //  enterMode = "p";
         iterator.enforceRealBlocks = true;
         iterator.enlargeBr = true;
-        var block;
-        while (( block = iterator.getNextParagraph() ))
-            indentElement.call(this, block);
+        while (block = iterator.getNextParagraph()) {
+            indentElement(block, type);
+        }
     }
 
-    function indentElement(element) {
-
-        var currentOffset = parseInt(element.style(this.indentCssProperty), 10);
-        if (isNaN(currentOffset))
+    function indentElement(element, type) {
+        var currentOffset = parseInt(element.style(INDENT_CSS_PROPERTY), 10);
+        if (isNaN(currentOffset)) {
             currentOffset = 0;
-        currentOffset += ( this.type == 'indent' ? 1 : -1 ) * this.indentOffset;
-
-        if (currentOffset < 0)
+        }
+        currentOffset += ( type == 'indent' ? 1 : -1 ) * INDENT_OFFSET;
+        if (currentOffset < 0) {
             return false;
-
+        }
         currentOffset = Math.max(currentOffset, 0);
-        currentOffset = Math.ceil(currentOffset / this.indentOffset,undefined) * this.indentOffset;
-        element.css(this.indentCssProperty, currentOffset ? currentOffset + this.indentUnit : '');
-        if (element[0].style.cssText === '')
+        currentOffset = Math.ceil(currentOffset / INDENT_OFFSET) * INDENT_OFFSET;
+        element.css(INDENT_CSS_PROPERTY, currentOffset ? currentOffset + INDENT_UNIT : '');
+        if (element[0].style.cssText === '') {
             element.removeAttr('style');
+        }
 
         return true;
     }
 
-    S.augment(IndentCommand, {
-        exec:function(editor) {
 
-            var selection = editor.getSelection(),
-                range = selection && selection.getRanges()[0];
-            var startContainer = range.startContainer,
-                endContainer = range.endContainer,
-                rangeRoot = range.getCommonAncestor(),
-                nearestListBlock = rangeRoot;
-
-            while (nearestListBlock && !( nearestListBlock[0].nodeType == KEN.NODE_ELEMENT &&
-                listNodeNames[ nearestListBlock._4e_name() ] ))
-                nearestListBlock = nearestListBlock.parent();
-
-            // Avoid selection anchors under list root.
-            // <ul>[<li>...</li>]</ul> =>	<ul><li>[...]</li></ul>
-            //注：firefox 永远不会出现
-            //注2：哪种情况会出现？
-            if (nearestListBlock
-                && startContainer[0].nodeType == KEN.NODE_ELEMENT
-                && startContainer._4e_name() in listNodeNames) {
-                //S.log("indent from ul/ol");
-                var walker = new Walker(range);
-                walker.evaluator = isListItem;
-                range.startContainer = walker.next();
-            }
-
-            if (nearestListBlock
-                && endContainer[0].nodeType == KEN.NODE_ELEMENT
-                && endContainer._4e_name() in listNodeNames) {
-                walker = new Walker(range);
-                walker.evaluator = isListItem;
-                range.endContainer = walker.previous();
-            }
-
-            var bookmarks = selection.createBookmarks(true);
-
-            if (nearestListBlock) {
-                var firstListItem = nearestListBlock._4e_first();
-                while (firstListItem
-                    &&
-                    firstListItem._4e_name() != "li") {
-                    firstListItem = firstListItem.next();
-                }
-                var rangeStart = range.startContainer,
-                    indentWholeList = firstListItem[0] == rangeStart[0]
-                        || firstListItem.contains(rangeStart);
-
-                // Indent the entire list if  cursor is inside the first list item. (#3893)
-                if (!( indentWholeList
-                    &&
-                    indentElement.call(this, nearestListBlock) ))
-                    indentList.call(this, range, nearestListBlock);
-            }
-            else
-                indentBlock.call(this, range);
-            selection.selectBookmarks(bookmarks);
+    function indentEditor(editor, type) {
+        var selection = editor.getSelection(),
+            range = selection && selection.getRanges()[0];
+        if (!range) {
+            return;
         }
-    });
+        var startContainer = range.startContainer,
+            endContainer = range.endContainer,
+            rangeRoot = range.getCommonAncestor(),
+            nearestListBlock = rangeRoot;
 
-    KE.IndentSupport = {
-        init:function() {
-            var self = this,
-                cfg = self.cfg;
-            self.indentCommand = new IndentCommand(cfg.type);
-        },
-        offClick:function() {
-            var self = this,
-                editor = self.editor;
-            //ie要等会才能获得焦点窗口的选择区域
-            editor.execCommand("save");
-            setTimeout(function() {
-                self.indentCommand.exec(editor);
-                editor.execCommand("save");
-                editor.notifySelectionChange();
-            }, 10);
-        },
-        selectionChange:function(ev) {
-            var self = this,
-                cfg = self.cfg;
-            if (cfg.type != "outdent") return;
+        while (nearestListBlock &&
+            !( nearestListBlock[0].nodeType == KEN.NODE_ELEMENT &&
+                listNodeNames[ nearestListBlock._4e_name() ] )) {
+            nearestListBlock = nearestListBlock.parent();
+        }
 
-            var elementPath = ev.path,
-                blockLimit = elementPath.blockLimit,
-                el = self.btn;
+        // Avoid selection anchors under list root.
+        // <ul>[<li>...</li>]</ul> =>	<ul><li>[...]</li></ul>
+        //注：firefox 永远不会出现
+        //注2：哪种情况会出现？
+        if (nearestListBlock
+            && startContainer[0].nodeType == KEN.NODE_ELEMENT
+            && startContainer._4e_name() in listNodeNames) {
+            //S.log("indent from ul/ol");
+            var walker = new Walker(range);
+            walker.evaluator = isListItem;
+            range.startContainer = walker.next();
+        }
 
-            if (elementPath.contains(listNodeNames)) {
-                el.boff();
-            } else {
-                var block = elementPath.block || blockLimit;
-                if (block && block.style(self.indentCommand.indentCssProperty)) {
-                    el.boff();
-                } else {
-                    el.disable();
+        if (nearestListBlock
+            && endContainer[0].nodeType == KEN.NODE_ELEMENT
+            && endContainer._4e_name() in listNodeNames) {
+            walker = new Walker(range);
+            walker.evaluator = isListItem;
+            range.endContainer = walker.previous();
+        }
+
+        var bookmarks = selection.createBookmarks(true);
+
+        if (nearestListBlock) {
+            var firstListItem = nearestListBlock._4e_first();
+            while (firstListItem && firstListItem._4e_name() != "li") {
+                firstListItem = firstListItem.next();
+            }
+            var rangeStart = range.startContainer,
+                indentWholeList = firstListItem[0] == rangeStart[0] || firstListItem.contains(rangeStart);
+
+            // Indent the entire list if  cursor is inside the first list item. (#3893)
+            if (!( indentWholeList &&
+                indentElement(nearestListBlock, type) )) {
+                indentList(range, nearestListBlock, type);
+            }
+        }
+        else {
+            indentBlock(range, type);
+        }
+        selection.selectBookmarks(bookmarks);
+    }
+
+    function addCommand(editor, cmdType) {
+        if (!editor.hasCommand(cmdType)) {
+            editor.addCommand(cmdType, {
+                exec:function (editor) {
+                    editor.execCommand("save");
+                    indentEditor(editor, cmdType);
+                    editor.execCommand("save");
+                    editor.notifySelectionChange();
                 }
+            });
+        }
+    }
+
+    return {
+        init:function (editor) {
+            addCommand(editor, "outdent");
+            addCommand(editor, "indent");
+            var queryCmd = KE.Utils.getQueryCmd("outdent");
+            if (!editor.hasCommand(queryCmd)) {
+                editor.addCommand(queryCmd, {
+                    exec:function (editor, elementPath) {
+                        var blockLimit = elementPath.blockLimit;
+                        if (elementPath.contains(listNodeNames)) {
+                            return true;
+                        } else {
+                            var block = elementPath.block || blockLimit;
+                            return block && block.style(INDENT_CSS_PROPERTY);
+                        }
+                    }
+                });
             }
         }
     };
-},{
-    attach:false
+
+}, {
+    requires:['editor', '../list-utils/']
 });

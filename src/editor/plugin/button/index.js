@@ -67,12 +67,12 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
             el.html(text);
             self._updateHref();
         },
-        _uiSetState:function (n) {
-            this["_" + n]();
+        _uiSetState:function (n, ev) {
+            this["_" + n](ev);
         },
         disable:function () {
             var self = this;
-            self._savedState = self.get("state");
+
             self.set("state", DISABLED);
         },
         enable:function () {
@@ -106,8 +106,9 @@ KISSY.add("editor/plugin/button/index", function (S, KE, UIBase) {
             el.removeClass(ON_CLASS + " " + DISABLED_CLASS)
                 .addClass(OFF_CLASS);
         },
-        _disabled:function () {
+        _disabled:function (ev) {
             var el = this.get("el");
+            this._savedState = ev.prevVal;
             el.removeClass(OFF_CLASS + " " + ON_CLASS)
                 .addClass(DISABLED_CLASS);
         }
