@@ -1,5 +1,5 @@
 /**
- * modified from ckeditor for kissy editor,use style to gen element and wrap range's elements.Modified from CKEditor.
+ * Use style to gen element and wrap range's elements.Modified from CKEditor.
  * @author <yiminghe@gmail.com>
  */
 /*
