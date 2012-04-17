@@ -1695,7 +1695,7 @@ KISSY.add("editor/core/range", function (S) {
 
             // We'll be extracting part of this element, so let's use our
             // range to get the correct piece.
-            range.setStartAfter(el);
+            range.setStartAfter(new Node(el));
             range.setEndAfter(parent);
 
             // Extract it.

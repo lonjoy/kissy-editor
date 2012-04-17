@@ -76,16 +76,19 @@ KISSY.add("editor/plugin/removeFormat/cmd", function (S, KE) {
                                 for (var i = 1, pathElement;
                                      pathElement = pathElements[ i ];
                                      i++) {
-                                    if (pathElement.equals(path.block)
-                                        || pathElement.equals(path.blockLimit))
+                                    if (pathElement.equals(path.block) ||
+                                        pathElement.equals(path.blockLimit)) {
                                         break;
-
+                                    }
                                     // If this element can be removed (even partially).
-                                    if (tagsRegex.test(pathElement._4e_name()))
+                                    if (tagsRegex.test(pathElement._4e_name())) {
                                         node._4e_breakParent(pathElement);
+                                    }
                                 }
                             };
 
+                            // does not make bookmark within any format tag
+                            // but keep bookmark node is at original text posititon
                             breakParent(startNode);
                             breakParent(endNode);
 

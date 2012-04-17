@@ -146,7 +146,7 @@ KISSY.add("editor/core/dom", function (S) {
             /**
              *
              * @param el {(Node)}
-             * @param evaluator {function(KISSY.Node)}
+             * @param [evaluator] {function(KISSY.Node)}
              */
             _4e_first:function (el, evaluator) {
                 var first = el.firstChild,
@@ -160,7 +160,7 @@ KISSY.add("editor/core/dom", function (S) {
              *
              * @param thisElement {(Node)}
              * @param target {(Node)}
-             * @param toStart {boolean}
+             * @param [toStart] {boolean}
              */
             _4e_move:function (thisElement, target, toStart) {
                 DOM._4e_remove(thisElement);

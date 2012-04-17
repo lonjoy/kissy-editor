@@ -6,7 +6,7 @@
  Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
  For licensing, see LICENSE.html or http://ckeditor.com/license
  */
-KISSY.add("editor/core/domiterator", function (S) {
+KISSY.add("editor/core/domIterator", function (S) {
     var TRUE = true,
         FALSE = false,
         NULL = null,
@@ -69,8 +69,8 @@ KISSY.add("editor/core/domiterator", function (S) {
             if (!self._.lastNode) {
                 range = self.range.clone();
 
-                //2010-09-30 shrink
-                //3.4.2 新增，
+                // 2010-09-30 shrink
+                // 3.4.2 新增，
                 // Shrink the range to exclude harmful "noises" (#4087, #4450, #5435).
                 range.shrink(KER.SHRINK_ELEMENT, TRUE);
 
@@ -220,33 +220,6 @@ KISSY.add("editor/core/domiterator", function (S) {
                 // loop.
                 if (isLast || ( closeRange && range ))
                     break;
-
-                //3.4.2 中被去掉了！不要了，改作一开始就shrink，参见开头 2010-09-30 shrink 注释 
-                ////qc #3879 ，选择td内所有问题，这里被出发了
-                //禁止，只有td内全部为空时才会略过
-                /*
-                 if (FALSE) {
-                 if (( closeRange || isLast ) && range) {
-                 var boundaryNodes = range.getBoundaryNodes(),
-                 startPath = new ElementPath(range.startContainer);
-
-                 // Drop the range if it only contains bookmark nodes, and is
-                 // not because of the original collapsed range. (#4087,#4450)
-                 if (boundaryNodes.startNode.parent().equals(startPath.blockLimit)
-                 && isBookmark(boundaryNodes.startNode)
-                 && isBookmark(boundaryNodes.endNode)
-                 ) {
-                 range = NULL;
-                 self._.nextNode = NULL;
-                 }
-                 else
-                 break;
-                 }
-                 if (isLast)
-                 break;
-                 }*/
-
-
             }
 
             // Now, based on the processed range, look for (or create) the block to be returned.
@@ -352,6 +325,6 @@ KISSY.add("editor/core/domiterator", function (S) {
     KERange.prototype.createIterator = function () {
         return new Iterator(this);
     };
-},{
-    requires:['./base','./range','./elementpath','./walker']
+}, {
+    requires:['./base', './range', './elementpath', './walker']
 });

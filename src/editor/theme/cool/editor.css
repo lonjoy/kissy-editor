@@ -132,16 +132,16 @@ ke-toolbar-padding {
     background-image: url("indent.png"); /** sprite-ref: mysprite; */
 }
 
-.ke-toolbar-alignleft {
-    background-image: url("align-left.png"); /** sprite-ref: mysprite; */
+.ke-toolbar-justifyLeft {
+    background-image: url("justify-left.png"); /** sprite-ref: mysprite; */
 }
 
-.ke-toolbar-aligncenter {
-    background-image: url("align-center.png"); /** sprite-ref: mysprite; */
+.ke-toolbar-justifyCenter {
+    background-image: url("justify-center.png"); /** sprite-ref: mysprite; */
 }
 
-.ke-toolbar-alignright {
-    background-image: url("align-right.png"); /** sprite-ref: mysprite; */
+.ke-toolbar-justifyRight {
+    background-image: url("justify-right.png"); /** sprite-ref: mysprite; */
 }
 
 .ke-toolbar-image {

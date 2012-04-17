@@ -528,11 +528,14 @@ KISSY.ready(function (S) {
         window.editor3 = new KE(cfg3)
                 .use("sourcearea" +
                 ",separator" +
-                ",bold,italic,fontFamily,fontSize," +
+                ",bold," +
+                "italic," +
+                "fontFamily," +
+                "fontSize," +
                 "strikeThrough," +
                 "underline," +
                 "separator" +
-                ",checkboxSourcearea" +
+            //",checkboxSourcearea" +
                 ",image" +
                 ",link" +
                 ",foreColor" +
@@ -541,6 +544,7 @@ KISSY.ready(function (S) {
                 ",draft" +
                 ",undo" +
                 ",indent" +
+                ",outdent" +
                 ",insertUnorderedList" +
                 ",insertOrderedList" +
                 ",elementPath" +
@@ -548,7 +552,10 @@ KISSY.ready(function (S) {
                 ",preview" +
                 ",maximize" +
                 ",removeFormat" +
-                ",heading"
+                ",heading" +
+                ",justifyLeft" +
+                ",justifyCenter" +
+                ",justifyRight"
                 // +",separator,undo,elementpaths"
                 , function () {
                     this.on("blur", function () {

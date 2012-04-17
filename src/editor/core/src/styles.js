@@ -1378,5 +1378,5 @@ KISSY.add("editor/core/styles", function (S) {
 
     KE.Style = KEStyle;
 }, {
-    requires:['./range', './selection', './domiterator', './elementpath']
+    requires:['./range', './selection', './domIterator', './elementpath']
 });
