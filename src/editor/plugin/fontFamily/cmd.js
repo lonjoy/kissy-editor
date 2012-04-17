@@ -2,7 +2,7 @@ KISSY.add("editor/plugin/fontFamily/cmd", function (S, KE, Cmd) {
     var fontFamilyStyle = {
         element:'span',
         styles:{
-            'fontFamily':'#(value)'
+            'font-family':'#(value)'
         },
         overrides:[
             {
