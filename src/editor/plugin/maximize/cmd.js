@@ -1,23 +1,16 @@
 /**
- * maximize functionality
+ * Add maximizeWindow/restoreWindow to Editor.
  * @author yiminghe@gmail.com
  */
-KISSY.Editor.add("maximize/support", function () {
-
-    var S = KISSY,
-        KE = S.Editor,
-        UA = S.UA,
+KISSY.add("editor/plugin/maximize/cmd", function (S, KE) {
+    var UA = S.UA,
         ie = UA['ie'],
+        doc = document,
         Node = S.Node,
         Event = S.Event,
         DOM = S.DOM,
         iframe,
-        MAXIMIZE_CLASS = "ke-toolbar-maximize",
-        RESTORE_CLASS = "ke-toolbar-restore",
-        MAXIMIZE_TIP = "全屏",
         MAXIMIZE_TOOLBAR_CLASS = "ke-toolbar-padding",
-        RESTORE_TIP = "取消全屏",
-        Maximize = {},
         init = function () {
             if (!iframe) {
                 iframe = new Node("<" + "iframe " +
@@ -27,18 +20,17 @@ KISSY.Editor.add("maximize/support", function () {
                     "top:-9999px;" +
                     "left:-9999px;" +
                     "'" +
-                    " frameborder='0'>").prependTo(document.body);
+                    " frameborder='0'>").prependTo(doc.body, undefined);
             }
         };
 
-    DOM.addStyleSheet(".ke-toolbar-padding {" +
-        "padding:5px;" +
-        "}",
-        "ke-maximize");
+    function MaximizeCmd(editor) {
+        this.editor = editor;
+    }
 
-    S.mix(Maximize, {
+    S.augment(MaximizeCmd, {
 
-        onClick:function () {
+        restoreWindow:function () {
             var self = this,
                 editor = self.editor;
 
@@ -54,13 +46,12 @@ KISSY.Editor.add("maximize/support", function () {
             }
 
             //body overflow 变化也会引起 resize 变化！！！！先去除
-            self.call("_saveEditorStatus");
-            self.call("_restoreState");
-            self.btn.boff();
+            self._saveEditorStatus();
+            self._restoreState();
 
             //firefox 必须timeout
             setTimeout(function () {
-                self.call("_restoreEditorStatus");
+                self._restoreEditorStatus();
                 editor.notifySelectionChange();
                 editor.fire("restoreWindow");
             }, 30);
@@ -72,7 +63,6 @@ KISSY.Editor.add("maximize/support", function () {
          */
         _restoreState:function () {
             var self = this,
-                doc = document,
                 editor = self.editor,
                 //恢复父节点的position原状态 bugfix:最大化被父元素限制
                 _savedParents = self._savedParents;
@@ -98,7 +88,7 @@ KISSY.Editor.add("maximize/support", function () {
 
             var editorElStyle = editor.get("el")[0].style;
             editorElStyle.position = "static";
-            editorElStyle.width = self.el;
+            editorElStyle.width = self.editorElWidth;
 
             /*
              iframe 中时假死！
@@ -113,14 +103,10 @@ KISSY.Editor.add("maximize/support", function () {
             });
 
             window.scrollTo(self.scrollLeft, self.scrollTop);
-            var bel = self.btn.get("el");
 
-            bel.one("span")
-                .removeClass(RESTORE_CLASS)
-                .addClass(MAXIMIZE_CLASS)
-                .attr("title", MAXIMIZE_TIP);
-
-            ie < 8 && self.editor.get("toolBarEl").removeClass(MAXIMIZE_TOOLBAR_CLASS);
+            if (ie < 8) {
+                self.editor.get("toolBarEl").removeClass(MAXIMIZE_TOOLBAR_CLASS, undefined);
+            }
         },
         /**
          * 保存最大化前的外围状态信息到内存，
@@ -153,13 +139,11 @@ KISSY.Editor.add("maximize/support", function () {
                 p = p.parent();
             }
             self._savedParents = _savedParents;
-            var bel = self.btn.get("el");
-            bel.one("span")
-                .removeClass(MAXIMIZE_CLASS)
-                .addClass(RESTORE_CLASS);
-            bel.attr("title", RESTORE_TIP);
+
             //ie6,7 图标到了窗口边界，不可点击，给个padding
-            ie < 8 && self.editor.get("toolBarEl").addClass(MAXIMIZE_TOOLBAR_CLASS);
+            if (ie < 8) {
+                self.editor.get("toolBarEl").addClass(MAXIMIZE_TOOLBAR_CLASS, undefined);
+            }
         },
 
         /**
@@ -170,7 +154,9 @@ KISSY.Editor.add("maximize/support", function () {
             var self = this,
                 editor = self.editor;
             self.savedRanges = null;
-            if (!UA['gecko'] || !editor.__iframeFocus) return;
+            if (!UA['gecko'] || !editor.__iframeFocus) {
+                return;
+            }
             var sel = editor.getSelection();
             //firefox 光标丢失bug,位置丢失，所以这里保存下
             self.savedRanges = sel && sel.getRanges();
@@ -203,7 +189,7 @@ KISSY.Editor.add("maximize/support", function () {
                 var element = sel.getStartElement();
                 //使用原生不行的，会使主窗口滚动
                 //element[0] && element[0].scrollIntoView(true);
-                element && element[0] && element._4e_scrollIntoView();
+                element && element._4e_scrollIntoView();
             }
         },
 
@@ -213,7 +199,6 @@ KISSY.Editor.add("maximize/support", function () {
          */
         _maximize:function (stop) {
             var self = this,
-                doc = document,
                 editor = self.editor,
                 editorEl = editor.get("el"),
                 viewportHeight = DOM.viewportHeight(),
@@ -266,12 +251,12 @@ KISSY.Editor.add("maximize/support", function () {
                 return;
             }
 
-            self.call("_saveEditorStatus");
-            self.call("_saveSate");
-            self.call("_maximize");
+            self._saveEditorStatus();
+            self._saveSate();
+            self._maximize();
             if (!self._resize) {
-                var _maximize = S.buffer(self.cfg._maximize, 100,self);
-                self['_resize'] = function () {
+                var _maximize = S.buffer(self._maximize, 100, self);
+                self._resize = function () {
                     _maximize();
                     editor.fire("maximizeWindow");
                 };
@@ -279,21 +264,20 @@ KISSY.Editor.add("maximize/support", function () {
 
             Event.on(window, "resize", self._resize);
 
-            self.btn.bon();
             setTimeout(function () {
-                self.call("_restoreEditorStatus");
+                self._restoreEditorStatus();
                 editor.notifySelectionChange();
                 editor.fire("maximizeWindow");
             }, 30);
         },
-        offClick:function () {
+        maximizeWindow:function () {
             var self = this,
                 editor = self.editor;
             if (editor.fire("beforeMaximizeWindow") === false) {
                 return;
             }
             init();
-            self.call("_real");
+            self._real();
         },
         destroy:function () {
             var self = this;
@@ -304,7 +288,29 @@ KISSY.Editor.add("maximize/support", function () {
         }
     });
 
-    KE.Maximize = Maximize;
+    return {
+        init:function (editor) {
+
+            if (!editor.hasCommand("maximizeWindow")) {
+
+                var maximizeCmd = new MaximizeCmd(editor);
+
+                editor.addCommand("maximizeWindow", {
+                    exec:function () {
+                        maximizeCmd.maximizeWindow();
+                    }
+                });
+
+                editor.addCommand("restoreWindow", {
+                    exec:function () {
+                        maximizeCmd.restoreWindow();
+                    }
+                });
+
+            }
+
+        }
+    };
 }, {
-    attach:false
+    requires:['editor']
 });
