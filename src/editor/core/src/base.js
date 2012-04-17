@@ -54,7 +54,12 @@ KISSY.add("editor/core/base", function (S, HtmlParser, Component, UIBase) {
             },
             use:function (mods, callback) {
                 var self = this,
-                    BASIC = self.__CORE_PLUGINS || ["htmldataprocessor", "enterkey", "clipboard", "selection"];
+                    BASIC = self.__CORE_PLUGINS || [
+                        "htmlDataProcessor",
+                        "enterKey",
+                        "clipboard",
+                        "selection"
+                    ];
 
                 mods = mods.split(",");
 

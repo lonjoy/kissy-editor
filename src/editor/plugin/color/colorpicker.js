@@ -24,7 +24,7 @@ KISSY.add("editor/plugin/color/colorpicker", function (S, KE, Overlay4E) {
         ".ke-color-advanced-picker-right a {" +
         "height:2px;" +
         "line-height:0;" +
-        "font-size:0;" +
+        "fontSize:0;" +
         "display:block;" +
         "}" +
         "" +
@@ -37,7 +37,7 @@ KISSY.add("editor/plugin/color/colorpicker", function (S, KE, Overlay4E) {
         "width:15px;" +
         "height:16px;" +
         "line-height:0;" +
-        "font-size:0;" +
+        "fontSize:0;" +
         "display:block;" +
         "}" +
         ".ke-color-advanced-picker-left a:hover{" +

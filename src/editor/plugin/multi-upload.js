@@ -1,10 +1,10 @@
-KISSY.Editor.add("multi-upload", function(editor) {
+KISSY.Editor.add("multiUpload", function(editor) {
     var S = KISSY,
         KE = S.Editor;
 
-    if (!KE['Env']['mods']["multi-upload/dialog"]) {
+    if (!KE['Env']['mods']["multiUpload/dialog"]) {
         KE.add({
-            "multi-upload/dialog":{
+            "multiUpload/dialog":{
                 attach: false,
                 charset:"utf-8",
                 fullpath:KE.Utils.debugUrl(
@@ -15,26 +15,26 @@ KISSY.Editor.add("multi-upload", function(editor) {
 
 
         KE.add({
-            "multi-upload/dialog/support":{
+            "multiUpload/dialog/support":{
                 attach: false,
                 charset:"utf-8",
-                requires:["progressbar","localstorage","overlay"],
+                requires:["progressbar","localStorage","overlay"],
                 fullpath:KE.Utils.debugUrl("/plugin/upload/dialog/support/plugin.js")
             }
         });
     }
 
-    editor.addPlugin("multi-upload", function() {
-        var context = editor.addButton("multi-upload", {
+    editor.addPlugin("multiUpload", function() {
+        var context = editor.addButton("multiUpload", {
             contentCls:"ke-toolbar-mul-image",
             title:"批量插图",
             mode:KE.WYSIWYG_MODE,
             offClick:function() {
                 var editor = this.editor;
-                editor.showDialog("multi-upload/dialog");
+                editor.showDialog("multiUpload/dialog");
             },
             destroy:function() {
-                this.editor.destroyDialog("multi-upload/dialog");
+                this.editor.destroyDialog("multiUpload/dialog");
             }
         });
 

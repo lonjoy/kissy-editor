@@ -2,7 +2,7 @@
  * pagebreak functionality
  * @author yiminghe@gmail.com
  */
-KISSY.add("editor/plugin/pagebreak/index", function (S, KE, fakeObjects) {
+KISSY.add("editor/plugin/pageBreak/index", function (S, KE, fakeObjects) {
     var Node = S.Node,
         CLS = "ke_pagebreak",
         TYPE = "div",
@@ -88,5 +88,5 @@ KISSY.add("editor/plugin/pagebreak/index", function (S, KE, fakeObjects) {
         }
     };
 }, {
-    "requires":["editor", "../fakeobjects/"]
+    "requires":["editor", "../fakeObjects/"]
 });

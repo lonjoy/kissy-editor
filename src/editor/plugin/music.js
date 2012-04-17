@@ -88,5 +88,5 @@ KISSY.Editor.add("music", function(editor) {
     });
 }, {
     attach:false,
-    "requires":["fakeobjects"]
+    "requires":["fakeObjects"]
 });

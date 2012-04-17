@@ -152,14 +152,14 @@ ke-toolbar-padding {
     background-image: url("mul-image.png"); /** sprite-ref: mysprite; */
 }
 
-.ke-toolbar-bgcolor {
+.ke-toolbar-back-color {
     background-image: url("bgcolor.png"); /** sprite-ref: mysprite; */
     width: 24px;
     height: 15px;
     margin-top: 3px;
 }
 
-.ke-toolbar-color {
+.ke-toolbar-fore-color {
     background-image: url("color.png"); /** sprite-ref: mysprite; */
     width: 24px;
     height: 14px;

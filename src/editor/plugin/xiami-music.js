@@ -2,11 +2,11 @@
  * biz plugin , xiami music intergration
  * @author yiminghe@gmail.com
  */
-KISSY.Editor.add("xiami-music", function(editor) {
+KISSY.Editor.add("xiamiMusic", function(editor) {
     var S = KISSY,
         KE = S.Editor,
         CLS_XIAMI = "ke_xiami",
-        TYPE_XIAMI = "xiami-music",
+        TYPE_XIAMI = "xiamiMusic",
         dataProcessor = editor.htmlDataProcessor,
         dataFilter = dataProcessor && dataProcessor.dataFilter;
 
@@ -70,15 +70,15 @@ KISSY.Editor.add("xiami-music", function(editor) {
             //4 比 flash 的优先级 5 高！
         }}, 4);
 
-    editor.addPlugin("xiami-music", function() {
-        var context = editor.addButton("xiami-music", {
+    editor.addPlugin("xiamiMusic", function() {
+        var context = editor.addButton("xiamiMusic", {
             contentCls:"ke-toolbar-music",
             title:"插入虾米音乐" ,
             mode:KE.WYSIWYG_MODE,
             loading:true
         });
 
-        KE.use("xiami-music/support", function() {
+        KE.use("xiamiMusic/support", function() {
             var music = new KE.XiamiMusic(editor);
             context.reload({
                 offClick:function() {
@@ -98,5 +98,5 @@ KISSY.Editor.add("xiami-music", function(editor) {
 },
 {
     attach:false,
-    requires : ["fakeobjects"]
+    requires : ["fakeObjects"]
 });

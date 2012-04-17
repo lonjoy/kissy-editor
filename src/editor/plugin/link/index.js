@@ -83,5 +83,5 @@ KISSY.add("editor/plugin/link/index", function (S, KE, BubbleView, Utils, Dialog
     }
     };
 }, {
-    requires:['editor', '../bubbleview/', './utils', '../dialog-loader/']
+    requires:['editor', '../bubbleview/', './utils', '../dialogLoader/']
 });

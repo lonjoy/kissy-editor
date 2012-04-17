@@ -1,14 +1,14 @@
-KISSY.add("editor/plugin/elementpath/index", function (S, KE) {
+KISSY.add("editor/plugin/elementPath/index", function (S, KE) {
     var Node = S.Node;
 
-    function ElementPaths(cfg) {
+    function elementPaths(cfg) {
         var self = this;
         self.cfg = cfg;
         self._cache = [];
         self._init();
     }
 
-    S.augment(ElementPaths, {
+    S.augment(elementPaths, {
         _init:function () {
             var self = this,
                 cfg = self.cfg,
@@ -43,7 +43,7 @@ KISSY.add("editor/plugin/elementpath/index", function (S, KE) {
             for (i = 0; i < elements.length; i++) {
                 element = elements[i];
 
-                var a = new Node("<a href='#' class='elementpath'>" +
+                var a = new Node("<a href='#' class='elementPath'>" +
                     //考虑 fake objects
                     (element.attr("_ke_real_element_type") || element._4e_name())
                     + "</a>");
@@ -67,7 +67,7 @@ KISSY.add("editor/plugin/elementpath/index", function (S, KE) {
 
     return {
         init:function (editor) {
-            var elemPath = new ElementPaths({
+            var elemPath = new elementPaths({
                 editor:editor
             });
             editor.on("destroy", function () {

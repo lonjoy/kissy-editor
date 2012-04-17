@@ -103,5 +103,5 @@ KISSY.Editor.add("video", function(editor) {
 
 }, {
     attach:false,
-    requires:["fakeobjects"]
+    requires:["fakeObjects"]
 });

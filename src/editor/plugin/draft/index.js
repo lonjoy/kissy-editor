@@ -205,7 +205,7 @@ KISSY.add("editor/plugin/draft/index", function (S, KE, localStorage, Overlay, S
                 help = new Node(draftCfg['helpHtml'] || "");
             var arrowCss = "height:0;" +
                 "position:absolute;" +
-                "font-size:0;" +
+                "fontSize:0;" +
                 "width:0;" +
                 "border:8px #000 solid;" +
                 "border-color:#000 transparent transparent transparent;" +
@@ -350,5 +350,5 @@ KISSY.add("editor/plugin/draft/index", function (S, KE, localStorage, Overlay, S
         }
     };
 }, {
-    "requires":["editor", "../localstorage/", "overlay", '../select/']
+    "requires":["editor", "../localStorage/", "overlay", '../select/']
 });

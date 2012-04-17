@@ -284,5 +284,5 @@ KISSY.add("editor/plugin/indent/cmd", function (S, KE, ListUtils) {
     };
 
 }, {
-    requires:['editor', '../list-utils/']
+    requires:['editor', '../listUtils/']
 });

@@ -64,5 +64,5 @@ KISSY.Editor.add("flash", function(editor) {
 
 }, {
     attach:false,
-    requires:["fakeobjects"]
+    requires:["fakeObjects"]
 });

@@ -9,6 +9,7 @@
 <link href="../src/editor/theme/cool/overlay.css" rel="stylesheet"/>
 <link href="../src/editor/theme/cool/resize-plugin.css" rel="stylesheet"/>
 <link href="../src/editor/theme/cool/elementpath.css" rel="stylesheet"/>
+<link href="../src/editor/theme/cool/editor.css" rel="stylesheet"/>
 <script>
     //document.domain="taobao.net";
 </script>
@@ -19,13 +20,13 @@
 <!--
 <label>
     执行代码：
-    <textarea id='code1' style="width: 60%; height:200px;margin: 0 auto"></textarea>
+    <textarea id='code1' style="width: 80%; height:200px;margin: 0 auto"></textarea>
 </label>
 <button onclick="eval(KISSY.trim(KISSY.one('#code1').val()))">执行</button>
 <br>
 <label>
     插入html：
-    <textarea id='code2' style="width: 60%; height:200px;margin: 0 auto"></textarea>
+    <textarea id='code2' style="width: 80%; height:200px;margin: 0 auto"></textarea>
 </label>
 <button onclick="editor2.insertHtml(KISSY.trim(KISSY.one('#code2').val()))">执行</button>
 <br>
@@ -189,7 +190,7 @@
 </form>
 -->
 <a href="http://www.g.cn"> leave </a>
-<div style="width: 60%; margin: 50px auto;position:relative;overflow:hidden;" id="container2">
+<div style="width: 80%; margin: 50px auto;position:relative;overflow:hidden;" id="container2">
     <label for="editor2">Editor Instance 2:</label>
     <textarea id="editor2" style="width:80%;height:400px;margin:0 auto;"></textarea>
 </div>
@@ -218,8 +219,8 @@ core
 core plugins
 -->
 <script src="../src/editor/core/src/clipboard/index.js"></script>
-<script src="../src/editor/core/src/enterkey/index.js"></script>
-<script src="../src/editor/core/src/htmldataprocessor/index.js"></script>
+<script src="../src/editor/core/src/enterKey/index.js"></script>
+<script src="../src/editor/core/src/htmlDataProcessor/index.js"></script>
 <script src="../src/editor/core/src/selection/index.js"></script>
 <!--
 other plugins
@@ -527,24 +528,27 @@ KISSY.ready(function (S) {
         window.editor3 = new KE(cfg3)
                 .use("sourcearea" +
                 ",separator" +
-                ",font-bold,font-italic,font-family,font-size," +
-                "font-strikeThrough," +
-                "font-underline," +
+                ",bold,italic,fontFamily,fontSize," +
+                "strikeThrough," +
+                "underline," +
                 "separator" +
-                ",checkbox-sourcearea" +
+                ",checkboxSourcearea" +
                 ",image" +
                 ",link" +
-                ",forecolor" +
-                ",bgcolor" +
+                ",foreColor" +
+                ",backColor" +
                 ",resize" +
                 ",draft" +
                 ",undo" +
                 ",indent" +
-                ",list" +
-                ",elementpath" +
-                ",pagebreak" +
+                ",insertUnorderedList" +
+                ",insertOrderedList" +
+                ",elementPath" +
+                ",pageBreak" +
                 ",preview" +
-                ",maximize"
+                ",maximize" +
+                ",removeFormat" +
+                ",heading"
                 // +",separator,undo,elementpaths"
                 , function () {
                     this.on("blur", function () {

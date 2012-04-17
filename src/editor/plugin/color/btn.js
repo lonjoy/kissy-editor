@@ -181,5 +181,5 @@ KISSY.add("editor/plugin/color/btn", function (S, KE, TripleButton, Overlay4E, D
     return ColorButton;
 
 }, {
-    requires:['editor', '../button/', '../overlay/', '../dialog-loader/']
+    requires:['editor', '../button/', '../overlay/', '../dialogLoader/']
 });
