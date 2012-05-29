@@ -187,7 +187,7 @@
 })(KISSY);/*
 Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Feb 25 23:15
+build time: May 25 11:22
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -278,7 +278,7 @@ build time: Feb 25 23:15
          */
         version:'1.20',
 
-        buildTime:'20120225231543',
+        buildTime:'20120525112239',
 
         /**
          * Returns a new object containing all of the properties of
@@ -1273,7 +1273,7 @@ build time: Feb 25 23:15
 
             function f() {
                 f.stop();
-                bufferTimer = S.later(fn, ms, FALSE, context || this);
+                bufferTimer = S.later(fn, ms, FALSE, context || this,arguments);
             }
 
             f.stop = function () {
@@ -1660,7 +1660,7 @@ build time: Feb 25 23:15
  * script/css load across browser
  * @author  yiminghe@gmail.com
  */
-(function(S, utils) {
+(function (S, utils) {
     if ("require" in this) {
         return;
     }
@@ -1698,14 +1698,15 @@ build time: Feb 25 23:15
                 try {
                     var cssRules;
                     if (cssRules = node['sheet'].cssRules) {
-                        S.log('firefox  ' + cssRules + ' loaded : ' + url);
+                        S.log('firefox loaded : ' + url);
                         loaded = 1;
                     }
-                } catch(ex) {
-                    // S.log('firefox  ' + ex.name + ' ' + ex.code + ' ' + url);
-                    // if (ex.name === 'NS_ERROR_DOM_SECURITY_ERR') {
-                    if (ex.code === 1000) {
-                        S.log('firefox  ' + ex.name + ' loaded : ' + url);
+                } catch (ex) {
+                    var exName = ex.name;
+                    S.log('firefox getStyle : ' + exName + ' ' + ex.code + ' ' + url);
+                    if (exName == 'NS_ERROR_DOM_SECURITY_ERR' ||
+                        exName == 'SecurityError') {
+                        S.log('firefox loaded : ' + url);
                         loaded = 1;
                     }
                 }
@@ -1728,18 +1729,18 @@ build time: Feb 25 23:15
 
     S.mix(utils, {
         scriptOnload:document.addEventListener ?
-            function(node, callback) {
+            function (node, callback) {
                 if (utils.isLinkNode(node)) {
                     return utils.styleOnload(node, callback);
                 }
                 node.addEventListener('load', callback, false);
             } :
-            function(node, callback) {
+            function (node, callback) {
                 if (utils.isLinkNode(node)) {
                     return utils.styleOnload(node, callback);
                 }
                 var oldCallback = node.onreadystatechange;
-                node.onreadystatechange = function() {
+                node.onreadystatechange = function () {
                     var rs = node.readyState;
                     if (/loaded|complete/i.test(rs)) {
                         node.onreadystatechange = null;
@@ -1760,9 +1761,9 @@ build time: Feb 25 23:15
          *  - 其他
          *    - http://www.zachleat.com/web/load-css-dynamically/
          */
-        styleOnload:window.attachEvent ?
+        styleOnload:window.attachEvent || window.opera ?
             // ie/opera
-            function(node, callback) {
+            function (node, callback) {
                 // whether to detach using function wrapper?
                 function t() {
                     node.detachEvent('onload', t);
@@ -1774,8 +1775,8 @@ build time: Feb 25 23:15
             } :
             // refer : http://lifesinger.org/lab/2011/load-js-css/css-preload.html
             // 暂时不考虑如何判断失败，如 404 等
-            function(node, callback) {
-                var href = node.href,arr;
+            function (node, callback) {
+                var href = node.href, arr;
                 arr = monitors[href] = monitors[href] || [];
                 arr.node = node;
                 arr.push(callback);
@@ -2076,6 +2077,13 @@ build time: Feb 25 23:15
             }
 
             function build(fullpath, path) {
+
+                if (mod[fullpath + "__builded"]) {
+                    return;
+                }
+
+                mod[fullpath + "__builded"] = 1;
+
                 if (!mod[fullpath] && mod[path]) {
                     //如果是 ./ 或 ../ 则相对当前模块路径
                     mod[path] = utils.normalDepModuleName(mod.name, mod[path]);
@@ -2185,16 +2193,24 @@ build time: Feb 25 23:15
                 === 0) {
                 return utils.removePostfix(src.substring(self.Config.base.length));
             }
-            var packages = self.Config.packages;
+            var packages = self.Config.packages,
+                finalPackagePath,
+                finalPackageLength = -1;
             //外部模块去除包路径，得到模块名
             for (var p in packages) {
                 if (packages.hasOwnProperty(p)) {
                     var p_path = packages[p].path;
                     if (packages.hasOwnProperty(p) &&
                         src.lastIndexOf(p_path, 0) === 0) {
-                        return utils.removePostfix(src.substring(p_path.length));
+                        if (p_path.length > finalPackageLength) {
+                            finalPackageLength = p_path.length;
+                            finalPackagePath = p_path;
+                        }
                     }
                 }
+            }
+            if (finalPackagePath) {
+                return utils.removePostfix(src.substring(finalPackagePath.length));
             }
             S.log("interactive script does not have package config ：" + src, "error");
         }
@@ -2455,7 +2471,7 @@ build time: Feb 25 23:15
             for (var p in packages) {
                 if (packages.hasOwnProperty(p)) {
                     if (S.startsWith(modName, p) &&
-                        p.length > pName) {
+                        p.length > pName.length) {
                         pName = p;
                     }
                 }
@@ -3106,71 +3122,71 @@ build time: Feb 25 23:15
         }
     });
 })(KISSY);
-/**
- combined files : 
+/*
+ Combined modules by KISSY Module Compiler : 
 
-D:\code\kissy_git\kissy1.2\src\ua\base.js
-D:\code\kissy_git\kissy1.2\src\ua\extra.js
-D:\code\kissy_git\kissy1.2\src\ua.js
-D:\code\kissy_git\kissy1.2\src\dom\base.js
-D:\code\kissy_git\kissy1.2\src\dom\attr.js
-D:\code\kissy_git\kissy1.2\src\dom\class.js
-D:\code\kissy_git\kissy1.2\src\dom\create.js
-D:\code\kissy_git\kissy1.2\src\dom\data.js
-D:\code\kissy_git\kissy1.2\src\dom\insertion.js
-D:\code\kissy_git\kissy1.2\src\dom\offset.js
-D:\code\kissy_git\kissy1.2\src\dom\style.js
-D:\code\kissy_git\kissy1.2\src\dom\selector.js
-D:\code\kissy_git\kissy1.2\src\dom\style-ie.js
-D:\code\kissy_git\kissy1.2\src\dom\traversal.js
-D:\code\kissy_git\kissy1.2\src\dom.js
-D:\code\kissy_git\kissy1.2\src\event\keycodes.js
-D:\code\kissy_git\kissy1.2\src\event\object.js
-D:\code\kissy_git\kissy1.2\src\event\utils.js
-D:\code\kissy_git\kissy1.2\src\event\base.js
-D:\code\kissy_git\kissy1.2\src\event\target.js
-D:\code\kissy_git\kissy1.2\src\event\focusin.js
-D:\code\kissy_git\kissy1.2\src\event\hashchange.js
-D:\code\kissy_git\kissy1.2\src\event\valuechange.js
-D:\code\kissy_git\kissy1.2\src\event\delegate.js
-D:\code\kissy_git\kissy1.2\src\event\mouseenter.js
-D:\code\kissy_git\kissy1.2\src\event\submit.js
-D:\code\kissy_git\kissy1.2\src\event\change.js
-D:\code\kissy_git\kissy1.2\src\event\mousewheel.js
-D:\code\kissy_git\kissy1.2\src\event.js
-D:\code\kissy_git\kissy1.2\src\node\base.js
-D:\code\kissy_git\kissy1.2\src\node\attach.js
-D:\code\kissy_git\kissy1.2\src\node\override.js
-D:\code\kissy_git\kissy1.2\src\anim\easing.js
-D:\code\kissy_git\kissy1.2\src\anim\manager.js
-D:\code\kissy_git\kissy1.2\src\anim\fx.js
-D:\code\kissy_git\kissy1.2\src\anim\queue.js
-D:\code\kissy_git\kissy1.2\src\anim\base.js
-D:\code\kissy_git\kissy1.2\src\anim\color.js
-D:\code\kissy_git\kissy1.2\src\anim.js
-D:\code\kissy_git\kissy1.2\src\node\anim.js
-D:\code\kissy_git\kissy1.2\src\node.js
-D:\code\kissy_git\kissy1.2\src\json\json2.js
-D:\code\kissy_git\kissy1.2\src\json.js
-D:\code\kissy_git\kissy1.2\src\ajax\form-serializer.js
-D:\code\kissy_git\kissy1.2\src\ajax\xhrobject.js
-D:\code\kissy_git\kissy1.2\src\ajax\base.js
-D:\code\kissy_git\kissy1.2\src\ajax\xhrbase.js
-D:\code\kissy_git\kissy1.2\src\ajax\subdomain.js
-D:\code\kissy_git\kissy1.2\src\ajax\xdr.js
-D:\code\kissy_git\kissy1.2\src\ajax\xhr.js
-D:\code\kissy_git\kissy1.2\src\ajax\script.js
-D:\code\kissy_git\kissy1.2\src\ajax\jsonp.js
-D:\code\kissy_git\kissy1.2\src\ajax\form.js
-D:\code\kissy_git\kissy1.2\src\ajax\iframe-upload.js
-D:\code\kissy_git\kissy1.2\src\ajax.js
-D:\code\kissy_git\kissy1.2\src\base\attribute.js
-D:\code\kissy_git\kissy1.2\src\base\base.js
-D:\code\kissy_git\kissy1.2\src\base.js
-D:\code\kissy_git\kissy1.2\src\cookie\base.js
-D:\code\kissy_git\kissy1.2\src\cookie.js
-D:\code\kissy_git\kissy1.2\src\core.js
-**/
+ ua/base
+ ua/extra
+ ua
+ dom/base
+ dom/attr
+ dom/class
+ dom/create
+ dom/data
+ dom/insertion
+ dom/offset
+ dom/style
+ dom/selector
+ dom/style-ie
+ dom/traversal
+ dom
+ event/keycodes
+ event/object
+ event/utils
+ event/base
+ event/target
+ event/focusin
+ event/hashchange
+ event/valuechange
+ event/delegate
+ event/mouseenter
+ event/submit
+ event/change
+ event/mousewheel
+ event
+ node/base
+ node/attach
+ node/override
+ anim/easing
+ anim/manager
+ anim/fx
+ anim/queue
+ anim/base
+ anim/color
+ anim
+ node/anim
+ node
+ json/json2
+ json
+ ajax/form-serializer
+ ajax/xhrobject
+ ajax/base
+ ajax/xhrbase
+ ajax/subdomain
+ ajax/xdr
+ ajax/xhr
+ ajax/script
+ ajax/jsonp
+ ajax/form
+ ajax/iframe-upload
+ ajax
+ base/attribute
+ base/base
+ base
+ cookie/base
+ cookie
+ core
+*/
 
 /**
  * @module  ua
@@ -8434,7 +8450,7 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
                 // S.log("set iframe html :" + hash);
 
                 var html = S.substitute(IFRAME_TEMPLATE, {
-                    hash: hash,
+                    hash: S.escapeHTML(hash),
                     // 一定要加哦
                     head:DOM._isCustomDomain() ? "<script>document.domain = '" +
                         doc.domain
@@ -11986,7 +12002,7 @@ KISSY.add("ajax/base", function(S, JSON, Event, XhrObject) {
  * base for xhr and subdomain
  * @author yiminghe@gmail.com
  */
-KISSY.add("ajax/xhrbase", function(S, io) {
+KISSY.add("ajax/xhrbase", function (S, io) {
     var OK_CODE = 200,
         win = window,
         // http://msdn.microsoft.com/en-us/library/cc288060(v=vs.85).aspx
@@ -12001,7 +12017,7 @@ KISSY.add("ajax/xhrbase", function(S, io) {
     function createStandardXHR(_, refWin) {
         try {
             return new (refWin || win)['XMLHttpRequest']();
-        } catch(e) {
+        } catch (e) {
             //S.log("createStandardXHR error");
         }
         return undefined;
@@ -12010,13 +12026,13 @@ KISSY.add("ajax/xhrbase", function(S, io) {
     function createActiveXHR(_, refWin) {
         try {
             return new (refWin || win)['ActiveXObject']("Microsoft.XMLHTTP");
-        } catch(e) {
+        } catch (e) {
             S.log("createActiveXHR error");
         }
         return undefined;
     }
 
-    XhrBase.xhr = win.ActiveXObject ? function(crossDomain, refWin) {
+    XhrBase.xhr = win.ActiveXObject ? function (crossDomain, refWin) {
         if (crossDomain && _XDomainRequest) {
             return new _XDomainRequest();
         }
@@ -12029,7 +12045,7 @@ KISSY.add("ajax/xhrbase", function(S, io) {
     }
 
     S.mix(XhrBase.proto, {
-        sendInternal:function() {
+        sendInternal:function () {
 
             var self = this,
                 xhrObj = self.xhrObj,
@@ -12067,7 +12083,7 @@ KISSY.add("ajax/xhrbase", function(S, io) {
                         xhr.setRequestHeader(i, xhrObj.requestHeaders[ i ]);
                     }
                 }
-            } catch(e) {
+            } catch (e) {
                 S.log("setRequestHeader in xhr error : ");
                 S.log(e);
             }
@@ -12079,37 +12095,39 @@ KISSY.add("ajax/xhrbase", function(S, io) {
             } else {
                 // _XDomainRequest 单独的回调机制
                 if (isInstanceOfXDomainRequest(xhr)) {
-                    xhr.onload = function() {
+                    xhr.onload = function () {
                         xhr.readyState = 4;
                         xhr.status = 200;
                         self._callback();
                     };
-                    xhr.onerror = function() {
+                    xhr.onerror = function () {
                         xhr.readyState = 4;
                         xhr.status = 500;
                         self._callback();
                     };
                 } else {
-                    xhr.onreadystatechange = function() {
+                    xhr.onreadystatechange = function () {
                         self._callback();
                     };
                 }
             }
         },
         // 由 xhrObj.abort 调用，自己不可以调用 xhrObj.abort
-        abort:function() {
+        abort:function () {
             this._callback(0, 1);
         },
 
-        _callback:function(event, abort) {
+        _callback:function (event, abort) {
             // Firefox throws exceptions when accessing properties
             // of an xhr when a network error occured
             // http://helpful.knobs-dials.com/index.php/Component_returned_failure_code:_0x80040111_(NS_ERROR_NOT_AVAILABLE)
+            var self = this,
+                xhr = self.xhr,
+                xhrObj = self.xhrObj,
+                c = xhrObj.config;
+
             try {
-                var self = this,
-                    xhr = self.xhr,
-                    xhrObj = self.xhrObj,
-                    c = xhrObj.config;
+
                 //abort or complete
                 if (abort || xhr.readyState == 4) {
 
@@ -12147,9 +12165,9 @@ KISSY.add("ajax/xhrbase", function(S, io) {
                         // statusText for faulty cross-domain requests
                         try {
                             var statusText = xhr.statusText;
-                        } catch(e) {
-                            S.log("xhr statustext error : ");
-                            S.log(e);
+                        } catch (e) {
+                            S.log("xhr statustext error : ", "error");
+                            S.log(e, "error");
                             // We normalize with Webkit giving an empty statusText
                             statusText = "";
                         }
@@ -12164,12 +12182,11 @@ KISSY.add("ajax/xhrbase", function(S, io) {
                         } else if (status === NO_CONTENT_CODE2) {
                             status = NO_CONTENT_CODE;
                         }
-
                         xhrObj.callback(status, statusText);
-
                     }
                 }
             } catch (firefoxAccessException) {
+                S.log(firefoxAccessException.stack || firefoxAccessException, "error");
                 xhr.onreadystatechange = S.noop;
                 if (!abort) {
                     xhrObj.callback(-1, firefoxAccessException);

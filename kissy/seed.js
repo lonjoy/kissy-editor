@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Feb 25 23:15
+build time: May 25 11:22
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -92,7 +92,7 @@ build time: Feb 25 23:15
          */
         version:'1.20',
 
-        buildTime:'20120225231543',
+        buildTime:'20120525112239',
 
         /**
          * Returns a new object containing all of the properties of
@@ -1087,7 +1087,7 @@ build time: Feb 25 23:15
 
             function f() {
                 f.stop();
-                bufferTimer = S.later(fn, ms, FALSE, context || this);
+                bufferTimer = S.later(fn, ms, FALSE, context || this,arguments);
             }
 
             f.stop = function () {
@@ -1474,7 +1474,7 @@ build time: Feb 25 23:15
  * script/css load across browser
  * @author  yiminghe@gmail.com
  */
-(function(S, utils) {
+(function (S, utils) {
     if ("require" in this) {
         return;
     }
@@ -1512,14 +1512,15 @@ build time: Feb 25 23:15
                 try {
                     var cssRules;
                     if (cssRules = node['sheet'].cssRules) {
-                        S.log('firefox  ' + cssRules + ' loaded : ' + url);
+                        S.log('firefox loaded : ' + url);
                         loaded = 1;
                     }
-                } catch(ex) {
-                    // S.log('firefox  ' + ex.name + ' ' + ex.code + ' ' + url);
-                    // if (ex.name === 'NS_ERROR_DOM_SECURITY_ERR') {
-                    if (ex.code === 1000) {
-                        S.log('firefox  ' + ex.name + ' loaded : ' + url);
+                } catch (ex) {
+                    var exName = ex.name;
+                    S.log('firefox getStyle : ' + exName + ' ' + ex.code + ' ' + url);
+                    if (exName == 'NS_ERROR_DOM_SECURITY_ERR' ||
+                        exName == 'SecurityError') {
+                        S.log('firefox loaded : ' + url);
                         loaded = 1;
                     }
                 }
@@ -1542,18 +1543,18 @@ build time: Feb 25 23:15
 
     S.mix(utils, {
         scriptOnload:document.addEventListener ?
-            function(node, callback) {
+            function (node, callback) {
                 if (utils.isLinkNode(node)) {
                     return utils.styleOnload(node, callback);
                 }
                 node.addEventListener('load', callback, false);
             } :
-            function(node, callback) {
+            function (node, callback) {
                 if (utils.isLinkNode(node)) {
                     return utils.styleOnload(node, callback);
                 }
                 var oldCallback = node.onreadystatechange;
-                node.onreadystatechange = function() {
+                node.onreadystatechange = function () {
                     var rs = node.readyState;
                     if (/loaded|complete/i.test(rs)) {
                         node.onreadystatechange = null;
@@ -1574,9 +1575,9 @@ build time: Feb 25 23:15
          *  - 其他
          *    - http://www.zachleat.com/web/load-css-dynamically/
          */
-        styleOnload:window.attachEvent ?
+        styleOnload:window.attachEvent || window.opera ?
             // ie/opera
-            function(node, callback) {
+            function (node, callback) {
                 // whether to detach using function wrapper?
                 function t() {
                     node.detachEvent('onload', t);
@@ -1588,8 +1589,8 @@ build time: Feb 25 23:15
             } :
             // refer : http://lifesinger.org/lab/2011/load-js-css/css-preload.html
             // 暂时不考虑如何判断失败，如 404 等
-            function(node, callback) {
-                var href = node.href,arr;
+            function (node, callback) {
+                var href = node.href, arr;
                 arr = monitors[href] = monitors[href] || [];
                 arr.node = node;
                 arr.push(callback);
@@ -1890,6 +1891,13 @@ build time: Feb 25 23:15
             }
 
             function build(fullpath, path) {
+
+                if (mod[fullpath + "__builded"]) {
+                    return;
+                }
+
+                mod[fullpath + "__builded"] = 1;
+
                 if (!mod[fullpath] && mod[path]) {
                     //如果是 ./ 或 ../ 则相对当前模块路径
                     mod[path] = utils.normalDepModuleName(mod.name, mod[path]);
@@ -1999,16 +2007,24 @@ build time: Feb 25 23:15
                 === 0) {
                 return utils.removePostfix(src.substring(self.Config.base.length));
             }
-            var packages = self.Config.packages;
+            var packages = self.Config.packages,
+                finalPackagePath,
+                finalPackageLength = -1;
             //外部模块去除包路径，得到模块名
             for (var p in packages) {
                 if (packages.hasOwnProperty(p)) {
                     var p_path = packages[p].path;
                     if (packages.hasOwnProperty(p) &&
                         src.lastIndexOf(p_path, 0) === 0) {
-                        return utils.removePostfix(src.substring(p_path.length));
+                        if (p_path.length > finalPackageLength) {
+                            finalPackageLength = p_path.length;
+                            finalPackagePath = p_path;
+                        }
                     }
                 }
+            }
+            if (finalPackagePath) {
+                return utils.removePostfix(src.substring(finalPackagePath.length));
             }
             S.log("interactive script does not have package config ：" + src, "error");
         }
@@ -2269,7 +2285,7 @@ build time: Feb 25 23:15
             for (var p in packages) {
                 if (packages.hasOwnProperty(p)) {
                     if (S.startsWith(modName, p) &&
-                        p.length > pName) {
+                        p.length > pName.length) {
                         pName = p;
                     }
                 }

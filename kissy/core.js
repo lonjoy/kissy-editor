@@ -1,68 +1,68 @@
-﻿/**
- combined files : 
+﻿/*
+ Combined modules by KISSY Module Compiler : 
 
-D:\code\kissy_git\kissy1.2\src\ua\base.js
-D:\code\kissy_git\kissy1.2\src\ua\extra.js
-D:\code\kissy_git\kissy1.2\src\ua.js
-D:\code\kissy_git\kissy1.2\src\dom\base.js
-D:\code\kissy_git\kissy1.2\src\dom\attr.js
-D:\code\kissy_git\kissy1.2\src\dom\class.js
-D:\code\kissy_git\kissy1.2\src\dom\create.js
-D:\code\kissy_git\kissy1.2\src\dom\data.js
-D:\code\kissy_git\kissy1.2\src\dom\insertion.js
-D:\code\kissy_git\kissy1.2\src\dom\offset.js
-D:\code\kissy_git\kissy1.2\src\dom\style.js
-D:\code\kissy_git\kissy1.2\src\dom\selector.js
-D:\code\kissy_git\kissy1.2\src\dom\style-ie.js
-D:\code\kissy_git\kissy1.2\src\dom\traversal.js
-D:\code\kissy_git\kissy1.2\src\dom.js
-D:\code\kissy_git\kissy1.2\src\event\keycodes.js
-D:\code\kissy_git\kissy1.2\src\event\object.js
-D:\code\kissy_git\kissy1.2\src\event\utils.js
-D:\code\kissy_git\kissy1.2\src\event\base.js
-D:\code\kissy_git\kissy1.2\src\event\target.js
-D:\code\kissy_git\kissy1.2\src\event\focusin.js
-D:\code\kissy_git\kissy1.2\src\event\hashchange.js
-D:\code\kissy_git\kissy1.2\src\event\valuechange.js
-D:\code\kissy_git\kissy1.2\src\event\delegate.js
-D:\code\kissy_git\kissy1.2\src\event\mouseenter.js
-D:\code\kissy_git\kissy1.2\src\event\submit.js
-D:\code\kissy_git\kissy1.2\src\event\change.js
-D:\code\kissy_git\kissy1.2\src\event\mousewheel.js
-D:\code\kissy_git\kissy1.2\src\event.js
-D:\code\kissy_git\kissy1.2\src\node\base.js
-D:\code\kissy_git\kissy1.2\src\node\attach.js
-D:\code\kissy_git\kissy1.2\src\node\override.js
-D:\code\kissy_git\kissy1.2\src\anim\easing.js
-D:\code\kissy_git\kissy1.2\src\anim\manager.js
-D:\code\kissy_git\kissy1.2\src\anim\fx.js
-D:\code\kissy_git\kissy1.2\src\anim\queue.js
-D:\code\kissy_git\kissy1.2\src\anim\base.js
-D:\code\kissy_git\kissy1.2\src\anim\color.js
-D:\code\kissy_git\kissy1.2\src\anim.js
-D:\code\kissy_git\kissy1.2\src\node\anim.js
-D:\code\kissy_git\kissy1.2\src\node.js
-D:\code\kissy_git\kissy1.2\src\json\json2.js
-D:\code\kissy_git\kissy1.2\src\json.js
-D:\code\kissy_git\kissy1.2\src\ajax\form-serializer.js
-D:\code\kissy_git\kissy1.2\src\ajax\xhrobject.js
-D:\code\kissy_git\kissy1.2\src\ajax\base.js
-D:\code\kissy_git\kissy1.2\src\ajax\xhrbase.js
-D:\code\kissy_git\kissy1.2\src\ajax\subdomain.js
-D:\code\kissy_git\kissy1.2\src\ajax\xdr.js
-D:\code\kissy_git\kissy1.2\src\ajax\xhr.js
-D:\code\kissy_git\kissy1.2\src\ajax\script.js
-D:\code\kissy_git\kissy1.2\src\ajax\jsonp.js
-D:\code\kissy_git\kissy1.2\src\ajax\form.js
-D:\code\kissy_git\kissy1.2\src\ajax\iframe-upload.js
-D:\code\kissy_git\kissy1.2\src\ajax.js
-D:\code\kissy_git\kissy1.2\src\base\attribute.js
-D:\code\kissy_git\kissy1.2\src\base\base.js
-D:\code\kissy_git\kissy1.2\src\base.js
-D:\code\kissy_git\kissy1.2\src\cookie\base.js
-D:\code\kissy_git\kissy1.2\src\cookie.js
-D:\code\kissy_git\kissy1.2\src\core.js
-**/
+ ua/base
+ ua/extra
+ ua
+ dom/base
+ dom/attr
+ dom/class
+ dom/create
+ dom/data
+ dom/insertion
+ dom/offset
+ dom/style
+ dom/selector
+ dom/style-ie
+ dom/traversal
+ dom
+ event/keycodes
+ event/object
+ event/utils
+ event/base
+ event/target
+ event/focusin
+ event/hashchange
+ event/valuechange
+ event/delegate
+ event/mouseenter
+ event/submit
+ event/change
+ event/mousewheel
+ event
+ node/base
+ node/attach
+ node/override
+ anim/easing
+ anim/manager
+ anim/fx
+ anim/queue
+ anim/base
+ anim/color
+ anim
+ node/anim
+ node
+ json/json2
+ json
+ ajax/form-serializer
+ ajax/xhrobject
+ ajax/base
+ ajax/xhrbase
+ ajax/subdomain
+ ajax/xdr
+ ajax/xhr
+ ajax/script
+ ajax/jsonp
+ ajax/form
+ ajax/iframe-upload
+ ajax
+ base/attribute
+ base/base
+ base
+ cookie/base
+ cookie
+ core
+*/
 
 /**
  * @module  ua
@@ -5326,7 +5326,7 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
                 // S.log("set iframe html :" + hash);
 
                 var html = S.substitute(IFRAME_TEMPLATE, {
-                    hash: hash,
+                    hash: S.escapeHTML(hash),
                     // 一定要加哦
                     head:DOM._isCustomDomain() ? "<script>document.domain = '" +
                         doc.domain
@@ -8878,7 +8878,7 @@ KISSY.add("ajax/base", function(S, JSON, Event, XhrObject) {
  * base for xhr and subdomain
  * @author yiminghe@gmail.com
  */
-KISSY.add("ajax/xhrbase", function(S, io) {
+KISSY.add("ajax/xhrbase", function (S, io) {
     var OK_CODE = 200,
         win = window,
         // http://msdn.microsoft.com/en-us/library/cc288060(v=vs.85).aspx
@@ -8893,7 +8893,7 @@ KISSY.add("ajax/xhrbase", function(S, io) {
     function createStandardXHR(_, refWin) {
         try {
             return new (refWin || win)['XMLHttpRequest']();
-        } catch(e) {
+        } catch (e) {
             //S.log("createStandardXHR error");
         }
         return undefined;
@@ -8902,13 +8902,13 @@ KISSY.add("ajax/xhrbase", function(S, io) {
     function createActiveXHR(_, refWin) {
         try {
             return new (refWin || win)['ActiveXObject']("Microsoft.XMLHTTP");
-        } catch(e) {
+        } catch (e) {
             S.log("createActiveXHR error");
         }
         return undefined;
     }
 
-    XhrBase.xhr = win.ActiveXObject ? function(crossDomain, refWin) {
+    XhrBase.xhr = win.ActiveXObject ? function (crossDomain, refWin) {
         if (crossDomain && _XDomainRequest) {
             return new _XDomainRequest();
         }
@@ -8921,7 +8921,7 @@ KISSY.add("ajax/xhrbase", function(S, io) {
     }
 
     S.mix(XhrBase.proto, {
-        sendInternal:function() {
+        sendInternal:function () {
 
             var self = this,
                 xhrObj = self.xhrObj,
@@ -8959,7 +8959,7 @@ KISSY.add("ajax/xhrbase", function(S, io) {
                         xhr.setRequestHeader(i, xhrObj.requestHeaders[ i ]);
                     }
                 }
-            } catch(e) {
+            } catch (e) {
                 S.log("setRequestHeader in xhr error : ");
                 S.log(e);
             }
@@ -8971,37 +8971,39 @@ KISSY.add("ajax/xhrbase", function(S, io) {
             } else {
                 // _XDomainRequest 单独的回调机制
                 if (isInstanceOfXDomainRequest(xhr)) {
-                    xhr.onload = function() {
+                    xhr.onload = function () {
                         xhr.readyState = 4;
                         xhr.status = 200;
                         self._callback();
                     };
-                    xhr.onerror = function() {
+                    xhr.onerror = function () {
                         xhr.readyState = 4;
                         xhr.status = 500;
                         self._callback();
                     };
                 } else {
-                    xhr.onreadystatechange = function() {
+                    xhr.onreadystatechange = function () {
                         self._callback();
                     };
                 }
             }
         },
         // 由 xhrObj.abort 调用，自己不可以调用 xhrObj.abort
-        abort:function() {
+        abort:function () {
             this._callback(0, 1);
         },
 
-        _callback:function(event, abort) {
+        _callback:function (event, abort) {
             // Firefox throws exceptions when accessing properties
             // of an xhr when a network error occured
             // http://helpful.knobs-dials.com/index.php/Component_returned_failure_code:_0x80040111_(NS_ERROR_NOT_AVAILABLE)
+            var self = this,
+                xhr = self.xhr,
+                xhrObj = self.xhrObj,
+                c = xhrObj.config;
+
             try {
-                var self = this,
-                    xhr = self.xhr,
-                    xhrObj = self.xhrObj,
-                    c = xhrObj.config;
+
                 //abort or complete
                 if (abort || xhr.readyState == 4) {
 
@@ -9039,9 +9041,9 @@ KISSY.add("ajax/xhrbase", function(S, io) {
                         // statusText for faulty cross-domain requests
                         try {
                             var statusText = xhr.statusText;
-                        } catch(e) {
-                            S.log("xhr statustext error : ");
-                            S.log(e);
+                        } catch (e) {
+                            S.log("xhr statustext error : ", "error");
+                            S.log(e, "error");
                             // We normalize with Webkit giving an empty statusText
                             statusText = "";
                         }
@@ -9056,12 +9058,11 @@ KISSY.add("ajax/xhrbase", function(S, io) {
                         } else if (status === NO_CONTENT_CODE2) {
                             status = NO_CONTENT_CODE;
                         }
-
                         xhrObj.callback(status, statusText);
-
                     }
                 }
             } catch (firefoxAccessException) {
+                S.log(firefoxAccessException.stack || firefoxAccessException, "error");
                 xhr.onreadystatechange = S.noop;
                 if (!abort) {
                     xhrObj.callback(-1, firefoxAccessException);

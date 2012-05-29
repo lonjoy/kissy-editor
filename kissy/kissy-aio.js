@@ -1,7 +1,7 @@
 ﻿/*
 Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Feb 25 23:15
+build time: May 25 11:22
 */
 /*
  * a seed where KISSY grows up from , KISS Yeah !
@@ -92,7 +92,7 @@ build time: Feb 25 23:15
          */
         version:'1.20',
 
-        buildTime:'20120225231543',
+        buildTime:'20120525112239',
 
         /**
          * Returns a new object containing all of the properties of
@@ -1087,7 +1087,7 @@ build time: Feb 25 23:15
 
             function f() {
                 f.stop();
-                bufferTimer = S.later(fn, ms, FALSE, context || this);
+                bufferTimer = S.later(fn, ms, FALSE, context || this,arguments);
             }
 
             f.stop = function () {
@@ -1474,7 +1474,7 @@ build time: Feb 25 23:15
  * script/css load across browser
  * @author  yiminghe@gmail.com
  */
-(function(S, utils) {
+(function (S, utils) {
     if ("require" in this) {
         return;
     }
@@ -1512,14 +1512,15 @@ build time: Feb 25 23:15
                 try {
                     var cssRules;
                     if (cssRules = node['sheet'].cssRules) {
-                        S.log('firefox  ' + cssRules + ' loaded : ' + url);
+                        S.log('firefox loaded : ' + url);
                         loaded = 1;
                     }
-                } catch(ex) {
-                    // S.log('firefox  ' + ex.name + ' ' + ex.code + ' ' + url);
-                    // if (ex.name === 'NS_ERROR_DOM_SECURITY_ERR') {
-                    if (ex.code === 1000) {
-                        S.log('firefox  ' + ex.name + ' loaded : ' + url);
+                } catch (ex) {
+                    var exName = ex.name;
+                    S.log('firefox getStyle : ' + exName + ' ' + ex.code + ' ' + url);
+                    if (exName == 'NS_ERROR_DOM_SECURITY_ERR' ||
+                        exName == 'SecurityError') {
+                        S.log('firefox loaded : ' + url);
                         loaded = 1;
                     }
                 }
@@ -1542,18 +1543,18 @@ build time: Feb 25 23:15
 
     S.mix(utils, {
         scriptOnload:document.addEventListener ?
-            function(node, callback) {
+            function (node, callback) {
                 if (utils.isLinkNode(node)) {
                     return utils.styleOnload(node, callback);
                 }
                 node.addEventListener('load', callback, false);
             } :
-            function(node, callback) {
+            function (node, callback) {
                 if (utils.isLinkNode(node)) {
                     return utils.styleOnload(node, callback);
                 }
                 var oldCallback = node.onreadystatechange;
-                node.onreadystatechange = function() {
+                node.onreadystatechange = function () {
                     var rs = node.readyState;
                     if (/loaded|complete/i.test(rs)) {
                         node.onreadystatechange = null;
@@ -1574,9 +1575,9 @@ build time: Feb 25 23:15
          *  - 其他
          *    - http://www.zachleat.com/web/load-css-dynamically/
          */
-        styleOnload:window.attachEvent ?
+        styleOnload:window.attachEvent || window.opera ?
             // ie/opera
-            function(node, callback) {
+            function (node, callback) {
                 // whether to detach using function wrapper?
                 function t() {
                     node.detachEvent('onload', t);
@@ -1588,8 +1589,8 @@ build time: Feb 25 23:15
             } :
             // refer : http://lifesinger.org/lab/2011/load-js-css/css-preload.html
             // 暂时不考虑如何判断失败，如 404 等
-            function(node, callback) {
-                var href = node.href,arr;
+            function (node, callback) {
+                var href = node.href, arr;
                 arr = monitors[href] = monitors[href] || [];
                 arr.node = node;
                 arr.push(callback);
@@ -1890,6 +1891,13 @@ build time: Feb 25 23:15
             }
 
             function build(fullpath, path) {
+
+                if (mod[fullpath + "__builded"]) {
+                    return;
+                }
+
+                mod[fullpath + "__builded"] = 1;
+
                 if (!mod[fullpath] && mod[path]) {
                     //如果是 ./ 或 ../ 则相对当前模块路径
                     mod[path] = utils.normalDepModuleName(mod.name, mod[path]);
@@ -1999,16 +2007,24 @@ build time: Feb 25 23:15
                 === 0) {
                 return utils.removePostfix(src.substring(self.Config.base.length));
             }
-            var packages = self.Config.packages;
+            var packages = self.Config.packages,
+                finalPackagePath,
+                finalPackageLength = -1;
             //外部模块去除包路径，得到模块名
             for (var p in packages) {
                 if (packages.hasOwnProperty(p)) {
                     var p_path = packages[p].path;
                     if (packages.hasOwnProperty(p) &&
                         src.lastIndexOf(p_path, 0) === 0) {
-                        return utils.removePostfix(src.substring(p_path.length));
+                        if (p_path.length > finalPackageLength) {
+                            finalPackageLength = p_path.length;
+                            finalPackagePath = p_path;
+                        }
                     }
                 }
+            }
+            if (finalPackagePath) {
+                return utils.removePostfix(src.substring(finalPackagePath.length));
             }
             S.log("interactive script does not have package config ：" + src, "error");
         }
@@ -2269,7 +2285,7 @@ build time: Feb 25 23:15
             for (var p in packages) {
                 if (packages.hasOwnProperty(p)) {
                     if (S.startsWith(modName, p) &&
-                        p.length > pName) {
+                        p.length > pName.length) {
                         pName = p;
                     }
                 }
@@ -2920,71 +2936,71 @@ build time: Feb 25 23:15
         }
     });
 })(KISSY);
-/**
- combined files : 
+/*
+ Combined modules by KISSY Module Compiler : 
 
-D:\code\kissy_git\kissy1.2\src\ua\base.js
-D:\code\kissy_git\kissy1.2\src\ua\extra.js
-D:\code\kissy_git\kissy1.2\src\ua.js
-D:\code\kissy_git\kissy1.2\src\dom\base.js
-D:\code\kissy_git\kissy1.2\src\dom\attr.js
-D:\code\kissy_git\kissy1.2\src\dom\class.js
-D:\code\kissy_git\kissy1.2\src\dom\create.js
-D:\code\kissy_git\kissy1.2\src\dom\data.js
-D:\code\kissy_git\kissy1.2\src\dom\insertion.js
-D:\code\kissy_git\kissy1.2\src\dom\offset.js
-D:\code\kissy_git\kissy1.2\src\dom\style.js
-D:\code\kissy_git\kissy1.2\src\dom\selector.js
-D:\code\kissy_git\kissy1.2\src\dom\style-ie.js
-D:\code\kissy_git\kissy1.2\src\dom\traversal.js
-D:\code\kissy_git\kissy1.2\src\dom.js
-D:\code\kissy_git\kissy1.2\src\event\keycodes.js
-D:\code\kissy_git\kissy1.2\src\event\object.js
-D:\code\kissy_git\kissy1.2\src\event\utils.js
-D:\code\kissy_git\kissy1.2\src\event\base.js
-D:\code\kissy_git\kissy1.2\src\event\target.js
-D:\code\kissy_git\kissy1.2\src\event\focusin.js
-D:\code\kissy_git\kissy1.2\src\event\hashchange.js
-D:\code\kissy_git\kissy1.2\src\event\valuechange.js
-D:\code\kissy_git\kissy1.2\src\event\delegate.js
-D:\code\kissy_git\kissy1.2\src\event\mouseenter.js
-D:\code\kissy_git\kissy1.2\src\event\submit.js
-D:\code\kissy_git\kissy1.2\src\event\change.js
-D:\code\kissy_git\kissy1.2\src\event\mousewheel.js
-D:\code\kissy_git\kissy1.2\src\event.js
-D:\code\kissy_git\kissy1.2\src\node\base.js
-D:\code\kissy_git\kissy1.2\src\node\attach.js
-D:\code\kissy_git\kissy1.2\src\node\override.js
-D:\code\kissy_git\kissy1.2\src\anim\easing.js
-D:\code\kissy_git\kissy1.2\src\anim\manager.js
-D:\code\kissy_git\kissy1.2\src\anim\fx.js
-D:\code\kissy_git\kissy1.2\src\anim\queue.js
-D:\code\kissy_git\kissy1.2\src\anim\base.js
-D:\code\kissy_git\kissy1.2\src\anim\color.js
-D:\code\kissy_git\kissy1.2\src\anim.js
-D:\code\kissy_git\kissy1.2\src\node\anim.js
-D:\code\kissy_git\kissy1.2\src\node.js
-D:\code\kissy_git\kissy1.2\src\json\json2.js
-D:\code\kissy_git\kissy1.2\src\json.js
-D:\code\kissy_git\kissy1.2\src\ajax\form-serializer.js
-D:\code\kissy_git\kissy1.2\src\ajax\xhrobject.js
-D:\code\kissy_git\kissy1.2\src\ajax\base.js
-D:\code\kissy_git\kissy1.2\src\ajax\xhrbase.js
-D:\code\kissy_git\kissy1.2\src\ajax\subdomain.js
-D:\code\kissy_git\kissy1.2\src\ajax\xdr.js
-D:\code\kissy_git\kissy1.2\src\ajax\xhr.js
-D:\code\kissy_git\kissy1.2\src\ajax\script.js
-D:\code\kissy_git\kissy1.2\src\ajax\jsonp.js
-D:\code\kissy_git\kissy1.2\src\ajax\form.js
-D:\code\kissy_git\kissy1.2\src\ajax\iframe-upload.js
-D:\code\kissy_git\kissy1.2\src\ajax.js
-D:\code\kissy_git\kissy1.2\src\base\attribute.js
-D:\code\kissy_git\kissy1.2\src\base\base.js
-D:\code\kissy_git\kissy1.2\src\base.js
-D:\code\kissy_git\kissy1.2\src\cookie\base.js
-D:\code\kissy_git\kissy1.2\src\cookie.js
-D:\code\kissy_git\kissy1.2\src\core.js
-**/
+ ua/base
+ ua/extra
+ ua
+ dom/base
+ dom/attr
+ dom/class
+ dom/create
+ dom/data
+ dom/insertion
+ dom/offset
+ dom/style
+ dom/selector
+ dom/style-ie
+ dom/traversal
+ dom
+ event/keycodes
+ event/object
+ event/utils
+ event/base
+ event/target
+ event/focusin
+ event/hashchange
+ event/valuechange
+ event/delegate
+ event/mouseenter
+ event/submit
+ event/change
+ event/mousewheel
+ event
+ node/base
+ node/attach
+ node/override
+ anim/easing
+ anim/manager
+ anim/fx
+ anim/queue
+ anim/base
+ anim/color
+ anim
+ node/anim
+ node
+ json/json2
+ json
+ ajax/form-serializer
+ ajax/xhrobject
+ ajax/base
+ ajax/xhrbase
+ ajax/subdomain
+ ajax/xdr
+ ajax/xhr
+ ajax/script
+ ajax/jsonp
+ ajax/form
+ ajax/iframe-upload
+ ajax
+ base/attribute
+ base/base
+ base
+ cookie/base
+ cookie
+ core
+*/
 
 /**
  * @module  ua
@@ -8248,7 +8264,7 @@ KISSY.add('event/hashchange', function(S, Event, DOM, UA) {
                 // S.log("set iframe html :" + hash);
 
                 var html = S.substitute(IFRAME_TEMPLATE, {
-                    hash: hash,
+                    hash: S.escapeHTML(hash),
                     // 一定要加哦
                     head:DOM._isCustomDomain() ? "<script>document.domain = '" +
                         doc.domain
@@ -11800,7 +11816,7 @@ KISSY.add("ajax/base", function(S, JSON, Event, XhrObject) {
  * base for xhr and subdomain
  * @author yiminghe@gmail.com
  */
-KISSY.add("ajax/xhrbase", function(S, io) {
+KISSY.add("ajax/xhrbase", function (S, io) {
     var OK_CODE = 200,
         win = window,
         // http://msdn.microsoft.com/en-us/library/cc288060(v=vs.85).aspx
@@ -11815,7 +11831,7 @@ KISSY.add("ajax/xhrbase", function(S, io) {
     function createStandardXHR(_, refWin) {
         try {
             return new (refWin || win)['XMLHttpRequest']();
-        } catch(e) {
+        } catch (e) {
             //S.log("createStandardXHR error");
         }
         return undefined;
@@ -11824,13 +11840,13 @@ KISSY.add("ajax/xhrbase", function(S, io) {
     function createActiveXHR(_, refWin) {
         try {
             return new (refWin || win)['ActiveXObject']("Microsoft.XMLHTTP");
-        } catch(e) {
+        } catch (e) {
             S.log("createActiveXHR error");
         }
         return undefined;
     }
 
-    XhrBase.xhr = win.ActiveXObject ? function(crossDomain, refWin) {
+    XhrBase.xhr = win.ActiveXObject ? function (crossDomain, refWin) {
         if (crossDomain && _XDomainRequest) {
             return new _XDomainRequest();
         }
@@ -11843,7 +11859,7 @@ KISSY.add("ajax/xhrbase", function(S, io) {
     }
 
     S.mix(XhrBase.proto, {
-        sendInternal:function() {
+        sendInternal:function () {
 
             var self = this,
                 xhrObj = self.xhrObj,
@@ -11881,7 +11897,7 @@ KISSY.add("ajax/xhrbase", function(S, io) {
                         xhr.setRequestHeader(i, xhrObj.requestHeaders[ i ]);
                     }
                 }
-            } catch(e) {
+            } catch (e) {
                 S.log("setRequestHeader in xhr error : ");
                 S.log(e);
             }
@@ -11893,37 +11909,39 @@ KISSY.add("ajax/xhrbase", function(S, io) {
             } else {
                 // _XDomainRequest 单独的回调机制
                 if (isInstanceOfXDomainRequest(xhr)) {
-                    xhr.onload = function() {
+                    xhr.onload = function () {
                         xhr.readyState = 4;
                         xhr.status = 200;
                         self._callback();
                     };
-                    xhr.onerror = function() {
+                    xhr.onerror = function () {
                         xhr.readyState = 4;
                         xhr.status = 500;
                         self._callback();
                     };
                 } else {
-                    xhr.onreadystatechange = function() {
+                    xhr.onreadystatechange = function () {
                         self._callback();
                     };
                 }
             }
         },
         // 由 xhrObj.abort 调用，自己不可以调用 xhrObj.abort
-        abort:function() {
+        abort:function () {
             this._callback(0, 1);
         },
 
-        _callback:function(event, abort) {
+        _callback:function (event, abort) {
             // Firefox throws exceptions when accessing properties
             // of an xhr when a network error occured
             // http://helpful.knobs-dials.com/index.php/Component_returned_failure_code:_0x80040111_(NS_ERROR_NOT_AVAILABLE)
+            var self = this,
+                xhr = self.xhr,
+                xhrObj = self.xhrObj,
+                c = xhrObj.config;
+
             try {
-                var self = this,
-                    xhr = self.xhr,
-                    xhrObj = self.xhrObj,
-                    c = xhrObj.config;
+
                 //abort or complete
                 if (abort || xhr.readyState == 4) {
 
@@ -11961,9 +11979,9 @@ KISSY.add("ajax/xhrbase", function(S, io) {
                         // statusText for faulty cross-domain requests
                         try {
                             var statusText = xhr.statusText;
-                        } catch(e) {
-                            S.log("xhr statustext error : ");
-                            S.log(e);
+                        } catch (e) {
+                            S.log("xhr statustext error : ", "error");
+                            S.log(e, "error");
                             // We normalize with Webkit giving an empty statusText
                             statusText = "";
                         }
@@ -11978,12 +11996,11 @@ KISSY.add("ajax/xhrbase", function(S, io) {
                         } else if (status === NO_CONTENT_CODE2) {
                             status = NO_CONTENT_CODE;
                         }
-
                         xhrObj.callback(status, statusText);
-
                     }
                 }
             } catch (firefoxAccessException) {
+                S.log(firefoxAccessException.stack || firefoxAccessException, "error");
                 xhr.onreadystatechange = S.noop;
                 if (!abort) {
                     xhrObj.callback(-1, firefoxAccessException);
@@ -14881,7 +14898,7 @@ KISSY.add("sizzle", function(S, sizzle) {
 /*
 Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Feb 25 23:15
+build time: Mar 29 13:31
 */
 /**
  * 数据延迟加载组件
@@ -15197,7 +15214,7 @@ KISSY.add('datalazyload/impl', function(S, DOM, Event, undefined) {
             area.className = ''; // clear hook
 
             var content = DOM.create('<div>');
-            container.insertBefore(content, area);
+            area.parentNode.insertBefore(content, area);
             DOM.html(content, area.value, execScript === undefined ? true : execScript);
 
             //area.value = ''; // bug fix: 注释掉，不能清空，否则 F5 刷新，会丢内容
@@ -16154,9 +16171,9 @@ KISSY.add("flash", function(S, F) {
     requires:["flash/base","flash/embed"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20
+Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 28 12:39
+build time: Apr 24 20:15
 */
 /**
  * dd support for kissy , dd objects central management module
@@ -17095,124 +17112,158 @@ KISSY.add("dd/droppable", function(S, Node, Base, DDM) {
     return Droppable;
 
 }, { requires:["node","base","./ddm"] });/**
- * generate proxy drag object,
+ * @fileOverview generate proxy drag object,
  * @author yiminghe@gmail.com
  */
-KISSY.add("dd/proxy", function(S, Node) {
+KISSY.add("dd/proxy", function (S, Node, Base) {
     var DESTRUCTOR_ID = "__proxy_destructors",
         stamp = S.stamp,
         MARKER = S.guid("__dd_proxy"),
         PROXY_ATTR = "__proxy";
 
+    /**
+     * provide abilities for draggable tp create a proxy drag node,
+     * instead of dragging the original node.
+     * @memberOf DD
+     * @class
+     */
     function Proxy() {
         var self = this;
         Proxy.superclass.constructor.apply(self, arguments);
         self[DESTRUCTOR_ID] = {};
     }
 
-    Proxy.ATTRS = {
+    Proxy.ATTRS =
+    /**
+     * @lends DD.Proxy#
+     */
+    {
+        /**
+         * how to get the proxy node. default:clone the node itself deeply.
+         * @type {Function}
+         */
         node:{
-            /*
-             如何生成替代节点
-             @return {KISSY.Node} 替代节点
-             */
-            value:function(drag) {
+            value:function (drag) {
                 return new Node(drag.get("node").clone(true));
             }
         },
+        /**
+         * destroy the proxy node at the end of this drag. default:false
+         * @type {boolean}
+         */
         destroyOnEnd:{
-            /**
-             * 是否每次都生成新节点/拖放完毕是否销毁当前代理节点
-             */
             value:false
+        },
+
+        /**
+         * move the original node at the end of the drag. default:true
+         * @type {boolean}
+         */
+        moveOnEnd:{
+            value:true
         }
     };
 
-    S.extend(Proxy, S.Base, {
-        attach:function(drag) {
+    S.extend(Proxy, Base,
+        /**
+         * @lends DD.Proxy#
+         */
+        {
+            /**
+             * make this draggable object can be proxied.
+             * @param {DD.Draggable} drag
+             */
+            attach:function (drag) {
 
-            var self = this,
-                tag;
+                var self = this,
+                    tag = stamp(drag, 1, MARKER);
 
-            if (tag = stamp(drag, 1, MARKER) &&
-                self[DESTRUCTOR_ID][tag]
-                ) {
-                return;
-            }
+                if (tag && self[DESTRUCTOR_ID][tag]) {
+                    return;
+                }
 
-            function start() {
-                var node = self.get("node"),
-                    dragNode = drag.get("node");
-
-                // cache proxy node
-                if (!self[PROXY_ATTR]) {
-                    if (S.isFunction(node)) {
-                        node = node(drag);
-                        node.addClass("ks-dd-proxy");
-                        node.css("position", "absolute");
-                        self[PROXY_ATTR] = node;
+                function start() {
+                    var node = self.get("node"),
+                        dragNode = drag.get("node");
+                    // cache proxy node
+                    if (!self[PROXY_ATTR]) {
+                        if (S.isFunction(node)) {
+                            node = node(drag);
+                            node.addClass("ks-dd-proxy");
+                            node.css("position", "absolute");
+                            self[PROXY_ATTR] = node;
+                        }
+                    } else {
+                        node = self[PROXY_ATTR];
                     }
-                } else {
-                    node = self[PROXY_ATTR];
+                    dragNode.parent()
+                        .append(node);
+                    node.show();
+                    node.offset(dragNode.offset());
+                    drag.__set("dragNode", dragNode);
+                    drag.__set("node", node);
                 }
-                dragNode.parent()
-                    .append(node);
-                node.show();
-                node.offset(dragNode.offset());
-                drag.set("dragNode", dragNode);
-                drag.set("node", node);
-            }
 
-            function end() {
-                var node = self[PROXY_ATTR];
-                drag.get("dragNode").offset(node.offset());
-                node.hide();
-                if (self.get("destroyOnEnd")) {
+                function end() {
+                    var node = self[PROXY_ATTR];
+                    if (self.get("moveOnEnd")) {
+                        drag.get("dragNode").offset(node.offset());
+                    }
+                    if (self.get("destroyOnEnd")) {
+                        node.remove();
+                        self[PROXY_ATTR] = 0;
+                    } else {
+                        node.hide();
+                    }
+                    drag.__set("node", drag.get("dragNode"));
+                }
+
+                drag.on("dragstart", start);
+                drag.on("dragend", end);
+
+                tag = stamp(drag, 0, MARKER);
+
+                self[DESTRUCTOR_ID][tag] = {
+                    drag:drag,
+                    fn:function () {
+                        drag.detach("dragstart", start);
+                        drag.detach("dragend", end);
+                    }
+                };
+            },
+            /**
+             * make this draggable object unproxied
+             * @param {DD.Draggable} drag
+             */
+            unAttach:function (drag) {
+                var self = this,
+                    tag = stamp(drag, 1, MARKER),
+                    destructors = self[DESTRUCTOR_ID];
+                if (tag && destructors[tag]) {
+                    destructors[tag].fn();
+                    delete destructors[tag];
+                }
+            },
+
+            /**
+             * make all draggable object associated with this proxy object unproxied
+             */
+            destroy:function () {
+                var self = this,
+                    node = self.get("node"),
+                    destructors = self[DESTRUCTOR_ID];
+                if (node && !S.isFunction(node)) {
                     node.remove();
-                    self[PROXY_ATTR] = 0;
                 }
-                drag.set("node", drag.get("dragNode"));
-            }
-
-            drag.on("dragstart", start);
-            drag.on("dragend", end);
-
-            tag = stamp(drag, 0, MARKER);
-
-            self[DESTRUCTOR_ID][tag] = {
-                drag:drag,
-                fn:function() {
-                    drag.detach("dragstart", start);
-                    drag.detach("dragend", end);
+                for (var d in destructors) {
+                    this.unAttach(destructors[d].drag);
                 }
-            };
-        },
-        unAttach:function(drag) {
-            var self = this,
-                tag = stamp(drag, 1, MARKER),
-                destructors = self[DESTRUCTOR_ID];
-            if (tag && destructors[tag]) {
-                destructors[tag].fn();
-                delete destructors[tag];
             }
-        },
-
-        destroy:function() {
-            var self = this,
-                node = self.get("node"),
-                destructors = self[DESTRUCTOR_ID];
-            if (node && !S.isFunction(node)) {
-                node.remove();
-            }
-            for (var d in destructors) {
-                this.unAttach(destructors[d].drag);
-            }
-        }
-    });
+        });
 
     return Proxy;
 }, {
-    requires:['node']
+    requires:['node', 'base']
 });/**
  * delegate all draggable nodes to one draggable object
  * @author yiminghe@gmail.com
@@ -17249,15 +17300,20 @@ KISSY.add("dd/draggable-delegate", function(S, DDM, Draggable, DOM, Node) {
         }
 
         if (handler) {
-            self.set("activeHandler", handler);
             node = self._getNode(handler);
-        } else {
+        }
+
+        // can not find handler or can not find matched node from handler
+        // just return !
+        if (!node) {
             return;
         }
 
+        self.__set("activeHandler", handler);
+
         // 找到 handler 确定 委托的 node ，就算成功了
-        self.set("node", node);
-        self.set("dragNode", node);
+        self.__set("node", node);
+        self.__set("dragNode", node);
         self._prepare(ev);
     }
 
@@ -17336,6 +17392,17 @@ KISSY.add("dd/draggable-delegate", function(S, DDM, Draggable, DOM, Node) {
                     value:[],
                     // 覆盖父类的 getter ，这里 normalize 成节点
                     getter:0
+                },
+
+                /**
+                 * 拖无效
+                 */
+                disabled:{
+                    setter:function(d) {
+                        this.get("container")[d ? 'addClass' :
+                            'removeClass'](DDM.get("prefixCls") + '-disabled');
+                        return d;
+                    }
                 }
 
             }
@@ -17470,37 +17537,60 @@ KISSY.add("dd/droppable-delegate", function(S, DDM, Droppable, DOM, Node) {
 }, {
     requires:['./ddm','./droppable','dom','node']
 });/**
- * auto scroll for drag object's container
+ * @fileOverview auto scroll for drag object's container
  * @author yiminghe@gmail.com
  */
-KISSY.add("dd/scroll", function(S, Base, Node, DOM) {
+KISSY.add("dd/scroll", function (S, DDM, Base, Node, DOM) {
 
     var TAG_DRAG = "__dd-scroll-id-",
+        win = window,
         stamp = S.stamp,
-        RATE = [10,10],
+        RATE = [10, 10],
         ADJUST_DELAY = 100,
-        DIFF = [20,20],
+        DIFF = [20, 20],
         DESTRUCTORS = "__dd_scrolls";
 
+    /**
+     * make parent node scroll while dragging
+     * @memberOf DD
+     * @class
+     */
     function Scroll() {
         var self = this;
         Scroll.superclass.constructor.apply(self, arguments);
         self[DESTRUCTORS] = {};
     }
 
-    Scroll.ATTRS = {
+    Scroll.ATTRS =
+    /**
+     * @lends DD.Scroll#
+     */
+    {
+        /**
+         * node to be scrolled while dragging
+         * @type {window|String|HTMLElement}
+         */
         node:{
             // value:window：不行，默认值一定是简单对象
-            valueFn : function() {
-                return Node.one(window);
+            valueFn:function () {
+                return Node.one(win);
             },
-            setter : function(v) {
+            setter:function (v) {
                 return Node.one(v);
             }
         },
+        /**
+         * adjust velocity. default:[10,10]. larger faster
+         * @type Number[]
+         */
         rate:{
             value:RATE
         },
+        /**
+         * the margin to make node scroll. default: [20,20].
+         * easier to scroll for node if larger.
+         * @type number[]
+         */
         diff:{
             value:DIFF
         }
@@ -17509,185 +17599,242 @@ KISSY.add("dd/scroll", function(S, Base, Node, DOM) {
 
     var isWin = S.isWindow;
 
-    S.extend(Scroll, Base, {
+    S.extend(Scroll, Base,
+        /**
+         * @lends DD.Scroll#
+         */
+        {
+            /**
+             * @private
+             * @param node
+             */
+            getRegion:function (node) {
+                if (isWin(node[0])) {
+                    return {
+                        width:DOM.viewportWidth(),
+                        height:DOM.viewportHeight()
+                    };
+                } else {
+                    return {
+                        width:node.outerWidth(),
+                        height:node.outerHeight()
+                    };
+                }
+            },
 
-        getRegion:function(node) {
-            if (isWin(node[0])) {
+            /**
+             * @private
+             * @param node
+             */
+            getOffset:function (node) {
+                if (isWin(node[0])) {
+                    return {
+                        left:DOM.scrollLeft(),
+                        top:DOM.scrollTop()
+                    };
+                } else {
+                    return node.offset();
+                }
+            },
+
+            /**
+             * @private
+             * @param node
+             */
+            getScroll:function (node) {
                 return {
-                    width:DOM.viewportWidth(),
-                    height:DOM.viewportHeight()
+                    left:node.scrollLeft(),
+                    top:node.scrollTop()
                 };
-            } else {
-                return {
-                    width:node.outerWidth(),
-                    height:node.outerHeight()
-                };
-            }
-        },
+            },
 
-        getOffset:function(node) {
-            if (isWin(node[0])) {
-                return {
-                    left:DOM.scrollLeft(),
-                    top:DOM.scrollTop()
-                };
-            } else {
-                return node.offset();
-            }
-        },
+            /**
+             * @private
+             * @param node
+             */
+            setScroll:function (node, r) {
+                node.scrollLeft(r.left);
+                node.scrollTop(r.top);
+            },
 
-        getScroll:function(node) {
-            return {
-                left:node.scrollLeft(),
-                top:node.scrollTop()
-            };
-        },
-
-        setScroll:function(node, r) {
-            node.scrollLeft(r.left);
-            node.scrollTop(r.top);
-        },
-
-        unAttach:function(drag) {
-            var tag,
-                destructors = this[DESTRUCTORS];
-            if (!(tag = stamp(drag, 1, TAG_DRAG)) ||
-                !destructors[tag]
-                ) {
-                return;
-            }
-            destructors[tag].fn();
-            delete destructors[tag];
-        },
-
-        destroy:function() {
-            var self = this,
-                destructors = self[DESTRUCTORS];
-            for (var d in destructors) {
-                self.unAttach(destructors[d].drag);
-            }
-        },
-
-        attach:function(drag) {
-            var self = this,
-                tag = stamp(drag, 0, TAG_DRAG),
-                destructors = self[DESTRUCTORS];
-            if (destructors[tag]) {
-                return;
-            }
-
-            var rate = self.get("rate"),
-                diff = self.get('diff'),
-                event,
-                /*
-                 目前相对 container 的偏移，container 为 window 时，相对于 viewport
-                 */
-                dxy,
-                timer = null;
-
-            function dragging(ev) {
-                // 给调用者的事件，框架不需要处理
-                // fake 也表示该事件不是因为 mouseover 产生的
-                if (ev.fake) {
+            /**
+             * make node not to scroll while this drag object is dragging
+             * @param {DD.Draggable} drag
+             */
+            unAttach:function (drag) {
+                var tag,
+                    destructors = this[DESTRUCTORS];
+                if (!(tag = stamp(drag, 1, TAG_DRAG)) ||
+                    !destructors[tag]
+                    ) {
                     return;
                 }
-                // S.log("dragging");
-                // 更新当前鼠标相对于拖节点的相对位置
-                var node = self.get("node");
-                event = ev;
-                dxy = S.clone(drag.mousePos);
-                var offset = self.getOffset(node);
-                dxy.left -= offset.left;
-                dxy.top -= offset.top;
-                if (!timer) {
-                    checkAndScroll();
+                destructors[tag].fn();
+                delete destructors[tag];
+            },
+
+            /**
+             * make node not to scroll at all
+             */
+            destroy:function () {
+                var self = this,
+                    destructors = self[DESTRUCTORS];
+                for (var d in destructors) {
+                    self.unAttach(destructors[d].drag);
                 }
-            }
+            },
 
-            function dragEnd() {
-                clearTimeout(timer);
-                timer = null;
-            }
+            /**
+             * make node to scroll while this drag object is dragging
+             * @param {DD.Draggable} drag
+             */
+            attach:function (drag) {
+                var self = this,
+                    node = self.get("node"),
+                    tag = stamp(drag, 0, TAG_DRAG),
+                    destructors = self[DESTRUCTORS];
 
-            drag.on("drag", dragging);
-
-            drag.on("dragend", dragEnd);
-
-            destructors[tag] = {
-                drag:drag,
-                fn:function() {
-                    drag.detach("drag", dragging);
-                    drag.detach("dragend", dragEnd);
-                }
-            };
-
-
-            function checkAndScroll() {
-                //S.log("******* scroll");
-                var node = self.get("node"),
-                    r = self.getRegion(node),
-                    nw = r.width,
-                    nh = r.height,
-                    scroll = self.getScroll(node),
-                    origin = S.clone(scroll),
-                    diffY = dxy.top - nh,
-                    adjust = false;
-
-                if (diffY >= -diff[1]) {
-                    scroll.top += rate[1];
-                    adjust = true;
+                if (destructors[tag]) {
+                    return;
                 }
 
-                var diffY2 = dxy.top;
-                //S.log(diffY2);
-                if (diffY2 <= diff[1]) {
-                    scroll.top -= rate[1];
-                    adjust = true;
-                }
+                var rate = self.get("rate"),
+                    diff = self.get('diff'),
+                    event,
+                    /*
+                     目前相对 container 的偏移，container 为 window 时，相对于 viewport
+                     */
+                    dxy,
+                    timer = null;
 
-
-                var diffX = dxy.left - nw;
-                //S.log(diffX);
-                if (diffX >= -diff[0]) {
-                    scroll.left += rate[0];
-                    adjust = true;
-                }
-
-                var diffX2 = dxy.left;
-                //S.log(diffX2);
-                if (diffX2 <= diff[0]) {
-                    scroll.left -= rate[0];
-                    adjust = true;
-                }
-
-                if (adjust) {
-                    self.setScroll(node, scroll);
-                    timer = setTimeout(checkAndScroll, ADJUST_DELAY);
-                    // 不希望更新相对值，特别对于相对 window 时，相对值如果不真正拖放触发的 drag，是不变的，
-                    // 不会因为程序 scroll 而改变相对值
-
-                    // 调整事件，不需要 scroll 监控，达到预期结果：元素随容器的持续不断滚动而自动调整位置.
-                    event.fake = true;
+                // fix https://github.com/kissyteam/kissy/issues/115
+                // dragDelegate 时 可能一个 dragDelegate对应多个 scroll
+                // check container
+                function checkContainer() {
                     if (isWin(node[0])) {
-                        // 当使 window 自动滚动时，也要使得拖放物体相对文档位置随 scroll 改变
-                        // 而相对 node 容器时，只需 node 容器滚动，拖动物体相对文档位置不需要改变
-                        scroll = self.getScroll(node);
-                        event.left += scroll.left - origin.left;
-                        event.top += scroll.top - origin.top;
+                        return 0;
                     }
-                    // 容器滚动了，元素也要重新设置 left,top
-                    drag.fire("drag", event);
-                } else {
+                    // 判断 proxyNode，不对 dragNode 做大的改变
+                    var mousePos = drag.mousePos,
+                        r = DDM.region(node);
+
+                    if (!DDM.inRegion(r, mousePos)) {
+                        clearTimeout(timer);
+                        timer = 0;
+                        return 1;
+                    }
+                    return 0;
+                }
+
+                function dragging(ev) {
+                    // 给调用者的事件，框架不需要处理
+                    // fake 也表示该事件不是因为 mouseover 产生的
+                    if (ev.fake) {
+                        return;
+                    }
+
+                    if (checkContainer()) {
+                        return;
+                    }
+
+                    // 更新当前鼠标相对于拖节点的相对位置
+                    event = ev;
+                    dxy = S.clone(drag.mousePos);
+                    var offset = self.getOffset(node);
+                    dxy.left -= offset.left;
+                    dxy.top -= offset.top;
+                    if (!timer) {
+                        checkAndScroll();
+                    }
+                }
+
+                function dragEnd() {
+                    clearTimeout(timer);
                     timer = null;
                 }
-            }
 
-        }
-    });
+                drag.on("drag", dragging);
+
+                drag.on("dragend", dragEnd);
+
+                destructors[tag] = {
+                    drag:drag,
+                    fn:function () {
+                        drag.detach("drag", dragging);
+                        drag.detach("dragend", dragEnd);
+                    }
+                };
+
+                function checkAndScroll() {
+                    if (checkContainer()) {
+                        return;
+                    }
+
+                    var r = self.getRegion(node),
+                        nw = r.width,
+                        nh = r.height,
+                        scroll = self.getScroll(node),
+                        origin = S.clone(scroll),
+                        diffY = dxy.top - nh,
+                        adjust = false;
+
+                    if (diffY >= -diff[1]) {
+                        scroll.top += rate[1];
+                        adjust = true;
+                    }
+
+                    var diffY2 = dxy.top;
+
+                    if (diffY2 <= diff[1]) {
+                        scroll.top -= rate[1];
+                        adjust = true;
+                    }
+
+                    var diffX = dxy.left - nw;
+
+                    if (diffX >= -diff[0]) {
+                        scroll.left += rate[0];
+                        adjust = true;
+                    }
+
+                    var diffX2 = dxy.left;
+
+                    if (diffX2 <= diff[0]) {
+                        scroll.left -= rate[0];
+                        adjust = true;
+                    }
+
+                    if (adjust) {
+                        self.setScroll(node, scroll);
+                        timer = setTimeout(checkAndScroll, ADJUST_DELAY);
+                        // 不希望更新相对值，特别对于相对 window 时，相对值如果不真正拖放触发的 drag，是不变的，
+                        // 不会因为程序 scroll 而改变相对值
+
+                        // 调整事件，不需要 scroll 监控，达到预期结果：元素随容器的持续不断滚动而自动调整位置.
+                        event.fake = true;
+                        if (isWin(node[0])) {
+                            // 当使 window 自动滚动时，也要使得拖放物体相对文档位置随 scroll 改变
+                            // 而相对 node 容器时，只需 node 容器滚动，拖动物体相对文档位置不需要改变
+                            scroll = self.getScroll(node);
+                            event.left += scroll.left - origin.left;
+                            event.top += scroll.top - origin.top;
+                        }
+                        // 容器滚动了，元素也要重新设置 left,top
+                        if (drag.get("move")) {
+                            drag.get("node").offset(event);
+                        }
+                        drag.fire("drag", event);
+                    } else {
+                        timer = null;
+                    }
+                }
+
+            }
+        });
 
     return Scroll;
 }, {
-    requires:['base','node','dom']
+    requires:['./ddm', 'base', 'node', 'dom']
 });/**
  * dd support for kissy
  * @author  承玉<yiminghe@gmail.com>
@@ -20922,9 +21069,9 @@ KISSY.add("component", function(KISSY, ModelControl, Render, Container, UIStore,
         'component/decoratechild']
 });
 /*
-Copyright 2011, KISSY UI Library v1.20
+Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Dec 8 18:36
+build time: May 22 14:18
 */
 /**
  * Switchable
@@ -22721,7 +22868,7 @@ KISSY.add('switchable/effect', function(S, DOM, Event, Anim, Switchable, undefin
  * Switchable Circular Plugin
  * @creator  lifesinger@gmail.com
  */
-KISSY.add('switchable/circular', function(S, DOM, Anim, Switchable) {
+KISSY.add('switchable/circular', function (S, DOM, Anim, Switchable) {
 
     var POSITION = 'position',
         RELATIVE = 'relative',
@@ -22738,8 +22885,8 @@ KISSY.add('switchable/circular', function(S, DOM, Anim, Switchable) {
      * 添加默认配置
      */
     S.mix(Switchable.Config, {
-            circular: false
-        });
+        circular:false
+    });
 
     /**
      * 循环滚动效果函数
@@ -22770,6 +22917,12 @@ KISSY.add('switchable/circular', function(S, DOM, Anim, Switchable) {
 
         if (self.anim) {
             self.anim.stop();
+            // 快速的话会有点问题
+            // 上一个 relative 没清掉：上一个还没有移到该移的位置
+            if (self.panels[activeIndex * cfg.steps].style.position == "relative") {
+                // 快速移到 reset 后的结束位置，用户不会察觉到的！
+                resetPosition.call(self, self.panels, activeIndex, activeIndex, prop, viewDiff);
+            }
         }
 
         if (fromEls) {
@@ -22777,7 +22930,7 @@ KISSY.add('switchable/circular', function(S, DOM, Anim, Switchable) {
                 props,
                 cfg.duration,
                 cfg.easing,
-                function() {
+                function () {
                     if (isCritical) {
                         // 复原位置
                         resetPosition.call(self, self.panels, index, isBackward, prop, viewDiff);
@@ -22842,24 +22995,24 @@ KISSY.add('switchable/circular', function(S, DOM, Anim, Switchable) {
      */
     Switchable.Plugins.push({
 
-            name: 'circular',
+        name:'circular',
 
-            /**
-             * 根据 effect, 调整初始状态
-             */
-            init: function(host) {
-                var cfg = host.config;
+        /**
+         * 根据 effect, 调整初始状态
+         */
+        init:function (host) {
+            var cfg = host.config;
 
-                // 仅有滚动效果需要下面的调整
-                if (cfg.circular && (cfg.effect === SCROLLX || cfg.effect === SCROLLY)) {
-                    // 覆盖滚动效果函数
-                    cfg.scrollType = cfg.effect; // 保存到 scrollType 中
-                    cfg.effect = circularScroll;
-                }
+            // 仅有滚动效果需要下面的调整
+            if (cfg.circular && (cfg.effect === SCROLLX || cfg.effect === SCROLLY)) {
+                // 覆盖滚动效果函数
+                cfg.scrollType = cfg.effect; // 保存到 scrollType 中
+                cfg.effect = circularScroll;
             }
-        });
+        }
+    });
 
-}, { requires:["dom","anim","./base","./effect"]});
+}, { requires:["dom", "anim", "./base", "./effect"]});
 
 /**
  * 承玉：2011.06.02 review switchable
@@ -25857,14 +26010,14 @@ KISSY.add("imagezoom", function(S, ImageZoom) {
 /*
 Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Feb 20 10:28
+build time: Apr 26 14:02
 */
 /**
  * KISSY Calendar
  * @creator  拔赤<lijing00333@163.com>
  */
-KISSY.add('calendar/base', function(S, Node, Event, undefined) {
-    var EventTarget = Event.Target,$ = Node.all;
+KISSY.add('calendar/base', function (S, Node, Event, undefined) {
+    var EventTarget = Event.Target, $ = Node.all;
 
     function Calendar(trigger, config) {
         this._init(trigger, config);
@@ -25879,8 +26032,8 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @param { string }    config
          * @private
          */
-        _init: function(selector, config) {
-            var self = this,con = $(selector);
+        _init:function (selector, config) {
+            var self = this, con = $(selector);
             self.id = self.C_Id = self._stamp(con);
             self._buildParam(config);
 
@@ -25906,7 +26059,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
 
             //创建事件中心
             //事件中心已经和Calendar合并
-            var EventFactory = function() {
+            var EventFactory = function () {
             };
             S.augment(EventFactory, EventTarget);
             var eventCenter = new EventFactory();
@@ -25917,25 +26070,32 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
             return this;
         },
 
-        render: function(o) {
+        render:function (o) {
             var self = this,
-                i = 0,
-                _prev,_next,_oym;
+                i,
+                _prev, _next, _oym;
 
             o = o || {};
             self._parseParam(o);
 
             self.con.addClass('ks-cal-call ks-clearfix multi-' + self.pages);
-			
-			self.ca = self.ca ||[];
-			for(var i=0;i<self.ca.length;i++){
-				self.ca[i].detachEvent();
-			}
-            self.con.html('');
-			//重置日历的个数
-			self.ca.length = self.pages;
 
-            for (i = 0,_oym = [self.year,self.month]; i < self.pages; i++) {
+            self.ca = self.ca || [];
+            for (i = 0; i < self.ca.length; i++) {
+                self.ca[i].detachEvent();
+            }
+
+            if (self.__shimEl) {
+                self.__shimEl.remove();
+                delete self.__shimEl;
+            }
+
+
+            self.con.html('');
+            //重置日历的个数
+            self.ca.length = self.pages;
+
+            for (i = 0, _oym = [self.year, self.month]; i < self.pages; i++) {
                 if (i === 0) {
                     _prev = true;
                 } else {
@@ -25943,7 +26103,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                     _oym = self._computeNextMonth(_oym);
                 }
                 _next = i == (self.pages - 1);
-                self.ca[i]=new self.Page({
+                self.ca[i] = new self.Page({
                     year:_oym[0],
                     month:_oym[1],
                     prevArrow:_prev,
@@ -25954,22 +26114,34 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
 
                 self.ca[i].render();
             }
+            if (self.popup && S.UA['ie'] === 6) {
+                self.__shimEl = new Node("<" + "iframe frameBorder='0' style='position: absolute;" +
+                    "border: none;" +
+                    "width: expression(this.parentNode.offsetWidth-3);" +
+                    "top: 0;" +
+                    //"filter: alpha(opacity=0);" +
+                    "left: 0;" +
+                    "z-index: 0;" +
+                    "height: expression(this.parentNode.offsetHeight-3);" + "'></iframe>");
+                self.con.prepend(self.__shimEl);
+            }
             return this;
 
         },
-		destroy:function(){
-			//在清空html前，移除绑定的事件
-			var self = this;
-			for(var i=0;i<self.ca.length;i++){
-				self.ca[i].detachEvent();
-			}
-			
-			S.each(self.EV, function(tev) {
+        destroy:function () {
+            //在清空html前，移除绑定的事件
+            var self = this;
+            for (var i = 0; i < self.ca.length; i++) {
+                self.ca[i].detachEvent();
+            }
+
+            S.each(self.EV, function (tev) {
                 if (tev) {
                     tev.target.detach(tev.type, tev.fn);
-            }});
+                }
+            });
             self.con.remove();
-		},
+        },
         /**
          * 用以给容器打上id的标记,容器有id则返回
          * @method _stamp
@@ -25977,7 +26149,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @return {string}
          * @private
          */
-        _stamp: function(el) {
+        _stamp:function (el) {
             if (!el.attr('id')) {
                 el.attr('id', S.guid('K_Calendar'));
             }
@@ -25989,7 +26161,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @method _showdate
          * @private
          */
-        _showdate: function(n, d) {
+        _showdate:function (n, d) {
             var uom = new Date(d - 0 + n * 86400000);
             uom = uom.getFullYear() + "/" + (uom.getMonth() + 1) + "/" + uom.getDate();
             return new Date(uom);
@@ -26000,14 +26172,14 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @method _buildEvent
          * @private
          */
-        _buildEvent: function() {
-            var self = this,tev,i;
+        _buildEvent:function () {
+            var self = this, tev, i;
             if (!self.popup) {
                 return this;
             }
             //点击空白
             //flush event
-            S.each(self.EV, function(tev) {
+            S.each(self.EV, function (tev) {
                 if (tev) {
                     tev.target.detach(tev.type, tev.fn);
                 }
@@ -26017,7 +26189,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                 target:$(document),
                 type:'click'
             };
-            tev.fn = function(e) {
+            tev.fn = function (e) {
                 var target = $(e.target);
                 //点击到日历上
                 if (target.attr('id') === self.C_Id) {
@@ -26035,7 +26207,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                 if (self.con.css('visibility') == 'hidden') {
                     return;
                 }
-                var inRegion = function(dot, r) {
+                var inRegion = function (dot, r) {
                     return dot[0] > r[0].x
                         && dot[0] < r[1].x
                         && dot[1] > r[0].y
@@ -26052,7 +26224,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                 /*
                  if (!S.DOM.contains(Node.one('#' + self.C_Id), e.target)) {
                  */
-                if (!inRegion([e.pageX,e.pageY], [
+                if (!inRegion([e.pageX, e.pageY], [
                     {
                         x:self.con.offset().left,
                         y:self.con.offset().top
@@ -26069,9 +26241,9 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
             //点击触点
             for (i = 0; i < self.triggerType.length; i++) {
                 tev = self.EV[i + 1] = {
-                    target: $('#' + self.id),
-                    type: self.triggerType[i],
-                    fn: function(e) {
+                    target:$('#' + self.id),
+                    type:self.triggerType[i],
+                    fn:function (e) {
                         e.target = $(e.target);
                         e.preventDefault();
                         //如果focus和click同时存在的hack
@@ -26086,7 +26258,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
                                 self.toggle();
                             }
                         } else if (!S.inArray('click', a) && S.inArray('focus', a)) {//只有focus
-                            setTimeout(function() {//为了跳过document.onclick事件
+                            setTimeout(function () {//为了跳过document.onclick事件
                                 self.toggle();
                             }, 170);
                         } else {
@@ -26104,7 +26276,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * 改变日历是否显示的状态
          * @mathod toggle
          */
-        toggle: function() {
+        toggle:function () {
             var self = this;
             if (self.con.css('visibility') == 'hidden') {
                 self.show();
@@ -26117,7 +26289,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * 显示日历
          * @method show
          */
-        show: function() {
+        show:function () {
             var self = this;
             self.con.css('visibility', '');
             var _x = self.trigger.offset().left,
@@ -26134,7 +26306,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * 隐藏日历
          * @method hide
          */
-        hide: function() {
+        hide:function () {
             var self = this;
             self.con.css('visibility', 'hidden');
             self.fire("hide");
@@ -26146,7 +26318,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @method _buildParam
          * @private
          */
-        _buildParam: function(o) {
+        _buildParam:function (o) {
             var self = this;
             if (o === undefined || o === null) {
                 o = { };
@@ -26160,18 +26332,18 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
 
             //这种处理方式不错
             S.each({
-                date:        new Date(),
-                startDay:    0,
-                pages:       1,
-                closable:    false,
-                rangeSelect: false,
-                minDate:     false,
-                maxDate:     false,
-                multiSelect: false,
-                navigator:   true,
-                popup:       false,
-                showTime:    false,
-                triggerType: ['click']
+                date:new Date(),
+                startDay:0,
+                pages:1,
+                closable:false,
+                rangeSelect:false,
+                minDate:false,
+                maxDate:false,
+                "multiSelect":false,
+                navigator:true,
+                popup:false,
+                showTime:false,
+                triggerType:['click']
             }, setParam);
 
             // 支持用户传进来一个string
@@ -26206,8 +26378,8 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @method _parseParam
          * @private
          */
-        _parseParam: function(o) {
-            var self = this,i;
+        _parseParam:function (o) {
+            var self = this, i;
             if (o === undefined || o === null) {
                 o = {};
             }
@@ -26223,8 +26395,8 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @method _templetShow
          * @private
          */
-        _templetShow: function(templet, data) {
-            var str_in,value_s,i,m,value,par;
+        _templetShow:function (templet, data) {
+            var str_in, value_s, i, m, value, par;
             if (data instanceof Array) {
                 str_in = '';
                 for (i = 0; i < data.length; i++) {
@@ -26234,7 +26406,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
             } else {
                 value_s = templet.match(/{\$(.*?)}/g);
                 if (data !== undefined && value_s !== null) {
-                    for (i = 0,m = value_s.length; i < m; i++) {
+                    for (i = 0, m = value_s.length; i < m; i++) {
                         par = value_s[i].replace(/({\$)|}/g, '');
                         value = (data[par] !== undefined) ? data[par] : '';
                         templet = templet.replace(value_s[i], value);
@@ -26249,7 +26421,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
          * @method _handleDate
          * @private
          */
-        _handleDate: function() {
+        _handleDate:function () {
             var self = this,
                 date = self.date;
             self['weekday'] = date.getDay() + 1;//星期几 //指定日期是星期几
@@ -26260,12 +26432,12 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
         },
 
         //get标题
-        _getHeadStr: function(year, month) {
+        _getHeadStr:function (year, month) {
             return year.toString() + '年' + (Number(month) + 1).toString() + '月';
         },
 
         //月加
-        _monthAdd: function() {
+        _monthAdd:function () {
             var self = this;
             if (self.month == 11) {
                 self.year++;
@@ -26278,7 +26450,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
         },
 
         //月减
-        _monthMinus: function() {
+        _monthMinus:function () {
             var self = this;
             if (self.month === 0) {
                 self.year--;
@@ -26291,7 +26463,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
         },
 
         //裸算下一个月的年月,[2009,11],年:fullYear，月:从0开始计数
-        _computeNextMonth: function(a) {
+        _computeNextMonth:function (a) {
             var _year = a[0],
                 _month = a[1];
             if (_month == 11) {
@@ -26300,16 +26472,16 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
             } else {
                 _month++;
             }
-            return [_year,_month];
+            return [_year, _month];
         },
 
         //处理日期的偏移量
-        _handleOffset: function() {
+        _handleOffset:function () {
             var self = this,
-                data = ['日','一','二','三','四','五','六'],
+                data = ['日', '一', '二', '三', '四', '五', '六'],
                 temp = '<span>{$day}</span>',
                 offset = self.startDay,
-                day_html = '',
+                day_html,
                 a = [];
             for (var i = 0; i < 7; i++) {
                 a[i] = {
@@ -26324,8 +26496,8 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
         },
 
         //处理起始日期,d:Date类型
-        _handleRange: function(d) {
-            var self = this,t;
+        _handleRange:function (d) {
+            var self = this, t;
             if ((self.range.start === null && self.range.end === null ) || (self.range.start !== null && self.range.end !== null)) {
                 self.range.start = d;
                 self.range.end = null;
@@ -26345,7 +26517,7 @@ KISSY.add('calendar/base', function(S, Node, Event, undefined) {
     });
 
     return Calendar;
-}, { requires: ['node',"event"] });
+}, { requires:['node', "event"] });
 
 /**
  * 2011-12-06 by yiminghe@gmail.com
@@ -30324,9 +30496,9 @@ KISSY.add('tree', function(S, Tree, TreeNode, CheckNode, CheckTree) {
     requires:["tree/tree","tree/basenode","tree/checknode","tree/checktree"]
 });
 /*
-Copyright 2011, KISSY UI Library v1.20
+Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Dec 8 19:41
+build time: May 23 21:24
 */
 /**
  * intervein elements dynamically
@@ -30406,6 +30578,15 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
             }
         },
 
+        /**
+         * Horizontal alignment of waterfall items with container.
+         * Enum: 'left','center','right'.
+         * @type String
+         */
+        align:{
+            value:'center'
+        },
+
         colWidth:{}
     };
 
@@ -30437,6 +30618,7 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
     function adjustItem(itemRaw) {
         var self = this,
             effect = self.get("effect"),
+            align = self.get("align"),
             item = $(itemRaw),
             curColHeights = self.get("curColHeights"),
             container = self.get("container"),
@@ -30444,6 +30626,7 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
             dest = 0,
             containerRegion = self._containerRegion,
             guard = Number.MAX_VALUE;
+
         for (var i = 0; i < curColCount; i++) {
             if (curColHeights[i] < guard) {
                 guard = curColHeights[i];
@@ -30454,7 +30637,13 @@ KISSY.add("waterfall/base", function(S, Node, Base) {
             guard = 0;
         }
         // 元素保持间隔不变，居中
-        var margin = Math.max(containerRegion.width - curColCount * self.get("colWidth"), 0) / 2;
+        // 元素保持间隔不变，居中
+        var margin = align === 'left' ? 0 :
+            Math.max(containerRegion.width - curColCount * self.get("colWidth"), 0);
+
+        if (align === 'center') {
+            margin /= 2;
+        }
         item.css({
             //left:dest * Math.max(containerRegion.width / curColCount, self.get("colWidth"))
             //    + containerRegion.left,
@@ -30685,9 +30874,9 @@ KISSY.add("waterfall/loader", function(S, Node, Intervein) {
     requires:['waterfall/base','waterfall/loader']
 });
 /*
-Copyright 2011, KISSY UI Library v1.20
+Copyright 2012, KISSY UI Library v1.20
 MIT Licensed
-build time: Nov 28 12:39
+build time: May 22 16:11
 */
 /**
  * @author: 常胤 (lzlu.com)
@@ -31329,8 +31518,8 @@ KISSY.add("validation/rule/base", function(S, DOM, Event, Util) {
 
 	
 }, { requires: ['dom',"event","../utils"] });/**
- * 增加常用校验规则
- * @author: 常胤 <lzlu.com>
+ * @fileOverview 增加常用校验规则
+ * @author 常胤 <lzlu.com>
  */
 KISSY.add("validation/rule/normal", function(S, DOM, Event, Util, Rule) {
 	
@@ -31478,11 +31667,48 @@ KISSY.add("validation/rule/normal", function(S, DOM, Event, Util, Rule) {
 	
 	
 	
+
+	Rule.add("mobile","手机号码不合法",function(value,text){
+		//规则取自淘宝注册登录模块 @author:yanmu.wj@taobao.com
+        var regex = {
+            //中国移动
+            cm:/^(?:0?1)((?:3[56789]|5[0124789]|8[278])\d|34[0-8]|47\d)\d{7}$/,
+            //中国联通
+            cu:/^(?:0?1)(?:3[012]|4[5]|5[356]|8[356]\d|349)\d{7}$/,
+            //中国电信
+            ce:/^(?:0?1)(?:33|53|8[079])\d{8}$/,
+            //中国大陆
+            cn:/^(?:0?1)[3458]\d{9}$/,
+            //中国香港
+            hk:/^(?:0?[1569])(?:\d{7}|\d{8}|\d{12})$/,
+            //澳门
+            macao:/^6\d{7}$/,
+            //台湾
+            tw:/^(?:0?[679])(?:\d{7}|\d{8}|\d{10})$//*,
+            //韩国
+            kr:/^(?:0?[17])(?:\d{9}|\d{8})$/,
+            //日本
+            jp:/^(?:0?[789])(?:\d{9}|\d{8})$/*/
+        },
+		flag = false;
+		S.each(regex,function(re){
+			if(value.match(re)){
+				flag = true;
+				return false;
+			}
+		});
+		if(!flag){
+			return text;
+		}
+	});
+	
+	
+	
 	S.each([["chinese",/^[\u0391-\uFFE5]+$/,"只能输入中文"],
 			["english",/^[A-Za-z]+$/,"只能输入英文字母"],
 			["currency",/^\d+(\.\d+)?$/,"金额格式不正确。"],
 			["phone",/^((\(\d{2,3}\))|(\d{3}\-))?(\(0\d{2,3}\)|0\d{2,3}-)?[1-9]\d{6,7}(\-\d{1,4})?$/,"电话号码格式不正确。"],
-			["mobile",/^((\(\d{2,3}\))|(\d{3}\-))?13\d{9}$/,"手机号码格式不正确。"],
+			//["mobile",/^((\(\d{2,3}\))|(\d{3}\-))?13\d{9}$/,"手机号码格式不正确。"],
 			["url",/^http:\/\/[A-Za-z0-9]+\.[A-Za-z0-9]+[\/=\?%\-&_~`@[\]':+!]*([^<>""])*$/,"url格式不正确。"],
 			["email",/^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/,"请输入正确的email格式"]
 		],function(item){
